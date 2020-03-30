@@ -2,7 +2,7 @@
 package runtime
 
 import (
-	"bitbucket.org/mosteknoloji/robomotion/robomotion-plugin/go-lib/proto"
+	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
 	plugin "github.com/hashicorp/go-plugin"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

@@ -9,7 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
 
-	"bitbucket.org/mosteknoloji/robomotion/robomotion-plugin/go-lib/proto"
+	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
 )
 
 // Here is the gRPC server that GRPCClient talks to.
