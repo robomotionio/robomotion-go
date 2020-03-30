@@ -1,0 +1,142 @@
+syntax = "proto3";
+package proto;
+import "struct.proto";
+
+service Node {
+    rpc Init(InitRequest) returns (Empty);
+    rpc OnCreate(OnCreateRequest) returns (OnCreateResponse);
+    rpc OnMessage(OnMessageRequest) returns (OnMessageResponse);
+    rpc OnClose(OnCloseRequest) returns (OnCloseResponse);
+}
+
+message Error {
+    bool OK = 2;
+    string code = 3;
+    string message = 4;
+}
+
+message InitRequest {
+    uint32 event_server = 1;
+    uint32 port = 2;
+}
+
+message OnCreateRequest {
+    string name = 1;
+    bytes config = 2;
+}
+
+message OnCreateResponse {
+    Error error = 1;
+}
+
+message OnMessageRequest {
+    string guid = 1;
+    bytes inMessage = 2;
+}
+
+message OnMessageResponse {
+    bytes outMessage = 1;
+    Error error = 2;
+}
+
+message OnCloseRequest {
+    string guid = 1;
+}
+
+message OnCloseResponse {
+    Error error = 1;
+}
+
+service RuntimeHelper {
+    rpc Close(Empty) returns (Empty);
+    rpc Debug(DebugRequest) returns (Empty);
+    rpc EmitFlowEvent(EmitFlowEventRequest) returns (Empty);
+    rpc EmitOutput(EmitOutputRequest) returns (Empty);
+    rpc EmitError(EmitErrorRequest) returns (Empty);
+    rpc GetVaultItem(GetVaultItemRequest) returns (GetVaultItemResponse);
+    rpc GetIntVariable(GetVariableRequest) returns (GetIntVariableResponse);
+    rpc GetStringVariable(GetVariableRequest) returns (GetStringVariableResponse);
+    rpc GetInterfaceVariable(GetVariableRequest) returns (GetInterfaceVariableResponse);
+    rpc SetIntVariable(SetIntVariableRequest) returns (SetVariableResponse);
+    rpc SetStringVariable(SetStringVariableRequest) returns (SetVariableResponse);
+    rpc SetInterfaceVariable(SetInterfaceVariableRequest) returns (SetVariableResponse);
+}
+
+message Empty {
+}
+
+message DebugRequest {
+    string guid = 1;
+    string name = 2;
+    bytes message = 3;
+}
+
+message EmitFlowEventRequest {
+    string guid = 1;
+    string name = 2;
+}
+
+message EmitOutputRequest {
+    string guid = 1;
+    bytes output = 2;
+    int32 port = 3;
+}
+
+message EmitErrorRequest {
+    string guid = 1;
+    string name = 2;
+    string message = 3;
+}
+
+message GetVaultItemRequest {
+    string vaultId = 1;
+    string ItemId = 2;
+}
+
+message GetVaultItemResponse {
+    google.protobuf.Struct item = 1;
+}
+
+message Variable {
+    string scope = 1;
+    string name = 2;
+}
+
+message GetVariableRequest {
+    Variable variable = 1;
+    bytes message = 2;
+}
+
+message GetIntVariableResponse {
+    int32 value = 1;
+}
+
+message GetStringVariableResponse {
+    string value = 1;
+}
+
+message GetInterfaceVariableResponse {
+    google.protobuf.Struct value = 1;
+}
+
+message SetIntVariableRequest {
+    Variable variable = 1;
+    bytes message = 2;
+    int32 value = 3;
+}
+
+message SetStringVariableRequest {
+    Variable variable = 1;
+    bytes message = 2;
+    string value = 3;
+}
+
+message SetInterfaceVariableRequest {
+    Variable variable = 1;
+    bytes message = 2;
+    google.protobuf.Struct value = 3;
+}
+
+message SetVariableResponse {
+    bytes message = 1;
+}
