@@ -42,8 +42,8 @@ type SProperty struct {
 }
 
 type VProperty struct {
-	Name  Type `json:"name"`
-	Scope Type `json:"scope"`
+	Name  Type `json:"name,omitempty"`
+	Scope Type `json:"scope,omitempty"`
 }
 
 type VarDataProperty struct {
