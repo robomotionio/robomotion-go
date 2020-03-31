@@ -83,7 +83,8 @@ func generateSpecFile() {
 			fmt.Println(fieldName)
 
 			sProp := SProperty{Title: title}
-			isVar := field.Type == reflect.TypeOf(&Variable{})
+			isVar := field.Type == reflect.TypeOf(Variable{})
+			fmt.Println(field.Type, reflect.TypeOf(Variable{}))
 			if isVar {
 				sProp.Type = "object"
 				sProp.VariableType = getVariableType(field.Type)
