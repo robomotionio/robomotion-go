@@ -23,6 +23,10 @@ var (
 
 func Start() {
 
+	if len(os.Args) > 1 && os.Args[1] == "-s" { // generate spec file
+		return
+	}
+
 	go plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: Handshake,
 		Plugins: map[string]plugin.Plugin{
