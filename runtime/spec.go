@@ -1,7 +1,9 @@
 package runtime
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 )
@@ -134,7 +136,12 @@ func generateSpecFile() {
 	}
 
 	data := map[string]interface{}{"nodes": nodes}
-	fmt.Println(data)
+	d, err := json.Marshal(data)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	fmt.Println(string(d))
 }
 
 func lowerFirstLetter(text string) string {
