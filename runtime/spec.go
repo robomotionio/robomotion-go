@@ -34,10 +34,10 @@ type SProperty struct {
 	Type         string     `json:"type"`
 	Title        string     `json:"title"`
 	Properties   *VProperty `json:"properties,omitempty"`
-	CsScope      *bool      `json:"csScope"`
-	JsScope      *bool      `json:"jsScope"`
-	CustomScope  *bool      `json:"customScope"`
-	MessageScope *bool      `json:"messageScope"`
+	CsScope      *bool      `json:"csScope,omitempty"`
+	JsScope      *bool      `json:"jsScope,omitempty"`
+	CustomScope  *bool      `json:"customScope,omitempty"`
+	MessageScope *bool      `json:"messageScope,omitempty"`
 	VariableType string     `json:"variableType,omitempty"`
 }
 
