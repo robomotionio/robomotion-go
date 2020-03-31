@@ -61,6 +61,7 @@ func generateSpecFile() {
 		snode, _ := t.FieldByName("SNode")
 		id := snode.Tag.Get("id")
 		name := snode.Tag.Get("name")
+		fmt.Println(name)
 
 		spec := NodeSpec{ID: id, Name: name, Inputs: 1, Outputs: 1} // FIX
 
@@ -77,6 +78,7 @@ func generateSpecFile() {
 			field := t.Field(i)
 			fieldName := field.Name
 			title := field.Tag.Get("title")
+			fmt.Println(fieldName)
 
 			sProp := SProperty{Title: title}
 			isVar := field.Type == reflect.TypeOf(&Variable{})
