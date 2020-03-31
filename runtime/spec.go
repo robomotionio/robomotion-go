@@ -27,7 +27,7 @@ type Property struct {
 type Schema struct {
 	Type       string               `json:"type"`
 	Title      string               `json:"title"`
-	Properties map[string]SProperty `json:"properties"`
+	Properties map[string]SProperty `json:"properties,omitempty"`
 }
 
 type SProperty struct {
