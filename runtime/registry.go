@@ -24,6 +24,7 @@ var (
 func Start() {
 
 	if len(os.Args) > 1 && os.Args[1] == "-s" { // generate spec file
+		generateSpecFile()
 		return
 	}
 
@@ -55,7 +56,7 @@ func Init() {
 	types := GetNodeTypes()
 	for _, t := range types {
 		snode, _ := t.FieldByName("SNode")
-		name := snode.Tag.Get("name")
+		name := snode.Tag.Get("id")
 		CreateNode(name, &NodeFactory{Type: t})
 	}
 
