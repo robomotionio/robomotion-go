@@ -27,13 +27,13 @@ type Property struct {
 type Schema struct {
 	Type       string               `json:"type"`
 	Title      string               `json:"title"`
-	Properties map[string]SProperty `json:"properties,omitempty"`
+	Properties map[string]SProperty `json:"properties"`
 }
 
 type SProperty struct {
 	Type         string    `json:"type"`
 	Title        string    `json:"title"`
-	Properties   VProperty `json:"properties"`
+	Properties   VProperty `json:"properties,omitempty"`
 	CsScope      bool      `json:"csScope"`
 	JsScope      bool      `json:"jsScope"`
 	CustomScope  bool      `json:"customScope"`
@@ -63,7 +63,6 @@ func generateSpecFile() {
 		snode, _ := t.FieldByName("SNode")
 		id := snode.Tag.Get("id")
 		name := snode.Tag.Get("name")
-		fmt.Println(name)
 
 		spec := NodeSpec{ID: id, Name: name, Inputs: 1, Outputs: 1} // FIX
 
@@ -80,11 +79,9 @@ func generateSpecFile() {
 			field := t.Field(i)
 			fieldName := field.Name
 			title := field.Tag.Get("title")
-			fmt.Println(fieldName)
 
 			sProp := SProperty{Title: title}
 			isVar := field.Type == reflect.TypeOf(Variable{})
-			fmt.Println(field.Type, reflect.TypeOf(Variable{}))
 			if isVar {
 				sProp.Type = "object"
 				sProp.VariableType = getVariableType(field.Type)
