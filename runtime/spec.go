@@ -52,7 +52,7 @@ type VarDataProperty struct {
 }
 
 type Type struct {
-	Type string `json:"type"`
+	Type string `json:"type,omitempty"`
 }
 
 func generateSpecFile() {
