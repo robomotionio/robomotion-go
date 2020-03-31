@@ -31,19 +31,19 @@ type Schema struct {
 }
 
 type SProperty struct {
-	Type         string    `json:"type"`
-	Title        string    `json:"title"`
-	Properties   VProperty `json:"properties,omitempty"`
-	CsScope      bool      `json:"csScope"`
-	JsScope      bool      `json:"jsScope"`
-	CustomScope  bool      `json:"customScope"`
-	MessageScope bool      `json:"messageScope"`
-	VariableType string    `json:"variableType,omitempty"`
+	Type         string     `json:"type"`
+	Title        string     `json:"title"`
+	Properties   *VProperty `json:"properties,omitempty"`
+	CsScope      *bool      `json:"csScope"`
+	JsScope      *bool      `json:"jsScope"`
+	CustomScope  *bool      `json:"customScope"`
+	MessageScope *bool      `json:"messageScope"`
+	VariableType string     `json:"variableType,omitempty"`
 }
 
 type VProperty struct {
-	Name  Type `json:"name,omitempty"`
-	Scope Type `json:"scope,omitempty"`
+	Name  *Type `json:"name,omitempty"`
+	Scope *Type `json:"scope,omitempty"`
 }
 
 type VarDataProperty struct {
@@ -85,16 +85,29 @@ func generateSpecFile() {
 			if isVar {
 				sProp.Type = "object"
 				sProp.VariableType = getVariableType(field.Type)
-				sProp.Properties = VProperty{Name: Type{Type: "string"}, Scope: Type{Type: "string"}}
+				sProp.Properties = &VProperty{Name: &Type{Type: "string"}, Scope: &Type{Type: "string"}}
 
 			} else {
 				sProp.Type = strings.ToLower(getVariableType(field.Type))
 			}
 
-			_, sProp.CsScope = field.Tag.Lookup("csScope")
-			_, sProp.CustomScope = field.Tag.Lookup("customScope")
-			_, sProp.JsScope = field.Tag.Lookup("jsScope")
-			_, sProp.MessageScope = field.Tag.Lookup("messageScope")
+			_, csScope := field.Tag.Lookup("csScope")
+			_, customScope := field.Tag.Lookup("customScope")
+			_, jsScope := field.Tag.Lookup("jsScope")
+			_, messageScope := field.Tag.Lookup("messageScope")
+
+			if csScope {
+				sProp.CsScope = &csScope
+			}
+			if customScope {
+				sProp.CustomScope = &customScope
+			}
+			if jsScope {
+				sProp.JsScope = &jsScope
+			}
+			if messageScope {
+				sProp.MessageScope = &messageScope
+			}
 
 			lowerFieldName := lowerFirstLetter(fieldName)
 			if strings.HasPrefix(fieldName, "In") { // input
