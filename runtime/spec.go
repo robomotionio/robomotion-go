@@ -129,9 +129,17 @@ func generateSpecFile() {
 			}
 		}
 
-		spec.Properties = append(spec.Properties, inProperty)
-		spec.Properties = append(spec.Properties, outProperty)
-		spec.Properties = append(spec.Properties, optProperty)
+		if len(inProperty.Schema.Properties) > 0 {
+			spec.Properties = append(spec.Properties, inProperty)
+		}
+
+		if len(outProperty.Schema.Properties) > 0 {
+			spec.Properties = append(spec.Properties, outProperty)
+		}
+
+		if len(optProperty.Schema.Properties) > 0 {
+			spec.Properties = append(spec.Properties, optProperty)
+		}
 
 		nodes = append(nodes, spec)
 	}
