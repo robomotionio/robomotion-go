@@ -3,6 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"reflect"
 	"strings"
@@ -58,7 +59,9 @@ type Type struct {
 func generateSpecFile() {
 
 	var nodes []NodeSpec
+	config := getConfig()
 	types := GetNodeTypes()
+
 	for _, t := range types {
 		snode, _ := t.FieldByName("SNode")
 		id := snode.Tag.Get("id")
@@ -155,7 +158,7 @@ func generateSpecFile() {
 		nodes = append(nodes, spec)
 	}
 
-	data := map[string]interface{}{"nodes": nodes}
+	data := map[string]interface{}{"nodes": nodes, "name": config["name"]}
 	d, err := json.Marshal(data)
 	if err != nil {
 		log.Fatalln(err)
@@ -197,4 +200,19 @@ func getVariableType(f reflect.StructField) string {
 	}
 
 	return "String"
+}
+
+func getConfig() map[string]interface{} {
+	data, err := ioutil.ReadFile("config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	config := make(map[string]interface{})
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return config
 }
