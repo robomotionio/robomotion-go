@@ -3,7 +3,6 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"reflect"
 	"strings"
@@ -56,10 +55,9 @@ type Type struct {
 	Type string `json:"type,omitempty"`
 }
 
-func generateSpecFile() {
+func generateSpecFile(pluginName string) {
 
 	var nodes []NodeSpec
-	config := getConfig()
 	types := GetNodeTypes()
 
 	for _, t := range types {
@@ -158,7 +156,7 @@ func generateSpecFile() {
 		nodes = append(nodes, spec)
 	}
 
-	data := map[string]interface{}{"nodes": nodes, "name": config["name"]}
+	data := map[string]interface{}{"nodes": nodes, "name": pluginName}
 	d, err := json.Marshal(data)
 	if err != nil {
 		log.Fatalln(err)
@@ -200,19 +198,4 @@ func getVariableType(f reflect.StructField) string {
 	}
 
 	return "String"
-}
-
-func getConfig() map[string]interface{} {
-	data, err := ioutil.ReadFile("config.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	config := make(map[string]interface{})
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return config
 }

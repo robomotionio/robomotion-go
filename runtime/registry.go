@@ -23,8 +23,8 @@ var (
 
 func Start() {
 
-	if len(os.Args) > 1 && os.Args[1] == "-s" { // generate spec file
-		generateSpecFile()
+	if len(os.Args) > 2 && os.Args[1] == "-s" { // generate spec file
+		generateSpecFile(os.Args[2])
 		return
 	}
 
