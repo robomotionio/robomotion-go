@@ -84,11 +84,11 @@ func generateSpecFile() {
 			isVar := field.Type == reflect.TypeOf(Variable{})
 			if isVar {
 				sProp.Type = "object"
-				sProp.VariableType = getVariableType(field.Type)
+				sProp.VariableType = getVariableType(field)
 				sProp.Properties = &VProperty{Name: &Type{Type: "string"}, Scope: &Type{Type: "string"}}
 
 			} else {
-				sProp.Type = strings.ToLower(getVariableType(field.Type))
+				sProp.Type = strings.ToLower(getVariableType(field))
 			}
 
 			_, csScope := field.Tag.Lookup("csScope")
@@ -113,28 +113,29 @@ func generateSpecFile() {
 			if strings.HasPrefix(fieldName, "In") { // input
 
 				inProperty.Schema.Properties[lowerFieldName] = sProp
+				inProperty.UISchema["ui:order"] = []string{"*"} // FIX
 				if isVar {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
-					inProperty.UISchema["ui:order"] = []string{"*"} // FIX
 				}
 
 			} else if strings.HasPrefix(fieldName, "Out") { // output
 
 				outProperty.Schema.Properties[lowerFieldName] = sProp
+				outProperty.UISchema["ui:order"] = []string{"*"} // FIX
+
 				if isVar {
 					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
-					outProperty.UISchema["ui:order"] = []string{"*"} // FIX
 				}
 
 			} else if strings.HasPrefix(fieldName, "Opt") { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
+				optProperty.UISchema["ui:order"] = []string{"*"} // FIX
 				if isVar {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
-					optProperty.UISchema["ui:order"] = []string{"*"} // FIX
 				}
 			}
 		}
@@ -171,7 +172,19 @@ func lowerFirstLetter(text string) string {
 	return fmt.Sprintf("%s%s", strings.ToLower(text[:1]), text[1:])
 }
 
-func getVariableType(t reflect.Type) string {
+func upperFirstLetter(text string) string {
+	if len(text) < 2 {
+		return strings.ToUpper(text)
+	}
+
+	return fmt.Sprintf("%s%s", strings.ToUpper(text[:1]), text[1:])
+}
+
+func getVariableType(f reflect.StructField) string {
+
+	if f.Type == reflect.TypeOf(Variable{}) {
+		return upperFirstLetter(strings.ToLower(f.Tag.Get("type")))
+	}
 
 	kinds := map[reflect.Kind]string{
 		reflect.Bool: "Boolean", reflect.Int: "Integer", reflect.Int8: "Integer", reflect.Int16: "Integer", reflect.Int32: "Integer", reflect.Int64: "Integer",
@@ -179,7 +192,7 @@ func getVariableType(t reflect.Type) string {
 		reflect.Float64: "Double", reflect.Array: "Array",
 	}
 
-	if s, ok := kinds[t.Kind()]; ok {
+	if s, ok := kinds[f.Type.Kind()]; ok {
 		return s
 	}
 
