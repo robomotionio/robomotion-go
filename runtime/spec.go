@@ -55,7 +55,7 @@ type Type struct {
 	Type string `json:"type,omitempty"`
 }
 
-func generateSpecFile(pluginName string) {
+func generateSpecFile(pluginName, version string) {
 
 	var nodes []NodeSpec
 	types := GetNodeTypes()
@@ -156,7 +156,7 @@ func generateSpecFile(pluginName string) {
 		nodes = append(nodes, spec)
 	}
 
-	data := map[string]interface{}{"nodes": nodes, "name": pluginName}
+	data := map[string]interface{}{"nodes": nodes, "name": pluginName, "version": version}
 	d, err := json.Marshal(data)
 	if err != nil {
 		log.Fatalln(err)
