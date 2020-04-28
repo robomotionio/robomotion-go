@@ -132,7 +132,7 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
-					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
+					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
 				}
 
 			} else if strings.HasPrefix(fieldName, "Opt") { // option
@@ -143,7 +143,7 @@ func generateSpecFile(pluginName, version string) {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
-					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
 				}
 			}
 		}
