@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -86,7 +87,7 @@ func generateSpecFile(pluginName, version string) {
 			} else if isCred {
 				sProp.Type = "object"
 				sProp.SubTitle = "Credentials"
-				sProp.Category = 6
+				sProp.Category, _ = strconv.Atoi(field.Tag.Get("category"))
 				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
 
 			} else {
