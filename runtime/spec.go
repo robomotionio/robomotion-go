@@ -35,7 +35,7 @@ type SProperty struct {
 	Type         string                  `json:"type"`
 	Title        string                  `json:"title"`
 	SubTitle     string                  `json:"subtitle"`
-	Category     int                     `json:"category"`
+	Category     *int                    `json:"category,omitempty"`
 	Properties   *map[string]interface{} `json:"properties,omitempty"`
 	CsScope      *bool                   `json:"csScope,omitempty"`
 	JsScope      *bool                   `json:"jsScope,omitempty"`
@@ -85,9 +85,10 @@ func generateSpecFile(pluginName, version string) {
 				sProp.Properties = &map[string]interface{}{"scope": map[string]string{"type": "string"}, "name": map[string]string{"type": "string"}}
 
 			} else if isCred {
+				category, _ := strconv.Atoi(field.Tag.Get("category"))
 				sProp.Type = "object"
 				sProp.SubTitle = "Credentials"
-				sProp.Category, _ = strconv.Atoi(field.Tag.Get("category"))
+				sProp.Category = &category
 				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
 
 			} else {
