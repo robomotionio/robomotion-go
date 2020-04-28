@@ -31,28 +31,21 @@ type Schema struct {
 }
 
 type SProperty struct {
-	Type         string     `json:"type"`
-	Title        string     `json:"title"`
-	Properties   *VProperty `json:"properties,omitempty"`
-	CsScope      *bool      `json:"csScope,omitempty"`
-	JsScope      *bool      `json:"jsScope,omitempty"`
-	CustomScope  *bool      `json:"customScope,omitempty"`
-	MessageScope *bool      `json:"messageScope,omitempty"`
-	VariableType string     `json:"variableType,omitempty"`
-}
-
-type VProperty struct {
-	Name  *Type `json:"name,omitempty"`
-	Scope *Type `json:"scope,omitempty"`
+	Type         string                  `json:"type"`
+	Title        string                  `json:"title"`
+	SubTitle     string                  `json:"subtitle"`
+	Category     int                     `json:"category"`
+	Properties   *map[string]interface{} `json:"properties,omitempty"`
+	CsScope      *bool                   `json:"csScope,omitempty"`
+	JsScope      *bool                   `json:"jsScope,omitempty"`
+	CustomScope  *bool                   `json:"customScope,omitempty"`
+	MessageScope *bool                   `json:"messageScope,omitempty"`
+	VariableType string                  `json:"variableType,omitempty"`
 }
 
 type VarDataProperty struct {
 	Name  string `json:"name"`
 	Scope string `json:"scope"`
-}
-
-type Type struct {
-	Type string `json:"type,omitempty"`
 }
 
 func generateSpecFile(pluginName, version string) {
@@ -83,10 +76,18 @@ func generateSpecFile(pluginName, version string) {
 
 			sProp := SProperty{Title: title}
 			isVar := field.Type == reflect.TypeOf(Variable{})
+			isCred := field.Type == reflect.TypeOf(Credentials{})
+
 			if isVar {
 				sProp.Type = "object"
 				sProp.VariableType = getVariableType(field)
-				sProp.Properties = &VProperty{Name: &Type{Type: "string"}, Scope: &Type{Type: "string"}}
+				sProp.Properties = &map[string]interface{}{"scope": map[string]string{"type": "string"}, "name": map[string]string{"type": "string"}}
+
+			} else if isCred {
+				sProp.Type = "object"
+				sProp.SubTitle = "Credentials"
+				sProp.Category = 6
+				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
 
 			} else {
 				sProp.Type = strings.ToLower(getVariableType(field))
@@ -118,6 +119,8 @@ func generateSpecFile(pluginName, version string) {
 				if isVar {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
+				} else if isCred {
+					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
 				}
 
 			} else if strings.HasPrefix(fieldName, "Out") { // output
@@ -128,6 +131,8 @@ func generateSpecFile(pluginName, version string) {
 				if isVar {
 					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
+				} else if isCred {
+					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
 				}
 
 			} else if strings.HasPrefix(fieldName, "Opt") { // option
@@ -137,6 +142,8 @@ func generateSpecFile(pluginName, version string) {
 				if isVar {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
+				} else if isCred {
+					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
 				}
 			}
 		}
