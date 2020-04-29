@@ -41,7 +41,10 @@ type SProperty struct {
 	JsScope      *bool                   `json:"jsScope,omitempty"`
 	CustomScope  *bool                   `json:"customScope,omitempty"`
 	MessageScope *bool                   `json:"messageScope,omitempty"`
+	Multiple     *bool                   `json:"multiple,omitempty"`
 	VariableType string                  `json:"variableType,omitempty"`
+	Enum         []interface{}           `json:"enum,omitempty"`
+	EnumNames    []string                `json:"enumNames,omitempty"`
 }
 
 type VarDataProperty struct {
@@ -74,10 +77,12 @@ func generateSpecFile(pluginName, version string) {
 			field := t.Field(i)
 			fieldName := field.Name
 			title := field.Tag.Get("title")
+			enum := field.Tag.Get("enum")
 
 			sProp := SProperty{Title: title}
 			isVar := field.Type == reflect.TypeOf(Variable{})
 			isCred := field.Type == reflect.TypeOf(Credentials{})
+			isEnum := len(enum) > 0
 
 			if isVar {
 				sProp.Type = "object"
@@ -90,6 +95,13 @@ func generateSpecFile(pluginName, version string) {
 				sProp.SubTitle = "Credentials"
 				sProp.Category = &category
 				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
+
+			} else if isEnum {
+				sProp.Type = field.Tag.Get("type")
+				json.Unmarshal([]byte(enum), &sProp.Enum)
+				json.Unmarshal([]byte(field.Tag.Get("enumNames")), &sProp.EnumNames)
+				multiple := true
+				sProp.Multiple = &multiple
 
 			} else {
 				sProp.Type = strings.ToLower(getVariableType(field))
@@ -123,6 +135,8 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
+				} else {
+					inProperty.FormData[lowerFieldName] = field.Tag.Get("name")
 				}
 
 			} else if strings.HasPrefix(fieldName, "Out") { // output
@@ -135,6 +149,8 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
+				} else {
+					outProperty.FormData[lowerFieldName] = field.Tag.Get("name")
 				}
 
 			} else if strings.HasPrefix(fieldName, "Opt") { // option
@@ -146,6 +162,8 @@ func generateSpecFile(pluginName, version string) {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
+				} else {
+					optProperty.FormData[lowerFieldName] = field.Tag.Get("name")
 				}
 			}
 		}
