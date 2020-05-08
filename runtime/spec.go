@@ -68,6 +68,10 @@ func generateSpecFile(pluginName, version string) {
 		outProperty := Property{FormData: make(map[string]interface{}), UISchema: make(map[string]interface{})}
 		optProperty := Property{FormData: make(map[string]interface{}), UISchema: make(map[string]interface{})}
 
+		inProperty.UISchema["ui:order"] = []string{}
+		outProperty.UISchema["ui:order"] = []string{}
+		optProperty.UISchema["ui:order"] = []string{}
+
 		inProperty.Schema = Schema{Title: "Input", Type: "object", Properties: make(map[string]SProperty)}
 		outProperty.Schema = Schema{Title: "Output", Type: "object", Properties: make(map[string]SProperty)}
 		optProperty.Schema = Schema{Title: "Option", Type: "object", Properties: make(map[string]SProperty)}
@@ -129,7 +133,8 @@ func generateSpecFile(pluginName, version string) {
 			if strings.HasPrefix(fieldName, "In") { // input
 
 				inProperty.Schema.Properties[lowerFieldName] = sProp
-				inProperty.UISchema["ui:order"] = []string{"*"} // FIX
+				inProperty.UISchema["ui:order"] = append(inProperty.UISchema["ui:order"].([]string), lowerFieldName)
+
 				if isVar {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
@@ -142,7 +147,7 @@ func generateSpecFile(pluginName, version string) {
 			} else if strings.HasPrefix(fieldName, "Out") { // output
 
 				outProperty.Schema.Properties[lowerFieldName] = sProp
-				outProperty.UISchema["ui:order"] = []string{"*"} // FIX
+				outProperty.UISchema["ui:order"] = append(outProperty.UISchema["ui:order"].([]string), lowerFieldName)
 
 				if isVar {
 					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
@@ -156,7 +161,8 @@ func generateSpecFile(pluginName, version string) {
 			} else if strings.HasPrefix(fieldName, "Opt") { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
-				optProperty.UISchema["ui:order"] = []string{"*"} // FIX
+				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
+
 				if isVar {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
