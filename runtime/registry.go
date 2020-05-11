@@ -42,13 +42,6 @@ func Start() {
 
 	wg.Add(1)
 	wg.Wait()
-
-	err := Close()
-	if err != nil {
-		hclog.Default().Info("plugin.close", "err", err)
-		os.Exit(0)
-	}
-
 }
 
 func Init() {
