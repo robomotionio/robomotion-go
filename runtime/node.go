@@ -40,5 +40,5 @@ func Nodes() map[string]Node {
 	return nodes
 }
 
-func InitNodes(nodes ...Node) {
+func RegisterNodes(nodes ...Node) {
 }
