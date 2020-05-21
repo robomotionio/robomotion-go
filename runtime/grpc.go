@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	st "github.com/golang/protobuf/ptypes/struct"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
@@ -22,14 +22,16 @@ type GRPCServer struct {
 
 func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.Empty, error) {
 
-	conn, err := m.broker.Dial(req.EventServer)
+	var err error
+	RunnerConn, err = m.broker.Dial(req.EventServer)
 	if err != nil {
 		hclog.Default().Info("grpc.server.init", "err", err)
 		return nil, err
 	}
 	//defer conn.Close()
 
-	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
+	go CheckRunnerConn()
+	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(RunnerConn)}
 
 	err = m.Impl.Init(e)
 	return &proto.Empty{}, err

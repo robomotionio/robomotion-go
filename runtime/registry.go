@@ -6,8 +6,8 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/go-plugin"
+	hclog "github.com/hashicorp/go-hclog"
+	plugin "github.com/hashicorp/go-plugin"
 
 	"bitbucket.org/mosteknoloji/robomotion-go-lib/tl"
 )
