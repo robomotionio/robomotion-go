@@ -20,6 +20,7 @@ func CheckRunnerConn() {
 			break
 		default:
 			wg.Done()
+			return
 		}
 
 		time.Sleep(1 * time.Second)
