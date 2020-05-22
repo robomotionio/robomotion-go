@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -19,8 +20,7 @@ func CheckRunnerConn() {
 		case connectivity.Connecting, connectivity.Idle, connectivity.Ready:
 			break
 		default:
-			wg.Done()
-			return
+			os.Exit(1)
 		}
 
 		time.Sleep(1 * time.Second)
