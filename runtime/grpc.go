@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"encoding/json"
+	"sync/atomic"
 
 	st "github.com/golang/protobuf/ptypes/struct"
 	hclog "github.com/hashicorp/go-hclog"
@@ -53,7 +54,8 @@ func (m *GRPCServer) OnCreate(ctx context.Context, req *proto.OnCreateRequest) (
 		return resp, err
 	}
 
-	WaiterAdd()
+	atomic.AddInt32(&nc, 1)
+
 	return resp, err
 }
 
@@ -73,9 +75,14 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 
 func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*proto.OnCloseResponse, error) {
 
-	WaiterDone()
 	node := Nodes()[req.Guid]
 	err := node.OnClose()
+	atomic.AddInt32(&nc, -1)
+	defer func() {
+		if atomic.LoadInt32(&nc) == 0 {
+			done <- true
+		}
+	}()
 	return &proto.OnCloseResponse{}, err
 }
 

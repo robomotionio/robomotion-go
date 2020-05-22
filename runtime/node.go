@@ -24,7 +24,7 @@ func (n *SNode) OnCreate(string, []byte) error {
 	return nil
 }
 
-func CreateNode(name string, factory INodeFactory) {
+func RegisterNodeFactory(name string, factory INodeFactory) {
 	factories[name] = factory
 }
 

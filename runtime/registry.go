@@ -2,8 +2,8 @@ package runtime
 
 import (
 	"os"
+	"os/signal"
 	"reflect"
-	"sync"
 	"unsafe"
 
 	hclog "github.com/hashicorp/go-hclog"
@@ -17,8 +17,8 @@ type PluginNode struct {
 }
 
 var (
-	wg      sync.WaitGroup
-	started = false
+	nc   int32
+	done = make(chan bool, 1)
 )
 
 func Start() {
@@ -38,19 +38,27 @@ func Start() {
 		GRPCServer: plugin.DefaultGRPCServer,
 	})
 
-	Init()
+	RegisterFactories()
 
-	wg.Add(1)
-	wg.Wait()
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, os.Interrupt)
+	signal.Notify(sc, os.Kill)
+
+	go func() {
+		<-sc
+		done <- true
+	}()
+
+	<-done
 }
 
-func Init() {
+func RegisterFactories() {
 
 	types := GetNodeTypes()
 	for _, t := range types {
 		snode, _ := t.FieldByName("SNode")
 		name := snode.Tag.Get("id")
-		CreateNode(name, &NodeFactory{Type: t})
+		RegisterNodeFactory(name, &NodeFactory{Type: t})
 	}
 
 	hclog.Default().Info("nodes", "map", Factories())
@@ -73,17 +81,4 @@ func GetNodeTypes() []reflect.Type {
 	}
 
 	return types
-}
-
-func WaiterAdd() {
-
-	wg.Add(1)
-	if !started {
-		started = true
-		wg.Done()
-	}
-}
-
-func WaiterDone() {
-	wg.Done()
 }
