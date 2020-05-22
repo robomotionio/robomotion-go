@@ -73,9 +73,9 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 
 func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*proto.OnCloseResponse, error) {
 
-	WaiterDone()
 	node := Nodes()[req.Guid]
 	err := node.OnClose()
+	WaiterDone()
 	return &proto.OnCloseResponse{}, err
 }
 
