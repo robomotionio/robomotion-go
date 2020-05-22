@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"encoding/json"
+	"time"
 
 	st "github.com/golang/protobuf/ptypes/struct"
 	hclog "github.com/hashicorp/go-hclog"
@@ -73,9 +74,9 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 
 func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*proto.OnCloseResponse, error) {
 
+	time.AfterFunc(time.Second*1, WaiterDone)
 	node := Nodes()[req.Guid]
 	err := node.OnClose()
-	WaiterDone()
 	return &proto.OnCloseResponse{}, err
 }
 
