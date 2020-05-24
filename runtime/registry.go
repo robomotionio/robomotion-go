@@ -33,7 +33,11 @@ func Start() {
 		Plugins: map[string]plugin.Plugin{
 			"plugin": &NodePlugin{Impl: &SNode{}},
 		},
-
+		Logger: hclog.New(&hclog.LoggerOptions{
+			Output:     hclog.DefaultOutput,
+			Level:      hclog.Trace,
+			JSONFormat: true,
+		}),
 		// A non-nil value here enables gRPC serving for this plugin...
 		GRPCServer: plugin.DefaultGRPCServer,
 	})
