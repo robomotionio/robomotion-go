@@ -66,8 +66,15 @@ func generateSpecFile(pluginName, version string) {
 		icon := snode.Tag.Get("icon")
 		color := snode.Tag.Get("color")
 		editor := snode.Tag.Get("editor")
-		inputs := snode.Tag.Get("inputs")
-		outputs := snode.Tag.Get("outputs")
+		inputs, hasInputs := snode.Tag.Lookup("inputs")
+		outputs, hasOutputs := snode.Tag.Lookup("outputs")
+
+		if !hasInputs {
+			inputs = "1"
+		}
+		if !hasOutputs {
+			outputs = "1"
+		}
 
 		spec := NodeSpec{ID: id, Name: name, Icon: icon, Color: color}
 		spec.Inputs, _ = strconv.Atoi(inputs)
