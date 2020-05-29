@@ -23,12 +23,12 @@ func EmitDebug(guid, name string, message interface{}) error {
 	return runtimeHelper.Debug(guid, name, message)
 }
 
-func GetVaultItem(vaultID, itemID string) (map[string]interface{}, error) {
+func (c *Credentials) GetVaultItem() (map[string]interface{}, error) {
 	if runtimeHelper == nil {
 		return nil, fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.GetVaultItem(vaultID, itemID)
+	return runtimeHelper.GetVaultItem(c.VaultID, c.ItemID)
 }
 
 func (variable *Variable) GetInteger(message []byte) (int32, error) {
