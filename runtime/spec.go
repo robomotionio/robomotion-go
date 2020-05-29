@@ -14,8 +14,9 @@ type NodeSpec struct {
 	Icon       string     `json:"icon"`
 	Name       string     `json:"name"`
 	Color      string     `json:"color"`
-	Inputs     byte       `json:"inputs"`
-	Outputs    byte       `json:"outputs"`
+	Editor     *string    `json:"editor"`
+	Inputs     int        `json:"inputs"`
+	Outputs    int        `json:"outputs"`
 	Properties []Property `json:"properties"`
 }
 
@@ -41,6 +42,7 @@ type SProperty struct {
 	JsScope      *bool                   `json:"jsScope,omitempty"`
 	CustomScope  *bool                   `json:"customScope,omitempty"`
 	MessageScope *bool                   `json:"messageScope,omitempty"`
+	MessageOnly  *bool                   `json:"messageOnly,omitempty"`
 	Multiple     *bool                   `json:"multiple,omitempty"`
 	VariableType string                  `json:"variableType,omitempty"`
 	Enum         []interface{}           `json:"enum,omitempty"`
@@ -61,8 +63,18 @@ func generateSpecFile(pluginName, version string) {
 		snode, _ := t.FieldByName("SNode")
 		id := snode.Tag.Get("id")
 		name := snode.Tag.Get("name")
+		icon := snode.Tag.Get("icon")
+		color := snode.Tag.Get("color")
+		editor := snode.Tag.Get("editor")
+		inputs := snode.Tag.Get("inputs")
+		outputs := snode.Tag.Get("outputs")
 
-		spec := NodeSpec{ID: id, Name: name, Inputs: 1, Outputs: 1} // FIX
+		spec := NodeSpec{ID: id, Name: name, Icon: icon, Color: color}
+		spec.Inputs, _ = strconv.Atoi(inputs)
+		spec.Outputs, _ = strconv.Atoi(outputs)
+		if editor != "" {
+			spec.Editor = &editor
+		}
 
 		inProperty := Property{FormData: make(map[string]interface{}), UISchema: make(map[string]interface{})}
 		outProperty := Property{FormData: make(map[string]interface{}), UISchema: make(map[string]interface{})}
@@ -115,6 +127,8 @@ func generateSpecFile(pluginName, version string) {
 			_, customScope := field.Tag.Lookup("customScope")
 			_, jsScope := field.Tag.Lookup("jsScope")
 			_, messageScope := field.Tag.Lookup("messageScope")
+			_, messageOnly := field.Tag.Lookup("messageOnly")
+			_, isHidden := field.Tag.Lookup("hidden")
 
 			if csScope {
 				sProp.CsScope = &csScope
@@ -128,12 +142,19 @@ func generateSpecFile(pluginName, version string) {
 			if messageScope {
 				sProp.MessageScope = &messageScope
 			}
+			if messageOnly {
+				sProp.MessageOnly = &messageOnly
+			}
 
 			lowerFieldName := lowerFirstLetter(fieldName)
 			if strings.HasPrefix(fieldName, "In") { // input
 
 				inProperty.Schema.Properties[lowerFieldName] = sProp
 				inProperty.UISchema["ui:order"] = append(inProperty.UISchema["ui:order"].([]string), lowerFieldName)
+
+				if isHidden {
+					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
+				}
 
 				if isVar {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
@@ -149,6 +170,10 @@ func generateSpecFile(pluginName, version string) {
 				outProperty.Schema.Properties[lowerFieldName] = sProp
 				outProperty.UISchema["ui:order"] = append(outProperty.UISchema["ui:order"].([]string), lowerFieldName)
 
+				if isHidden {
+					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
+				}
+
 				if isVar {
 					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
@@ -162,6 +187,10 @@ func generateSpecFile(pluginName, version string) {
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
+
+				if isHidden {
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
+				}
 
 				if isVar {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
