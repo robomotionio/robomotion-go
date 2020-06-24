@@ -22,12 +22,12 @@ type RuntimeHelper interface {
 	EmitOutput(string, []byte, int32) error
 	EmitError(string, string, string) error
 	GetVaultItem(string, string) (map[string]interface{}, error)
-	GetIntVariable(*Variable, []byte) (int32, error)
-	GetStringVariable(*Variable, []byte) (string, error)
-	GetInterfaceVariable(*Variable, []byte) (interface{}, error)
-	SetIntVariable(*Variable, []byte, int32) ([]byte, error)
-	SetStringVariable(*Variable, []byte, string) ([]byte, error)
-	SetInterfaceVariable(*Variable, []byte, interface{}) ([]byte, error)
+	GetIntVariable(*Variable) (int32, error)
+	GetStringVariable(*Variable) (string, error)
+	GetInterfaceVariable(*Variable) (interface{}, error)
+	SetIntVariable(*Variable, int32) error
+	SetStringVariable(*Variable, string) error
+	SetInterfaceVariable(*Variable, interface{}) error
 }
 
 // KV is the interface that we're exposing as a plugin.

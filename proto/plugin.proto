@@ -104,7 +104,6 @@ message Variable {
 
 message GetVariableRequest {
     Variable variable = 1;
-    bytes message = 2;
 }
 
 message GetIntVariableResponse {
@@ -121,22 +120,18 @@ message GetInterfaceVariableResponse {
 
 message SetIntVariableRequest {
     Variable variable = 1;
-    bytes message = 2;
-    int32 value = 3;
+    int32 value = 2;
 }
 
 message SetStringVariableRequest {
     Variable variable = 1;
-    bytes message = 2;
-    string value = 3;
+    string value = 2;
 }
 
 message SetInterfaceVariableRequest {
     Variable variable = 1;
-    bytes message = 2;
-    google.protobuf.Struct value = 3;
+    google.protobuf.Struct value = 2;
 }
 
 message SetVariableResponse {
-    bytes message = 1;
 }

@@ -1,10 +1,10 @@
 package runtime
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 var (
@@ -31,49 +31,54 @@ func (c *Credentials) GetVaultItem() (map[string]interface{}, error) {
 	return runtimeHelper.GetVaultItem(c.VaultID, c.ItemID)
 }
 
-func (variable *Variable) GetInteger(message []byte) (int32, error) {
+func (variable *Variable) GetInteger(msg gjson.Result) (int32, error) {
 	if variable.Scope == "Message" {
-		return int32(gjson.Get(string(message), variable.Name).Int()), nil
+		return int32(msg.Get(variable.Name).Int()), nil
 	}
 
 	if runtimeHelper == nil {
 		return 0, fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.GetIntVariable(variable, message)
+	return runtimeHelper.GetIntVariable(variable)
 }
 
-func (variable *Variable) GetString(message []byte) (string, error) {
+func (variable *Variable) GetString(msg gjson.Result) (string, error) {
 	if variable.Scope == "Message" {
-		return gjson.Get(string(message), variable.Name).String(), nil
+		return msg.Get(variable.Name).String(), nil
 	}
 
 	if runtimeHelper == nil {
 		return "", fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.GetStringVariable(variable, message)
+	return runtimeHelper.GetStringVariable(variable)
 }
 
-func (variable *Variable) GetInterface(message []byte) (interface{}, error) {
+func (variable *Variable) GetInterface(msg gjson.Result) (interface{}, error) {
 	if variable.Scope == "Message" {
-		return gjson.Get(string(message), variable.Name).Value(), nil
+		return msg.Get(variable.Name).Value(), nil
 	}
 
 	if runtimeHelper == nil {
 		return "", fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.GetInterfaceVariable(variable, message)
+	return runtimeHelper.GetInterfaceVariable(variable)
 }
 
-func (variable *Variable) SetInteger(msg map[string]interface{}, value int32) error {
+func (variable *Variable) SetInteger(msg *gjson.Result, value int32) error {
 	if variable.Scope == "Message" {
 		if variable.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
 
-		msg[variable.Name] = value
+		sMsg, err := sjson.Set(msg.String(), variable.Name, value)
+		if err != nil {
+			return err
+		}
+
+		*msg = gjson.Parse(sMsg)
 		return nil
 	}
 
@@ -81,22 +86,21 @@ func (variable *Variable) SetInteger(msg map[string]interface{}, value int32) er
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	message, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-
-	_, err = runtimeHelper.SetIntVariable(variable, message, value)
-	return err
+	return runtimeHelper.SetIntVariable(variable, value)
 }
 
-func (variable *Variable) SetString(msg map[string]interface{}, value string) error {
+func (variable *Variable) SetString(msg *gjson.Result, value string) error {
 	if variable.Scope == "Message" {
 		if variable.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
 
-		msg[variable.Name] = value
+		sMsg, err := sjson.Set(msg.String(), variable.Name, value)
+		if err != nil {
+			return err
+		}
+
+		*msg = gjson.Parse(sMsg)
 		return nil
 	}
 
@@ -104,21 +108,21 @@ func (variable *Variable) SetString(msg map[string]interface{}, value string) er
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	message, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	_, err = runtimeHelper.SetStringVariable(variable, message, value)
-	return err
+	return runtimeHelper.SetStringVariable(variable, value)
 }
 
-func (variable *Variable) SetInterface(msg map[string]interface{}, value interface{}) error {
+func (variable *Variable) SetInterface(msg *gjson.Result, value interface{}) error {
 	if variable.Scope == "Message" {
 		if variable.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
 
-		msg[variable.Name] = value
+		sMsg, err := sjson.Set(msg.String(), variable.Name, value)
+		if err != nil {
+			return err
+		}
+
+		*msg = gjson.Parse(sMsg)
 		return nil
 	}
 
@@ -126,11 +130,5 @@ func (variable *Variable) SetInterface(msg map[string]interface{}, value interfa
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	message, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-
-	_, err = runtimeHelper.SetInterfaceVariable(variable, message, value)
-	return err
+	return runtimeHelper.SetInterfaceVariable(variable, value)
 }
