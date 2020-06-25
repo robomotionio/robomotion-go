@@ -67,7 +67,7 @@ func (variable *Variable) GetInterface(msg gjson.Result) (interface{}, error) {
 	return runtimeHelper.GetInterfaceVariable(variable)
 }
 
-func (variable *Variable) SetInteger(msg *gjson.Result, value int32) error {
+func (variable *Variable) SetValue(msg *gjson.Result, value interface{}) error {
 	if variable.Scope == "Message" {
 		if variable.Name == "" {
 			return fmt.Errorf("Empty message object")
@@ -86,49 +86,5 @@ func (variable *Variable) SetInteger(msg *gjson.Result, value int32) error {
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.SetIntVariable(variable, value)
-}
-
-func (variable *Variable) SetString(msg *gjson.Result, value string) error {
-	if variable.Scope == "Message" {
-		if variable.Name == "" {
-			return fmt.Errorf("Empty message object")
-		}
-
-		sMsg, err := sjson.Set(msg.String(), variable.Name, value)
-		if err != nil {
-			return err
-		}
-
-		*msg = gjson.Parse(sMsg)
-		return nil
-	}
-
-	if runtimeHelper == nil {
-		return fmt.Errorf("Runtime was not initialized")
-	}
-
-	return runtimeHelper.SetStringVariable(variable, value)
-}
-
-func (variable *Variable) SetInterface(msg *gjson.Result, value interface{}) error {
-	if variable.Scope == "Message" {
-		if variable.Name == "" {
-			return fmt.Errorf("Empty message object")
-		}
-
-		sMsg, err := sjson.Set(msg.String(), variable.Name, value)
-		if err != nil {
-			return err
-		}
-
-		*msg = gjson.Parse(sMsg)
-		return nil
-	}
-
-	if runtimeHelper == nil {
-		return fmt.Errorf("Runtime was not initialized")
-	}
-
-	return runtimeHelper.SetInterfaceVariable(variable, value)
+	return runtimeHelper.SetVariable(variable, value)
 }

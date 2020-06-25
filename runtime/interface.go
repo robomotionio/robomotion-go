@@ -25,9 +25,7 @@ type RuntimeHelper interface {
 	GetIntVariable(*Variable) (int32, error)
 	GetStringVariable(*Variable) (string, error)
 	GetInterfaceVariable(*Variable) (interface{}, error)
-	SetIntVariable(*Variable, int32) error
-	SetStringVariable(*Variable, string) error
-	SetInterfaceVariable(*Variable, interface{}) error
+	SetVariable(*Variable, interface{}) error
 }
 
 // KV is the interface that we're exposing as a plugin.

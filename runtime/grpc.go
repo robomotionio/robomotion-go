@@ -240,47 +240,7 @@ func (m *GRPCRuntimeHelperClient) GetInterfaceVariable(variable *Variable) (inte
 	return parseStruct(resp.Value), nil
 }
 
-func (m *GRPCRuntimeHelperClient) SetIntVariable(variable *Variable, value int32) error {
-
-	v := &proto.Variable{
-		Name:  variable.Name,
-		Scope: variable.Scope,
-	}
-
-	_, err := m.client.SetIntVariable(context.Background(), &proto.SetIntVariableRequest{
-		Variable: v,
-		Value:    value,
-	})
-
-	if err != nil {
-		hclog.Default().Info("runtime.setintvariable", "err", err)
-		return err
-	}
-
-	return nil
-}
-
-func (m *GRPCRuntimeHelperClient) SetStringVariable(variable *Variable, value string) error {
-
-	v := &proto.Variable{
-		Name:  variable.Name,
-		Scope: variable.Scope,
-	}
-
-	_, err := m.client.SetStringVariable(context.Background(), &proto.SetStringVariableRequest{
-		Variable: v,
-		Value:    value,
-	})
-
-	if err != nil {
-		hclog.Default().Info("runtime.setstringvariable", "err", err)
-		return err
-	}
-
-	return nil
-}
-
-func (m *GRPCRuntimeHelperClient) SetInterfaceVariable(variable *Variable, value interface{}) error {
+func (m *GRPCRuntimeHelperClient) SetVariable(variable *Variable, value interface{}) error {
 
 	v := &proto.Variable{
 		Name:  variable.Name,
@@ -291,7 +251,7 @@ func (m *GRPCRuntimeHelperClient) SetInterfaceVariable(variable *Variable, value
 	fields["value"] = ToValue(value)
 	val := &st.Struct{Fields: fields}
 
-	_, err := m.client.SetInterfaceVariable(context.Background(), &proto.SetInterfaceVariableRequest{
+	_, err := m.client.SetVariable(context.Background(), &proto.SetVariableRequest{
 		Variable: v,
 		Value:    val,
 	})

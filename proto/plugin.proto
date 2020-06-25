@@ -57,9 +57,7 @@ service RuntimeHelper {
     rpc GetIntVariable(GetVariableRequest) returns (GetIntVariableResponse);
     rpc GetStringVariable(GetVariableRequest) returns (GetStringVariableResponse);
     rpc GetInterfaceVariable(GetVariableRequest) returns (GetInterfaceVariableResponse);
-    rpc SetIntVariable(SetIntVariableRequest) returns (SetVariableResponse);
-    rpc SetStringVariable(SetStringVariableRequest) returns (SetVariableResponse);
-    rpc SetInterfaceVariable(SetInterfaceVariableRequest) returns (SetVariableResponse);
+    rpc SetVariable(SetVariableRequest) returns (Empty);
 }
 
 message Empty {
@@ -118,20 +116,7 @@ message GetInterfaceVariableResponse {
     google.protobuf.Struct value = 1;
 }
 
-message SetIntVariableRequest {
-    Variable variable = 1;
-    int32 value = 2;
-}
-
-message SetStringVariableRequest {
-    Variable variable = 1;
-    string value = 2;
-}
-
-message SetInterfaceVariableRequest {
+message SetVariableRequest {
     Variable variable = 1;
     google.protobuf.Struct value = 2;
-}
-
-message SetVariableResponse {
 }
