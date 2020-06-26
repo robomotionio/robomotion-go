@@ -32,30 +32,45 @@ func (c *Credentials) GetVaultItem() (map[string]interface{}, error) {
 }
 
 func (variable *Variable) GetInteger(msg gjson.Result) (int32, error) {
-	if variable.Scope == "Message" {
-		return int32(msg.Get(variable.Name).Int()), nil
+	val, err := variable.GetValue(msg)
+	if err != nil {
+		return 0, err
 	}
 
-	if runtimeHelper == nil {
-		return 0, fmt.Errorf("Runtime was not initialized")
+	if d, ok := val.(int32); ok {
+		return d, nil
 	}
 
-	return runtimeHelper.GetIntVariable(variable)
+	return 0, nil
 }
 
 func (variable *Variable) GetString(msg gjson.Result) (string, error) {
-	if variable.Scope == "Message" {
-		return msg.Get(variable.Name).String(), nil
+	val, err := variable.GetValue(msg)
+	if err != nil {
+		return "", err
 	}
 
-	if runtimeHelper == nil {
-		return "", fmt.Errorf("Runtime was not initialized")
+	if s, ok := val.(string); ok {
+		return s, nil
 	}
 
-	return runtimeHelper.GetStringVariable(variable)
+	return "", nil
 }
 
-func (variable *Variable) GetInterface(msg gjson.Result) (interface{}, error) {
+func (variable *Variable) GetFloat(msg gjson.Result) (float32, error) {
+	val, err := variable.GetValue(msg)
+	if err != nil {
+		return 0.0, err
+	}
+
+	if f, ok := val.(float32); ok {
+		return f, nil
+	}
+
+	return 0.0, nil
+}
+
+func (variable *Variable) GetValue(msg gjson.Result) (interface{}, error) {
 	if variable.Scope == "Message" {
 		return msg.Get(variable.Name).Value(), nil
 	}
@@ -64,7 +79,7 @@ func (variable *Variable) GetInterface(msg gjson.Result) (interface{}, error) {
 		return "", fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.GetInterfaceVariable(variable)
+	return runtimeHelper.GetVariable(variable)
 }
 
 func (variable *Variable) SetValue(msg *gjson.Result, value interface{}) error {

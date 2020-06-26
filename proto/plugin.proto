@@ -54,9 +54,7 @@ service RuntimeHelper {
     rpc EmitOutput(EmitOutputRequest) returns (Empty);
     rpc EmitError(EmitErrorRequest) returns (Empty);
     rpc GetVaultItem(GetVaultItemRequest) returns (GetVaultItemResponse);
-    rpc GetIntVariable(GetVariableRequest) returns (GetIntVariableResponse);
-    rpc GetStringVariable(GetVariableRequest) returns (GetStringVariableResponse);
-    rpc GetInterfaceVariable(GetVariableRequest) returns (GetInterfaceVariableResponse);
+    rpc GetVariable(GetVariableRequest) returns (GetVariableResponse);
     rpc SetVariable(SetVariableRequest) returns (Empty);
 }
 
@@ -104,15 +102,7 @@ message GetVariableRequest {
     Variable variable = 1;
 }
 
-message GetIntVariableResponse {
-    int32 value = 1;
-}
-
-message GetStringVariableResponse {
-    string value = 1;
-}
-
-message GetInterfaceVariableResponse {
+message GetVariableResponse {
     google.protobuf.Struct value = 1;
 }
 

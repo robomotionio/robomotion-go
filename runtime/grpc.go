@@ -183,52 +183,14 @@ func (m *GRPCRuntimeHelperClient) GetVaultItem(vaultID, itemID string) (map[stri
 	return parseStruct(resp.Item).(map[string]interface{}), nil
 }
 
-func (m *GRPCRuntimeHelperClient) GetIntVariable(variable *Variable) (int32, error) {
+func (m *GRPCRuntimeHelperClient) GetVariable(variable *Variable) (interface{}, error) {
 
 	v := &proto.Variable{
 		Name:  variable.Name,
 		Scope: variable.Scope,
 	}
 
-	resp, err := m.client.GetIntVariable(context.Background(), &proto.GetVariableRequest{
-		Variable: v,
-	})
-
-	if err != nil {
-		hclog.Default().Info("runtime.getintvariable", "err", err)
-		return 0, err
-	}
-
-	return resp.Value, nil
-}
-
-func (m *GRPCRuntimeHelperClient) GetStringVariable(variable *Variable) (string, error) {
-
-	v := &proto.Variable{
-		Name:  variable.Name,
-		Scope: variable.Scope,
-	}
-
-	resp, err := m.client.GetStringVariable(context.Background(), &proto.GetVariableRequest{
-		Variable: v,
-	})
-
-	if err != nil {
-		hclog.Default().Info("runtime.getstringvariable", "err", err)
-		return "", err
-	}
-
-	return resp.Value, nil
-}
-
-func (m *GRPCRuntimeHelperClient) GetInterfaceVariable(variable *Variable) (interface{}, error) {
-
-	v := &proto.Variable{
-		Name:  variable.Name,
-		Scope: variable.Scope,
-	}
-
-	resp, err := m.client.GetInterfaceVariable(context.Background(), &proto.GetVariableRequest{
+	resp, err := m.client.GetVariable(context.Background(), &proto.GetVariableRequest{
 		Variable: v,
 	})
 

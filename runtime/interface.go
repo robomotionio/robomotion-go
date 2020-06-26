@@ -22,9 +22,7 @@ type RuntimeHelper interface {
 	EmitOutput(string, []byte, int32) error
 	EmitError(string, string, string) error
 	GetVaultItem(string, string) (map[string]interface{}, error)
-	GetIntVariable(*Variable) (int32, error)
-	GetStringVariable(*Variable) (string, error)
-	GetInterfaceVariable(*Variable) (interface{}, error)
+	GetVariable(*Variable) (interface{}, error)
 	SetVariable(*Variable, interface{}) error
 }
 
