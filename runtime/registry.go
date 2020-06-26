@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"time"
 	"unsafe"
 
 	hclog "github.com/hashicorp/go-hclog"
@@ -54,6 +55,7 @@ func Start() {
 	}()
 
 	<-done
+	time.Sleep(time.Second * 2)
 }
 
 func RegisterFactories() {
