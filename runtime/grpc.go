@@ -80,7 +80,9 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 	atomic.AddInt32(&nc, -1)
 	defer func() {
 		if atomic.LoadInt32(&nc) == 0 {
-			done <- true
+			defer func() {
+				done <- true
+			}()
 		}
 	}()
 	return &proto.OnCloseResponse{}, err
