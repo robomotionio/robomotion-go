@@ -60,14 +60,14 @@ func generateSpecFile(pluginName, version string) {
 	types := GetNodeTypes()
 
 	for _, t := range types {
-		snode, _ := t.FieldByName("SNode")
-		id := snode.Tag.Get("id")
-		name := snode.Tag.Get("name")
-		icon := snode.Tag.Get("icon")
-		color := snode.Tag.Get("color")
-		editor := snode.Tag.Get("editor")
-		inputs, hasInputs := snode.Tag.Lookup("inputs")
-		outputs, hasOutputs := snode.Tag.Lookup("outputs")
+		Node, _ := t.FieldByName("Node")
+		id := Node.Tag.Get("id")
+		name := Node.Tag.Get("name")
+		icon := Node.Tag.Get("icon")
+		color := Node.Tag.Get("color")
+		editor := Node.Tag.Get("editor")
+		inputs, hasInputs := Node.Tag.Lookup("inputs")
+		outputs, hasOutputs := Node.Tag.Lookup("outputs")
 
 		if !hasInputs {
 			inputs = "1"

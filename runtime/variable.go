@@ -69,11 +69,11 @@ func (v *Variable) Get(ctx message.Context) (interface{}, error) {
 		return ctx.Get(v.Name), nil
 	}
 
-	if runtimeHelper == nil {
+	if client == nil {
 		return "", fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.GetVariable(v)
+	return client.GetVariable(v)
 }
 
 func (v *Variable) Set(ctx message.Context, value interface{}) error {
@@ -86,9 +86,9 @@ func (v *Variable) Set(ctx message.Context, value interface{}) error {
 		return ctx.Set(v.Name, value)
 	}
 
-	if runtimeHelper == nil {
+	if client == nil {
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.SetVariable(v, value)
+	return client.SetVariable(v, value)
 }

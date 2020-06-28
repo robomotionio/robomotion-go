@@ -8,9 +8,9 @@ type Credential struct {
 }
 
 func (c *Credential) Get() (map[string]interface{}, error) {
-	if runtimeHelper == nil {
+	if client == nil {
 		return nil, fmt.Errorf("Runtime was not initialized")
 	}
 
-	return runtimeHelper.GetVaultItem(c.VaultID, c.ItemID)
+	return client.GetVaultItem(c.VaultID, c.ItemID)
 }

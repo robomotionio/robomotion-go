@@ -14,7 +14,7 @@ import (
 )
 
 type PluginNode struct {
-	SNode
+	Node
 }
 
 var (
@@ -32,7 +32,7 @@ func Start() {
 	go plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: Handshake,
 		Plugins: map[string]plugin.Plugin{
-			"plugin": &NodePlugin{Impl: &SNode{}},
+			"plugin": &NodePlugin{},
 		},
 		Logger: hclog.New(&hclog.LoggerOptions{
 			Output:     hclog.DefaultOutput,
@@ -62,12 +62,10 @@ func RegisterFactories() {
 
 	types := GetNodeTypes()
 	for _, t := range types {
-		snode, _ := t.FieldByName("SNode")
+		snode, _ := t.FieldByName("Node")
 		name := snode.Tag.Get("id")
 		RegisterNodeFactory(name, &NodeFactory{Type: t})
 	}
-
-	hclog.Default().Info("nodes", "map", Factories())
 }
 
 func GetNodeTypes() []reflect.Type {

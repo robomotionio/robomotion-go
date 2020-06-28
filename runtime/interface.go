@@ -6,7 +6,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/message"
 	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
 )
 
@@ -28,30 +27,15 @@ type RuntimeHelper interface {
 	SetVariable(*Variable, interface{}) error
 }
 
-// KV is the interface that we're exposing as a plugin.
-type Node interface {
-	OnCreate() error
-	OnMessage(ctx message.Context) error
-	OnClose() error
-}
-
-type INode interface {
-	Init(RuntimeHelper) error
-}
-
 // This is the implementation of plugin.Plugin so we can serve/consume this.
 // We also implement GRPCPlugin so that this plugin can be served over
 // gRPC.
 type NodePlugin struct {
 	plugin.NetRPCUnsupportedPlugin
-	// Concrete implementation, written in Go. This is only used for plugins
-	// that are written in Go.
-	Impl INode
 }
 
 func (p *NodePlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
 	proto.RegisterNodeServer(s, &GRPCServer{
-		Impl:   p.Impl,
 		broker: broker,
 	})
 	return nil

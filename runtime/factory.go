@@ -3,9 +3,15 @@ package runtime
 import (
 	"encoding/json"
 	"reflect"
+	"sync"
 
 	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
+)
+
+var (
+	factories = make(map[string]INodeFactory)
+	fMux      sync.Mutex
 )
 
 type INodeFactory interface {
@@ -18,13 +24,26 @@ type NodeFactory struct {
 
 func (f *NodeFactory) OnCreate(ctx context.Context, config []byte) error {
 
-	node := reflect.New(f.Type).Interface().(Node)
-	err := json.Unmarshal(config, &node)
+	handler := reflect.New(f.Type).Interface().(MessageHandler)
+	err := json.Unmarshal(config, &handler)
 	if err != nil {
 		return err
 	}
 
 	guid := gjson.GetBytes(config, "guid").String()
-	AddNode(guid, node)
+	AddMessageHandler(guid, handler)
 	return nil
+}
+
+func RegisterNodeFactory(name string, factory INodeFactory) {
+	fMux.Lock()
+	defer fMux.Unlock()
+	factories[name] = factory
+}
+
+func GetNodeFactory(name string) INodeFactory {
+	fMux.Lock()
+	defer fMux.Unlock()
+	f, _ := factories[name]
+	return f
 }

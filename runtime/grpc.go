@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -18,14 +19,11 @@ import (
 )
 
 var (
-	conn *grpc.ClientConn
+	conn   *grpc.ClientConn
+	client RuntimeHelper
 )
 
-// Here is the gRPC server that GRPCClient talks to.
 type GRPCServer struct {
-	// This is the real implementation
-	Impl INode
-
 	broker *plugin.GRPCBroker
 }
 
@@ -37,26 +35,36 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 		hclog.Default().Info("grpc.server.init", "err", err)
 		return nil, err
 	}
-	//defer conn.Close()
 
 	go checkConnState()
-	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
+	client = &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
 
-	err = m.Impl.Init(e)
 	return &proto.Empty{}, err
 }
 
 func (m *GRPCServer) OnCreate(ctx context.Context, req *proto.OnCreateRequest) (*proto.OnCreateResponse, error) {
 
 	resp := &proto.OnCreateResponse{}
-	err := Factories()[req.Name].OnCreate(context.TODO(), req.Config)
+
+	f := GetNodeFactory(req.Name)
+	if f == nil {
+		return nil, fmt.Errorf("%s factory not found", req.Name)
+	}
+
+	err := f.OnCreate(context.TODO(), req.Config)
 	if err != nil {
 		hclog.Default().Info("grpc.server.oncreate.factory", "err", err)
 		return resp, err
 	}
 
 	guid := gjson.Get(string(req.Config), "guid").String()
-	err = Nodes()[guid].OnCreate()
+
+	handler := GetMessageHandler(guid)
+	if handler == nil {
+		hclog.Default().Info("grpc.server.oncreate.node", "err", "no handler")
+	}
+
+	err = handler.OnCreate()
 	if err != nil {
 		hclog.Default().Info("grpc.server.oncreate.node", "err", err)
 		return resp, err
@@ -76,17 +84,25 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 		return resp, err
 	}
 
-	node := Nodes()[req.Guid]
+	handler := GetMessageHandler(req.Guid)
+	if handler == nil {
+		hclog.Default().Info("grpc.server.oncreate.node", "err", "no handler")
+	}
+
 	msgCtx := message.NewContext(data)
-	err = node.OnMessage(msgCtx)
+	err = handler.OnMessage(msgCtx)
 	resp.OutMessage = []byte(msgCtx.GetRaw())
 	return resp, err
 }
 
 func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*proto.OnCloseResponse, error) {
 
-	node := Nodes()[req.Guid]
-	err := node.OnClose()
+	handler := GetMessageHandler(req.Guid)
+	if handler == nil {
+		return nil, fmt.Errorf("No handler")
+	}
+
+	err := handler.OnClose()
 	atomic.AddInt32(&nc, -1)
 	defer func() {
 		if atomic.LoadInt32(&nc) == 0 {
