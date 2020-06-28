@@ -7,43 +7,58 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-type Context struct {
-	ID  string
-	msg []byte
+type Context interface {
+	GetID() string
+	Set(path string, value interface{}) error
+	Get(path string) interface{}
+	GetString(path string) string
+	GetBool(path string) bool
+	GetInt(path string) int64
+	GetFloat(path string) float64
+	GetRaw() json.RawMessage
 }
 
-func NewContext(msg []byte) Context {
-	return Context{
-		ID:  gjson.GetBytes(msg, "id").String(),
-		msg: msg,
+type message struct {
+	ID   string
+	data []byte
+}
+
+func NewContext(data []byte) Context {
+	return &message{
+		ID:   gjson.GetBytes(data, "id").String(),
+		data: data,
 	}
 }
 
-func (ctx Context) Set(path string, value interface{}) (err error) {
-	ctx.msg, err = sjson.SetBytes(ctx.msg, path, value)
+func (msg *message) Set(path string, value interface{}) (err error) {
+	msg.data, err = sjson.SetBytes(msg.data, path, value)
 	return
 }
 
-func (ctx Context) Get(path string) interface{} {
-	return gjson.GetBytes(ctx.msg, path).Value()
+func (msg *message) GetID() string {
+	return msg.ID
 }
 
-func (ctx Context) GetString(path string) string {
-	return gjson.GetBytes(ctx.msg, path).String()
+func (msg *message) Get(path string) interface{} {
+	return gjson.GetBytes(msg.data, path).Value()
 }
 
-func (ctx Context) GetBool(path string) bool {
-	return gjson.GetBytes(ctx.msg, path).Bool()
+func (msg *message) GetString(path string) string {
+	return gjson.GetBytes(msg.data, path).String()
 }
 
-func (ctx Context) GetInt(path string) int64 {
-	return gjson.GetBytes(ctx.msg, path).Int()
+func (msg *message) GetBool(path string) bool {
+	return gjson.GetBytes(msg.data, path).Bool()
 }
 
-func (ctx Context) GetFloat(path string) float64 {
-	return gjson.GetBytes(ctx.msg, path).Float()
+func (msg *message) GetInt(path string) int64 {
+	return gjson.GetBytes(msg.data, path).Int()
 }
 
-func (ctx Context) GetRaw() json.RawMessage {
-	return json.RawMessage(ctx.msg)
+func (msg *message) GetFloat(path string) float64 {
+	return gjson.GetBytes(msg.data, path).Float()
+}
+
+func (msg *message) GetRaw() json.RawMessage {
+	return json.RawMessage(msg.data)
 }

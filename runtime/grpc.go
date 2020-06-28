@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
+	"bitbucket.org/mosteknoloji/robomotion-go-lib/message"
 	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
 )
 
@@ -55,7 +56,7 @@ func (m *GRPCServer) OnCreate(ctx context.Context, req *proto.OnCreateRequest) (
 	}
 
 	guid := gjson.Get(string(req.Config), "guid").String()
-	err = Nodes()[guid].OnCreate(req.Config)
+	err = Nodes()[guid].OnCreate()
 	if err != nil {
 		hclog.Default().Info("grpc.server.oncreate.node", "err", err)
 		return resp, err
@@ -76,7 +77,9 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 	}
 
 	node := Nodes()[req.Guid]
-	resp.OutMessage, err = node.OnMessage(data)
+	msgCtx := message.NewContext(data)
+	err = node.OnMessage(msgCtx)
+	resp.OutMessage = []byte(msgCtx.GetRaw())
 	return resp, err
 }
 

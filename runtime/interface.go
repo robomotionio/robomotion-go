@@ -2,10 +2,12 @@
 package runtime
 
 import (
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
 	plugin "github.com/hashicorp/go-plugin"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+
+	"bitbucket.org/mosteknoloji/robomotion-go-lib/message"
+	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
 )
 
 // Handshake is a common handshake that is shared by plugin and host.
@@ -28,8 +30,8 @@ type RuntimeHelper interface {
 
 // KV is the interface that we're exposing as a plugin.
 type Node interface {
-	OnCreate([]byte) error
-	OnMessage([]byte) ([]byte, error)
+	OnCreate() error
+	OnMessage(ctx message.Context) error
 	OnClose() error
 }
 
