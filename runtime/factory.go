@@ -2,10 +2,10 @@ package runtime
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"sync"
 
-	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
 )
 
@@ -24,14 +24,19 @@ type NodeFactory struct {
 
 func (f *NodeFactory) OnCreate(ctx context.Context, config []byte) error {
 
-	handler := reflect.New(f.Type).Interface().(MessageHandler)
+	node := reflect.New(f.Type)
+	handler := node.Interface().(MessageHandler)
 	err := json.Unmarshal(config, &handler)
 	if err != nil {
 		return err
 	}
 
-	guid := gjson.GetBytes(config, "guid").String()
-	AddMessageHandler(guid, handler)
+	common, ok := node.FieldByName("Node").Interface().(Node)
+	if !ok {
+		return fmt.Errorf("Missing node common properties")
+	}
+
+	AddMessageHandler(common, handler)
 	return nil
 }
 
