@@ -59,12 +59,12 @@ func (m *GRPCServer) OnCreate(ctx context.Context, req *proto.OnCreateRequest) (
 
 	guid := gjson.Get(string(req.Config), "guid").String()
 
-	handler := GetMessageHandler(guid)
-	if handler == nil {
+	node := GetNodeHandler(guid)
+	if node == nil {
 		hclog.Default().Info("grpc.server.oncreate.node", "err", "no handler")
 	}
 
-	err = handler.OnCreate()
+	err = node.Handler.OnCreate()
 	if err != nil {
 		hclog.Default().Info("grpc.server.oncreate.node", "err", err)
 		return resp, err
@@ -84,25 +84,32 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 		return resp, err
 	}
 
-	handler := GetMessageHandler(req.Guid)
-	if handler == nil {
+	node := GetNodeHandler(req.Guid)
+	if node == nil {
 		hclog.Default().Info("grpc.server.oncreate.node", "err", "no handler")
 	}
 
 	msgCtx := message.NewContext(data)
-	err = handler.OnMessage(msgCtx)
+
+	time.Sleep(time.Duration(node.DelayBefore*1000) * time.Millisecond)
+	err = node.Handler.OnMessage(msgCtx)
+	if err != nil && node.ContinueOnError {
+		err = nil
+	}
 	resp.OutMessage = []byte(msgCtx.GetRaw())
+	time.Sleep(time.Duration(node.DelayAfter*1000) * time.Millisecond)
+
 	return resp, err
 }
 
 func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*proto.OnCloseResponse, error) {
 
-	handler := GetMessageHandler(req.Guid)
-	if handler == nil {
+	node := GetNodeHandler(req.Guid)
+	if node == nil {
 		return nil, fmt.Errorf("No handler")
 	}
 
-	err := handler.OnClose()
+	err := node.Handler.OnClose()
 	atomic.AddInt32(&nc, -1)
 	defer func() {
 		if atomic.LoadInt32(&nc) == 0 {

@@ -7,12 +7,12 @@ import (
 )
 
 var (
-	handlers = make(map[string]NodeHandler)
+	handlers = make(map[string]*NodeHandler)
 	hMux     sync.Mutex
 )
 
 type NodeHandler struct {
-	Node    Node
+	Node
 	Handler MessageHandler
 }
 
@@ -22,20 +22,20 @@ type MessageHandler interface {
 	OnClose() error
 }
 
-func AddMessageHandler(node Node, handler MessageHandler) {
+func AddNodeHandler(node Node, handler MessageHandler) {
 	hMux.Lock()
 	defer hMux.Unlock()
-	handlers[node.GUID] = NodeHandler{
-		Node:    node,
+	handlers[node.GUID] = &NodeHandler{
 		Handler: handler,
+		Node:    node,
 	}
 }
 
-func GetMessageHandler(guid string) MessageHandler {
+func GetNodeHandler(guid string) *NodeHandler {
 	hMux.Lock()
 	defer hMux.Unlock()
 	h, _ := handlers[guid]
-	return h.Handler
+	return h
 }
 
 func RegisterNodeHandlers(handlers ...NodeHandler) {

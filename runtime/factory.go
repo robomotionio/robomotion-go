@@ -36,7 +36,7 @@ func (f *NodeFactory) OnCreate(ctx context.Context, config []byte) error {
 		return fmt.Errorf("Missing node common properties")
 	}
 
-	AddMessageHandler(common, handler)
+	AddNodeHandler(common, handler)
 	return nil
 }
 
