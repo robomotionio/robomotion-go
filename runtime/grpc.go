@@ -25,6 +25,10 @@ var (
 
 type GRPCServer struct {
 	broker *plugin.GRPCBroker
+
+	// Concrete implementation, written in Go. This is only used for plugins
+	// that are written in Go.
+	Impl INode
 }
 
 func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.Empty, error) {

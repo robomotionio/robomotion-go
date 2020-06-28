@@ -32,10 +32,13 @@ type RuntimeHelper interface {
 // gRPC.
 type NodePlugin struct {
 	plugin.NetRPCUnsupportedPlugin
+
+	Impl INode
 }
 
 func (p *NodePlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
 	proto.RegisterNodeServer(s, &GRPCServer{
+		Impl:   p.Impl,
 		broker: broker,
 	})
 	return nil

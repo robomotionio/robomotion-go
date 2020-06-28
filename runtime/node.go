@@ -1,5 +1,9 @@
 package runtime
 
+type INode interface {
+	Init(RuntimeHelper) error
+}
+
 type Node struct {
 	Scope           string
 	GUID            string
