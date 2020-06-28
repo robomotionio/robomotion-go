@@ -76,7 +76,6 @@ func GetNodeTypes() []reflect.Type {
 		for _, offset := range offsets[i] {
 			typeAddr := tl.Add(base, uintptr(offset), "")
 			typ := reflect.TypeOf(*(*interface{})(unsafe.Pointer(&typeAddr)))
-
 			var handler *MessageHandler
 			if typ.Implements(reflect.TypeOf(handler).Elem()) {
 				types = append(types, typ.Elem())

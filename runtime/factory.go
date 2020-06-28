@@ -24,19 +24,20 @@ type NodeFactory struct {
 
 func (f *NodeFactory) OnCreate(ctx context.Context, config []byte) error {
 
-	node := reflect.New(f.Type)
-	handler := node.Interface().(MessageHandler)
+	n := reflect.New(f.Type)
+	handler := n.Interface().(MessageHandler)
 	err := json.Unmarshal(config, &handler)
 	if err != nil {
 		return err
 	}
 
-	common, ok := node.FieldByName("Node").Interface().(Node)
-	if !ok {
+	field := n.Elem().FieldByName("Node")
+	if !field.IsValid() {
 		return fmt.Errorf("Missing node common properties")
 	}
 
-	AddNodeHandler(common, handler)
+	node := field.Interface().(Node)
+	AddNodeHandler(node, handler)
 	return nil
 }
 
