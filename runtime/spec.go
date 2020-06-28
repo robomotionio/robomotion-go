@@ -104,7 +104,7 @@ func generateSpecFile(pluginName, version string) {
 
 			sProp := SProperty{Title: title}
 			isVar := field.Type == reflect.TypeOf(Variable{})
-			isCred := field.Type == reflect.TypeOf(Credentials{})
+			isCred := field.Type == reflect.TypeOf(Credential{})
 			isEnum := len(enum) > 0
 
 			if isVar {

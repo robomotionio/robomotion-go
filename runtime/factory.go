@@ -24,7 +24,7 @@ func (f *NodeFactory) OnCreate(ctx context.Context, config []byte) error {
 		return err
 	}
 
-	guid := gjson.Get(string(config), "guid").String()
+	guid := gjson.GetBytes(config, "guid").String()
 	AddNode(guid, node)
 	return nil
 }
