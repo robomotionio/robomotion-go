@@ -32,7 +32,7 @@ func Start() {
 	go plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: Handshake,
 		Plugins: map[string]plugin.Plugin{
-			"plugin": &NodePlugin{},
+			"plugin": &NodePlugin{Impl: &Node{}},
 		},
 		Logger: hclog.New(&hclog.LoggerOptions{
 			Output:     hclog.DefaultOutput,

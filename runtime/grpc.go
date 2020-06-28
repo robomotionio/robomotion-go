@@ -41,8 +41,9 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 	}
 
 	go checkConnState()
-	client = &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
+	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
 
+	m.Impl.Init(e)
 	return &proto.Empty{}, err
 }
 

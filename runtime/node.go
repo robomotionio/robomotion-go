@@ -12,3 +12,8 @@ type Node struct {
 	DelayAfter      float32
 	ContinueOnError bool
 }
+
+func (n *Node) Init(e RuntimeHelper) error {
+	client = e
+	return nil
+}
