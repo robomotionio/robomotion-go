@@ -38,5 +38,5 @@ func GetNodeHandler(guid string) *NodeHandler {
 	return h
 }
 
-func RegisterNodeHandlers(handlers ...NodeHandler) {
+func RegisterNodes(handlers ...MessageHandler) {
 }
