@@ -166,8 +166,6 @@ func generateSpecFile(pluginName, version string) {
 				if isVar {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
-				} else if isCred {
-					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
 				} else {
 					inProperty.FormData[lowerFieldName] = field.Tag.Get("name")
 				}
@@ -184,13 +182,11 @@ func generateSpecFile(pluginName, version string) {
 				if isVar {
 					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
-				} else if isCred {
-					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
 				} else {
 					outProperty.FormData[lowerFieldName] = field.Tag.Get("name")
 				}
 
-			} else if field.Type == reflect.TypeOf(OptVariable{}) { // option
+			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
