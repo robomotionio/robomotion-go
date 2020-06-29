@@ -19,7 +19,9 @@ type OutVariable struct {
 	Variable
 }
 
-type OptVariable = InVariable
+type OptVariable struct {
+	InVariable
+}
 
 func (v *InVariable) GetInt(ctx message.Context) (int64, error) {
 	val, err := v.Get(ctx)
