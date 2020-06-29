@@ -154,7 +154,7 @@ func generateSpecFile(pluginName, version string) {
 			}
 
 			lowerFieldName := lowerFirstLetter(fieldName)
-			if strings.HasPrefix(fieldName, "In") { // input
+			if field.Type == reflect.TypeOf(InVariable{}) { // input
 
 				inProperty.Schema.Properties[lowerFieldName] = sProp
 				inProperty.UISchema["ui:order"] = append(inProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -172,7 +172,7 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.FormData[lowerFieldName] = field.Tag.Get("name")
 				}
 
-			} else if strings.HasPrefix(fieldName, "Out") { // output
+			} else if field.Type == reflect.TypeOf(OutVariable{}) { // output
 
 				outProperty.Schema.Properties[lowerFieldName] = sProp
 				outProperty.UISchema["ui:order"] = append(outProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -190,7 +190,7 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.FormData[lowerFieldName] = field.Tag.Get("name")
 				}
 
-			} else if strings.HasPrefix(fieldName, "Opt") { // option
+			} else if field.Type == reflect.TypeOf(OptVariable{}) { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)

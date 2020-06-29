@@ -11,7 +11,17 @@ type Variable struct {
 	Name  string `json:"name"`
 }
 
-func (v *Variable) GetInt(ctx message.Context) (int64, error) {
+type InVariable struct {
+	Variable
+}
+
+type OutVariable struct {
+	Variable
+}
+
+type OptVariable = InVariable
+
+func (v *InVariable) GetInt(ctx message.Context) (int64, error) {
 	val, err := v.Get(ctx)
 	if err != nil {
 		return 0, err
@@ -24,7 +34,7 @@ func (v *Variable) GetInt(ctx message.Context) (int64, error) {
 	return 0, nil
 }
 
-func (v *Variable) GetString(ctx message.Context) (string, error) {
+func (v *InVariable) GetString(ctx message.Context) (string, error) {
 	val, err := v.Get(ctx)
 	if err != nil {
 		return "", err
@@ -37,7 +47,7 @@ func (v *Variable) GetString(ctx message.Context) (string, error) {
 	return "", nil
 }
 
-func (v *Variable) GetFloat(ctx message.Context) (float64, error) {
+func (v *InVariable) GetFloat(ctx message.Context) (float64, error) {
 	val, err := v.Get(ctx)
 	if err != nil {
 		return 0.0, err
@@ -50,7 +60,7 @@ func (v *Variable) GetFloat(ctx message.Context) (float64, error) {
 	return 0.0, nil
 }
 
-func (v *Variable) GetBool(ctx message.Context) (bool, error) {
+func (v *InVariable) GetBool(ctx message.Context) (bool, error) {
 	val, err := v.Get(ctx)
 	if err != nil {
 		return false, err
@@ -63,7 +73,7 @@ func (v *Variable) GetBool(ctx message.Context) (bool, error) {
 	return false, nil
 }
 
-func (v *Variable) Get(ctx message.Context) (interface{}, error) {
+func (v *InVariable) Get(ctx message.Context) (interface{}, error) {
 
 	if v.Scope == "Message" {
 		return ctx.Get(v.Name), nil
@@ -73,10 +83,10 @@ func (v *Variable) Get(ctx message.Context) (interface{}, error) {
 		return "", fmt.Errorf("Runtime was not initialized")
 	}
 
-	return client.GetVariable(v)
+	return client.GetVariable(&v.Variable)
 }
 
-func (v *Variable) Set(ctx message.Context, value interface{}) error {
+func (v *OutVariable) Set(ctx message.Context, value interface{}) error {
 
 	if v.Scope == "Message" {
 		if v.Name == "" {
@@ -90,5 +100,5 @@ func (v *Variable) Set(ctx message.Context, value interface{}) error {
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	return client.SetVariable(v, value)
+	return client.SetVariable(&v.Variable, value)
 }
