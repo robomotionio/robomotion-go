@@ -141,12 +141,12 @@ func generateSpecFile(pluginName, version string) {
 				sProp.Type = strings.ToLower(getVariableType(field))
 			}
 
-			_, csScope := field.Tag.Lookup("csScope")
-			_, customScope := field.Tag.Lookup("customScope")
-			_, jsScope := field.Tag.Lookup("jsScope")
-			_, messageScope := field.Tag.Lookup("messageScope")
-			_, messageOnly := field.Tag.Lookup("messageOnly")
-			_, isHidden := field.Tag.Lookup("hidden")
+			_, csScope := fsMap["csScope"]
+			_, customScope := fsMap["customScope"]
+			_, jsScope := fsMap["jsScope"]
+			_, messageScope := fsMap["messageScope"]
+			_, messageOnly := fsMap["messageOnly"]
+			_, isHidden := fsMap["hidden"]
 
 			if csScope {
 				sProp.CsScope = &csScope
@@ -260,6 +260,7 @@ func parseSpec(spec string) map[string]string {
 	for _, kv := range kvs {
 		p := strings.Split(kv, "=")
 		if len(p) < 2 {
+			nsMap[p[0]] = ""
 			continue
 		}
 
