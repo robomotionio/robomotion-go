@@ -61,13 +61,16 @@ func generateSpecFile(pluginName, version string) {
 
 	for _, t := range types {
 		Node, _ := t.FieldByName("Node")
-		id := Node.Tag.Get("id")
-		name := Node.Tag.Get("name")
-		icon := Node.Tag.Get("icon")
-		color := Node.Tag.Get("color")
-		editor := Node.Tag.Get("editor")
-		inputs, hasInputs := Node.Tag.Lookup("inputs")
-		outputs, hasOutputs := Node.Tag.Lookup("outputs")
+		nodeSpec := Node.Tag.Get("spec")
+		nsMap := parseSpec(nodeSpec)
+
+		id := nsMap["id"]
+		name := nsMap["name"]
+		icon := nsMap["icon"]
+		color := nsMap["color"]
+		editor := nsMap["editor"]
+		inputs, hasInputs := nsMap["inputs"]
+		outputs, hasOutputs := nsMap["outputs"]
 
 		if !hasInputs {
 			inputs = "1"
@@ -99,8 +102,16 @@ func generateSpecFile(pluginName, version string) {
 
 			field := t.Field(i)
 			fieldName := field.Name
-			title := field.Tag.Get("title")
-			enum := field.Tag.Get("enum")
+
+			fieldSpec := Node.Tag.Get("spec")
+			fsMap := parseSpec(fieldSpec)
+
+			title, hasTitle := fsMap["title"]
+			enum := fsMap["enum"]
+
+			if !hasTitle {
+				title = fieldName
+			}
 
 			sProp := SProperty{Title: title}
 			isVar := field.Type == reflect.TypeOf(Variable{})
@@ -113,16 +124,16 @@ func generateSpecFile(pluginName, version string) {
 				sProp.Properties = &map[string]interface{}{"scope": map[string]string{"type": "string"}, "name": map[string]string{"type": "string"}}
 
 			} else if isCred {
-				category, _ := strconv.Atoi(field.Tag.Get("category"))
+				category, _ := strconv.Atoi(fsMap["category"])
 				sProp.Type = "object"
 				sProp.SubTitle = "Credentials"
 				sProp.Category = &category
 				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
 
 			} else if isEnum {
-				sProp.Type = field.Tag.Get("type")
+				sProp.Type = fsMap["type"]
 				json.Unmarshal([]byte(enum), &sProp.Enum)
-				json.Unmarshal([]byte(field.Tag.Get("enumNames")), &sProp.EnumNames)
+				json.Unmarshal([]byte(fsMap["enumNames"]), &sProp.EnumNames)
 				multiple := true
 				sProp.Multiple = &multiple
 
@@ -154,6 +165,18 @@ func generateSpecFile(pluginName, version string) {
 			}
 
 			lowerFieldName := lowerFirstLetter(fieldName)
+
+			scope, hasScope := fsMap["scope"]
+			n, hasName := fsMap["name"]
+			if isVar && scope == "Message" && !hasName {
+				n = lowerFieldName
+			}
+
+			if isVar && !hasScope {
+				scope = "Custom"
+				n = ""
+			}
+
 			if field.Type == reflect.TypeOf(InVariable{}) { // input
 
 				inProperty.Schema.Properties[lowerFieldName] = sProp
@@ -164,10 +187,10 @@ func generateSpecFile(pluginName, version string) {
 				}
 
 				if isVar {
-					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
+					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else {
-					inProperty.FormData[lowerFieldName] = field.Tag.Get("name")
+					inProperty.FormData[lowerFieldName] = n
 				}
 
 			} else if field.Type == reflect.TypeOf(OutVariable{}) { // output
@@ -180,10 +203,10 @@ func generateSpecFile(pluginName, version string) {
 				}
 
 				if isVar {
-					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
+					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else {
-					outProperty.FormData[lowerFieldName] = field.Tag.Get("name")
+					outProperty.FormData[lowerFieldName] = n
 				}
 
 			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred { // option
@@ -196,12 +219,12 @@ func generateSpecFile(pluginName, version string) {
 				}
 
 				if isVar {
-					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: field.Tag.Get("scope"), Name: field.Tag.Get("name")}
+					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
 				} else {
-					optProperty.FormData[lowerFieldName] = field.Tag.Get("name")
+					optProperty.FormData[lowerFieldName] = n
 				}
 			}
 		}
@@ -228,6 +251,23 @@ func generateSpecFile(pluginName, version string) {
 	}
 
 	fmt.Println(string(d))
+}
+
+func parseSpec(spec string) map[string]string {
+	nsMap := map[string]string{}
+
+	kvs := strings.Split(spec, ",")
+	for _, kv := range kvs {
+		p := strings.Split(kv, "=")
+		if len(p) < 2 {
+			continue
+		}
+
+		k, v := p[0], p[1]
+		nsMap[k] = v
+	}
+
+	return nsMap
 }
 
 func lowerFirstLetter(text string) string {
