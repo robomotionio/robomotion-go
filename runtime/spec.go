@@ -103,7 +103,7 @@ func generateSpecFile(pluginName, version string) {
 			field := t.Field(i)
 			fieldName := field.Name
 
-			fieldSpec := Node.Tag.Get("spec")
+			fieldSpec := field.Tag.Get("spec")
 			fsMap := parseSpec(fieldSpec)
 
 			title, hasTitle := fsMap["title"]
