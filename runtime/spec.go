@@ -35,7 +35,7 @@ type Schema struct {
 type SProperty struct {
 	Type         string                  `json:"type"`
 	Title        string                  `json:"title"`
-	SubTitle     string                  `json:"subtitle"`
+	SubTitle     *string                 `json:"subtitle,omitempty"`
 	Category     *int                    `json:"category,omitempty"`
 	Properties   *map[string]interface{} `json:"properties,omitempty"`
 	CsScope      *bool                   `json:"csScope,omitempty"`
@@ -126,7 +126,8 @@ func generateSpecFile(pluginName, version string) {
 			} else if isCred {
 				category, _ := strconv.Atoi(fsMap["category"])
 				sProp.Type = "object"
-				sProp.SubTitle = "Credentials"
+				subtitle := "Credentials"
+				sProp.SubTitle = &subtitle
 				sProp.Category = &category
 				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
 
