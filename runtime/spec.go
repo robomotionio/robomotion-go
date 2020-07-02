@@ -7,8 +7,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/thoas/go-funk"
 )
 
 type NodeSpec struct {
@@ -135,7 +133,7 @@ func generateSpecFile(pluginName, version string) {
 
 			} else if isEnum {
 				sProp.Type = fsMap["type"]
-				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], fsMap["enumType"])
+				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], sProp.Type)
 				multiple := true
 				sProp.Multiple = &multiple
 
@@ -262,8 +260,7 @@ func parseEnum(enum, enumNames, enumType string) ([]interface{}, []string) {
 	)
 
 	enumParts := strings.Split(enum, "|")
-	names := []string{"int", "integer", "number"}
-	if funk.Contains(names, enumType) {
+	if enumType == "number" {
 		for _, part := range enumParts {
 			d, err := strconv.Atoi(part)
 			if err != nil {
