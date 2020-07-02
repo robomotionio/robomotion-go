@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/thoas/go-funk"
 )
 
 type NodeSpec struct {
@@ -133,8 +135,7 @@ func generateSpecFile(pluginName, version string) {
 
 			} else if isEnum {
 				sProp.Type = fsMap["type"]
-				json.Unmarshal([]byte(enum), &sProp.Enum)
-				json.Unmarshal([]byte(fsMap["enumNames"]), &sProp.EnumNames)
+				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], fsMap["enumType"])
 				multiple := true
 				sProp.Multiple = &multiple
 
@@ -252,6 +253,32 @@ func generateSpecFile(pluginName, version string) {
 	}
 
 	fmt.Println(string(d))
+}
+
+func parseEnum(enum, enumNames, enumType string) ([]interface{}, []string) {
+	var (
+		enumArr     []interface{}
+		enumNameArr []string
+	)
+
+	enumParts := strings.Split(enum, "|")
+	names := []string{"int", "integer", "number"}
+	if funk.Contains(names, enumType) {
+		enumArr = funk.Map(enumParts, func(part string) int {
+			d, err := strconv.Atoi(part)
+			if err != nil {
+				return 0
+			}
+			return d
+		}).([]interface{})
+	} else {
+		enumArr = funk.Map(enumParts, func(part string) string {
+			return part
+		}).([]interface{})
+	}
+
+	enumNameArr = strings.Split(enumNames, "|")
+	return enumArr, enumNameArr
 }
 
 func parseSpec(spec string) map[string]string {
