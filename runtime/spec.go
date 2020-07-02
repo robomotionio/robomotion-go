@@ -264,17 +264,18 @@ func parseEnum(enum, enumNames, enumType string) ([]interface{}, []string) {
 	enumParts := strings.Split(enum, "|")
 	names := []string{"int", "integer", "number"}
 	if funk.Contains(names, enumType) {
-		enumArr = funk.Map(enumParts, func(part string) int {
+		for _, part := range enumParts {
 			d, err := strconv.Atoi(part)
 			if err != nil {
-				return 0
+				d = 0
 			}
-			return d
-		}).([]interface{})
+			enumArr = append(enumArr, d)
+		}
+
 	} else {
-		enumArr = funk.Map(enumParts, func(part string) string {
-			return part
-		}).([]interface{})
+		for _, part := range enumParts {
+			enumArr = append(enumArr, part)
+		}
 	}
 
 	enumNameArr = strings.Split(enumNames, "|")
