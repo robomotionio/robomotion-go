@@ -211,7 +211,7 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred { // option
+			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
