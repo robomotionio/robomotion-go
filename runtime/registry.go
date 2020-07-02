@@ -63,7 +63,9 @@ func RegisterFactories() {
 	types := GetNodeTypes()
 	for _, t := range types {
 		snode, _ := t.FieldByName("Node")
-		name := snode.Tag.Get("id")
+		spec := snode.Tag.Get("spec")
+		nsMap := parseSpec(spec)
+		name := nsMap["id"]
 		RegisterNodeFactory(name, &NodeFactory{Type: t})
 	}
 }
