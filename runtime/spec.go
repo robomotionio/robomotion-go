@@ -164,6 +164,10 @@ func generateSpecFile(pluginName, version string) {
 				sProp.MessageOnly = &messageOnly
 			}
 
+			_, isInput := fsMap["input"]
+			_, isOutput := fsMap["output"]
+			_, isOption := fsMap["option"]
+
 			lowerFieldName := lowerFirstLetter(fieldName)
 
 			scope, hasScope := fsMap["scope"]
@@ -177,7 +181,7 @@ func generateSpecFile(pluginName, version string) {
 				n = ""
 			}
 
-			if field.Type == reflect.TypeOf(InVariable{}) { // input
+			if field.Type == reflect.TypeOf(InVariable{}) || isInput { // input
 
 				inProperty.Schema.Properties[lowerFieldName] = sProp
 				inProperty.UISchema["ui:order"] = append(inProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -193,7 +197,7 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OutVariable{}) { // output
+			} else if field.Type == reflect.TypeOf(OutVariable{}) || isOutput { // output
 
 				outProperty.Schema.Properties[lowerFieldName] = sProp
 				outProperty.UISchema["ui:order"] = append(outProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -209,7 +213,7 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum { // option
+			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum || isOption { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
