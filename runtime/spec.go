@@ -66,7 +66,7 @@ func generateSpecFile(pluginName, version string) {
 
 		id := nsMap["id"]
 		name := nsMap["name"]
-		icon := nsMap["icon"]
+		icon := Icons[nsMap["icon"]]
 		color := nsMap["color"]
 		editor := nsMap["editor"]
 		inputs, hasInputs := nsMap["inputs"]
