@@ -96,7 +96,7 @@ func generateSpecFile(pluginName, version string) {
 
 		inProperty.Schema = Schema{Title: "Input", Type: "object", Properties: make(map[string]SProperty)}
 		outProperty.Schema = Schema{Title: "Output", Type: "object", Properties: make(map[string]SProperty)}
-		optProperty.Schema = Schema{Title: "Option", Type: "object", Properties: make(map[string]SProperty)}
+		optProperty.Schema = Schema{Title: "Options", Type: "object", Properties: make(map[string]SProperty)}
 
 		for i := 0; i < t.NumField(); i++ {
 
