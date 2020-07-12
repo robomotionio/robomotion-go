@@ -213,7 +213,7 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum || isOption { // option
+			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -230,6 +230,31 @@ func generateSpecFile(pluginName, version string) {
 				} else {
 					optProperty.FormData[lowerFieldName] = n
 				}
+
+			} else if isOption {
+
+				optProperty.Schema.Properties[lowerFieldName] = sProp
+				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
+				v := fsMap["value"]
+				var cv interface{}
+
+				switch field.Type.Kind() {
+				case reflect.Bool:
+					cv, _ = strconv.ParseBool(v)
+				case reflect.Int, reflect.Int64:
+					cv, _ = strconv.ParseInt(v, 10, 64)
+				case reflect.Int32:
+					cv, _ = strconv.ParseInt(v, 10, 32)
+				case reflect.Float32:
+					cv, _ = strconv.ParseFloat(v, 32)
+				case reflect.Float64:
+					cv, _ = strconv.ParseFloat(v, 64)
+				case reflect.String:
+					cv = v
+				}
+
+				optProperty.FormData[lowerFieldName] = cv
+
 			}
 		}
 
