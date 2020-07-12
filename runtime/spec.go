@@ -133,6 +133,7 @@ func generateSpecFile(pluginName, version string) {
 
 			} else if isEnum {
 				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], getVariableType(field))
+				sProp.Type = strings.ToLower(getVariableType(field))
 				multiple := true
 				sProp.Multiple = &multiple
 
