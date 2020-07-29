@@ -20,6 +20,7 @@ type RuntimeHelper interface {
 	Close() error
 	Debug(string, string, interface{}) error
 	EmitFlowEvent(string, string) error
+	EmitInput(string, []byte) error
 	EmitOutput(string, []byte, int32) error
 	EmitError(string, string, string) error
 	GetVaultItem(string, string) (map[string]interface{}, error)
