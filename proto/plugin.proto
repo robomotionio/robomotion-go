@@ -51,6 +51,7 @@ service RuntimeHelper {
     rpc Close(Empty) returns (Empty);
     rpc Debug(DebugRequest) returns (Empty);
     rpc EmitFlowEvent(EmitFlowEventRequest) returns (Empty);
+    rpc EmitInput(EmitInputRequest) returns (Empty);
     rpc EmitOutput(EmitOutputRequest) returns (Empty);
     rpc EmitError(EmitErrorRequest) returns (Empty);
     rpc GetVaultItem(GetVaultItemRequest) returns (GetVaultItemResponse);
@@ -70,6 +71,11 @@ message DebugRequest {
 message EmitFlowEventRequest {
     string guid = 1;
     string name = 2;
+}
+
+message EmitInputRequest {
+    string guid = 1;
+    bytes output = 2;
 }
 
 message EmitOutputRequest {
