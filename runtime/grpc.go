@@ -176,6 +176,21 @@ func (m *GRPCRuntimeHelperClient) EmitFlowEvent(guid, name string) error {
 	return nil
 }
 
+func (m *GRPCRuntimeHelperClient) EmitInput(guid string, output []byte) error {
+
+	_, err := m.client.EmitInput(context.Background(), &proto.EmitInputRequest{
+		Guid:   guid,
+		Output: output,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.output", "err", err)
+		return err
+	}
+
+	return nil
+}
+
 func (m *GRPCRuntimeHelperClient) EmitOutput(guid string, output []byte, port int32) error {
 
 	_, err := m.client.EmitOutput(context.Background(), &proto.EmitOutputRequest{
