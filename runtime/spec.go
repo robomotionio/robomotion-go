@@ -96,7 +96,7 @@ func generateSpecFile(pluginName, version string) {
 
 		inProperty.Schema = Schema{Title: "Input", Type: "object", Properties: make(map[string]SProperty)}
 		outProperty.Schema = Schema{Title: "Output", Type: "object", Properties: make(map[string]SProperty)}
-		optProperty.Schema = Schema{Title: "Option", Type: "object", Properties: make(map[string]SProperty)}
+		optProperty.Schema = Schema{Title: "Options", Type: "object", Properties: make(map[string]SProperty)}
 
 		for i := 0; i < t.NumField(); i++ {
 
@@ -132,8 +132,8 @@ func generateSpecFile(pluginName, version string) {
 				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
 
 			} else if isEnum {
-				sProp.Type = fsMap["type"]
-				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], sProp.Type)
+				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], getVariableType(field))
+				sProp.Type = strings.ToLower(getVariableType(field))
 				multiple := true
 				sProp.Multiple = &multiple
 
@@ -213,7 +213,7 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum || isOption { // option
+			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -227,9 +227,20 @@ func generateSpecFile(pluginName, version string) {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
+				} else if isEnum {
+					v := fsMap["value"]
+					optProperty.FormData[lowerFieldName] = parseValue(field, v)
 				} else {
 					optProperty.FormData[lowerFieldName] = n
 				}
+
+			} else if isOption {
+
+				optProperty.Schema.Properties[lowerFieldName] = sProp
+				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
+				v := fsMap["value"]
+				optProperty.FormData[lowerFieldName] = parseValue(field, v)
+
 			}
 		}
 
@@ -264,9 +275,18 @@ func parseEnum(enum, enumNames, enumType string) ([]interface{}, []string) {
 	)
 
 	enumParts := strings.Split(enum, "|")
-	if enumType == "number" {
+	if enumType == "Integer" {
 		for _, part := range enumParts {
 			d, err := strconv.Atoi(part)
+			if err != nil {
+				d = 0
+			}
+			enumArr = append(enumArr, d)
+		}
+
+	} else if enumType == "Double" {
+		for _, part := range enumParts {
+			d, err := strconv.ParseFloat(part, 64)
 			if err != nil {
 				d = 0
 			}
@@ -299,6 +319,27 @@ func parseSpec(spec string) map[string]string {
 	}
 
 	return nsMap
+}
+
+func parseValue(f reflect.StructField, v string) interface{} {
+
+	var cv interface{}
+	switch f.Type.Kind() {
+	case reflect.Bool:
+		cv, _ = strconv.ParseBool(v)
+	case reflect.Int, reflect.Int64:
+		cv, _ = strconv.ParseInt(v, 10, 64)
+	case reflect.Int32:
+		cv, _ = strconv.ParseInt(v, 10, 32)
+	case reflect.Float32:
+		cv, _ = strconv.ParseFloat(v, 32)
+	case reflect.Float64:
+		cv, _ = strconv.ParseFloat(v, 64)
+	case reflect.String:
+		cv = v
+	}
+
+	return cv
 }
 
 func lowerFirstLetter(text string) string {
