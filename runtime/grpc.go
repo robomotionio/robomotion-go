@@ -176,15 +176,15 @@ func (m *GRPCRuntimeHelperClient) EmitFlowEvent(guid, name string) error {
 	return nil
 }
 
-func (m *GRPCRuntimeHelperClient) EmitInput(guid string, output []byte) error {
+func (m *GRPCRuntimeHelperClient) EmitInput(guid string, input []byte) error {
 
 	_, err := m.client.EmitInput(context.Background(), &proto.EmitInputRequest{
-		Guid:   guid,
-		Output: output,
+		Guid:  guid,
+		Input: input,
 	})
 
 	if err != nil {
-		hclog.Default().Info("runtime.output", "err", err)
+		hclog.Default().Info("runtime.input", "err", err)
 		return err
 	}
 
