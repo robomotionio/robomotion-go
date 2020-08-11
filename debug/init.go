@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -29,7 +27,7 @@ const (
 
 type AttachConfig struct {
 	Protocol Protocol `json:"protocol"`
-	Addr     net.Addr `json:"addr"`
+	Addr     string   `json:"addr"`
 	PID      int      `json:"pid"`
 }
 
@@ -67,19 +65,10 @@ func Attach() {
 
 	os.Stdout = old
 
-	p := strings.Split(gAddr, ":")
-	port, err := strconv.Atoi(p[1])
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	cfg := &AttachConfig{
 		Protocol: ProtocolGRPC,
 		PID:      os.Getpid(),
-		Addr: &net.TCPAddr{
-			IP:   net.ParseIP(p[0]),
-			Port: port,
-		},
+		Addr:     gAddr,
 	}
 
 	cfgData, err := json.Marshal(cfg)
