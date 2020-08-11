@@ -64,6 +64,9 @@ func Attach(namespace string) {
 		time.Sleep(time.Second)
 	}
 
+	r.Close()
+	w.Close()
+
 	os.Stdout = old
 
 	cfg := &AttachConfig{
