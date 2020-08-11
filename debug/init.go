@@ -1,6 +1,7 @@
 package debug
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -37,18 +38,24 @@ const (
 	timeout = 30 * time.Second
 )
 
-func Attach(listener net.Listener) {
+func Attach() {
 
+	gAddr := ""
 	t1 := time.Now()
-	for listener == nil {
+	for gAddr == "" {
 		if time.Now().Sub(t1) >= timeout {
 			log.Fatalln("timeout: plugin listener is nil")
 		}
 
-		time.Sleep(time.Second)
+		reader := bufio.NewReader(os.Stdin)
+		line, _ := reader.ReadString('\n')
+
+		if strings.Contains(line, "|") {
+			gAddr = strings.Split(line, "|")[3]
+		}
 	}
 
-	p := strings.Split(listener.Addr().String(), ":")
+	p := strings.Split(gAddr, ":")
 	port, err := strconv.Atoi(p[1])
 	if err != nil {
 		log.Fatalln(err)

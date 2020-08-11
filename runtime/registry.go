@@ -43,7 +43,7 @@ func Start() {
 		return
 
 	} else if len(os.Args) > 1 && os.Args[1] == "-a" { // attach
-		go debug.Attach(serveCfg.Listener)
+		go debug.Attach()
 	}
 
 	go plugin.Serve(serveCfg)
