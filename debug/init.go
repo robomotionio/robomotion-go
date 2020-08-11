@@ -26,16 +26,17 @@ const (
 )
 
 type AttachConfig struct {
-	Protocol Protocol `json:"protocol"`
-	Addr     string   `json:"addr"`
-	PID      int      `json:"pid"`
+	Protocol  Protocol `json:"protocol"`
+	Addr      string   `json:"addr"`
+	PID       int      `json:"pid"`
+	Namespace string   `json:"namespace"`
 }
 
 const (
 	timeout = 30 * time.Second
 )
 
-func Attach() {
+func Attach(namespace string) {
 
 	old := os.Stdout
 	r, w, _ := os.Pipe()
@@ -66,9 +67,10 @@ func Attach() {
 	os.Stdout = old
 
 	cfg := &AttachConfig{
-		Protocol: ProtocolGRPC,
-		PID:      os.Getpid(),
-		Addr:     gAddr,
+		Protocol:  ProtocolGRPC,
+		PID:       os.Getpid(),
+		Addr:      gAddr,
+		Namespace: namespace,
 	}
 
 	cfgData, err := json.Marshal(cfg)

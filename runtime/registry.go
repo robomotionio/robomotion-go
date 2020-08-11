@@ -42,8 +42,8 @@ func Start() {
 		generateSpecFile(os.Args[2], os.Args[3])
 		return
 
-	} else if len(os.Args) > 1 && os.Args[1] == "-a" { // attach
-		go debug.Attach()
+	} else if len(os.Args) > 2 && os.Args[1] == "-a" { // attach
+		go debug.Attach(os.Args[2])
 	}
 
 	go plugin.Serve(serveCfg)
