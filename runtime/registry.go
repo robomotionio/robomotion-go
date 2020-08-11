@@ -10,6 +10,7 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 
+	"bitbucket.org/mosteknoloji/robomotion-go-lib/debug"
 	"bitbucket.org/mosteknoloji/robomotion-go-lib/tl"
 )
 
@@ -18,18 +19,9 @@ type PluginNode struct {
 }
 
 var (
-	nc   int32
-	done = make(chan bool, 1)
-)
-
-func Start() {
-
-	if len(os.Args) > 3 && os.Args[1] == "-s" { // generate spec file
-		generateSpecFile(os.Args[2], os.Args[3])
-		return
-	}
-
-	go plugin.Serve(&plugin.ServeConfig{
+	nc       int32
+	done     = make(chan bool, 1)
+	serveCfg = &plugin.ServeConfig{
 		HandshakeConfig: Handshake,
 		Plugins: map[string]plugin.Plugin{
 			"plugin": &NodePlugin{Impl: &Node{}},
@@ -41,7 +33,20 @@ func Start() {
 		}),
 		// A non-nil value here enables gRPC serving for this plugin...
 		GRPCServer: plugin.DefaultGRPCServer,
-	})
+	}
+)
+
+func Start() {
+
+	if len(os.Args) > 3 && os.Args[1] == "-s" { // generate spec file
+		generateSpecFile(os.Args[2], os.Args[3])
+		return
+
+	} else if len(os.Args) > 1 && os.Args[1] == "-a" { // attach
+		go debug.Attach(serveCfg.Listener)
+	}
+
+	go plugin.Serve(serveCfg)
 
 	RegisterFactories()
 

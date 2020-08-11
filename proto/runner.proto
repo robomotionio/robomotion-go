@@ -1,0 +1,13 @@
+syntax = "proto3";
+package proto;
+
+service Debug {
+    rpc Attach(AttachRequest) returns (Null);
+}
+
+message Null {
+}
+
+message AttachRequest {
+    bytes config = 1;
+}
