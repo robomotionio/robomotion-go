@@ -48,7 +48,7 @@ func Attach() {
 			log.Fatalln("timeout: plugin listener is nil")
 		}
 
-		reader := bufio.NewReader(os.Stdin)
+		reader := bufio.NewReader(os.Stdout)
 		line, _ := reader.ReadString('\n')
 		fmt.Println("LINE:", line)
 
