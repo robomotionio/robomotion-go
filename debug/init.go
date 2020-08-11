@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -49,6 +50,7 @@ func Attach() {
 
 		reader := bufio.NewReader(os.Stdin)
 		line, _ := reader.ReadString('\n')
+		fmt.Println("LINE:", line)
 
 		if strings.Contains(line, "|") {
 			gAddr = strings.Split(line, "|")[3]
