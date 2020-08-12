@@ -1,0 +1,18 @@
+syntax = "proto3";
+package proto;
+
+service Debug {
+    rpc Attach(AttachRequest) returns (Nil);
+    rpc Detach(DetachRequest) returns (Nil);
+}
+
+message Nil {
+}
+
+message AttachRequest {
+    bytes config = 1;
+}
+
+message DetachRequest {
+    string namespace = 1;
+}

@@ -21,6 +21,8 @@ type PluginNode struct {
 var (
 	nc       int32
 	done     = make(chan bool, 1)
+	ns       = ""
+	attached = false
 	serveCfg = &plugin.ServeConfig{
 		HandshakeConfig: Handshake,
 		Plugins: map[string]plugin.Plugin{
@@ -43,6 +45,8 @@ func Start() {
 		return
 
 	} else if len(os.Args) > 2 && os.Args[1] == "-a" { // attach
+		ns = os.Args[2]
+		attached = true
 		go debug.Attach(os.Args[2])
 	}
 
@@ -60,6 +64,11 @@ func Start() {
 	}()
 
 	<-done
+
+	if attached {
+		debug.Detach(ns)
+	}
+
 	time.Sleep(time.Second * 2)
 }
 

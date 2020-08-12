@@ -90,6 +90,7 @@ func Attach(namespace string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	defer conn.Close()
 
 	runnerCli := proto.NewDebugClient(conn)
 	_, err = runnerCli.Attach(context.Background(), &proto.AttachRequest{Config: cfgData})
