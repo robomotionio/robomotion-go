@@ -12,8 +12,8 @@ import (
 // Handshake is a common handshake that is shared by plugin and host.
 var Handshake = plugin.HandshakeConfig{
 	ProtocolVersion:  1,
-	MagicCookieKey:   "BASIC_PLUGIN",
-	MagicCookieValue: "hello",
+	MagicCookieKey:   "robomotion-plugin",
+	MagicCookieValue: "6e80b1a2cf26c5935ed7b6e5be77fe218d5f358d",
 }
 
 type RuntimeHelper interface {
