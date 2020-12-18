@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
+	"github.com/robomotionio/robomotion-go/proto"
 	"google.golang.org/grpc"
 )
 

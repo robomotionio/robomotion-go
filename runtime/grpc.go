@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/message"
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
+	"github.com/robomotionio/robomotion-go/message"
+	"github.com/robomotionio/robomotion-go/proto"
 )
 
 var (

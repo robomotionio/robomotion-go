@@ -10,8 +10,8 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/debug"
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/tl"
+	"github.com/robomotionio/robomotion-go/debug"
+	"github.com/robomotionio/robomotion-go/tl"
 )
 
 type PluginNode struct {

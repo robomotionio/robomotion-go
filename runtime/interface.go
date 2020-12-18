@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
+	"github.com/robomotionio/robomotion-go/proto"
 )
 
 // Handshake is a common handshake that is shared by plugin and host.

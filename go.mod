@@ -1,4 +1,4 @@
-module bitbucket.org/mosteknoloji/robomotion-go-lib
+module github.com/robomotionio/robomotion-go
 
 go 1.14
 

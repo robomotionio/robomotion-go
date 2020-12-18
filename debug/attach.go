@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/proto"
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/utils"
+	"github.com/robomotionio/robomotion-go/proto"
+	"github.com/robomotionio/robomotion-go/utils"
 
 	"github.com/tidwall/gjson"
 	"google.golang.org/grpc"

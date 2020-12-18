@@ -3,7 +3,7 @@ package runtime
 import (
 	"fmt"
 
-	"bitbucket.org/mosteknoloji/robomotion-go-lib/message"
+	"github.com/robomotionio/robomotion-go/message"
 )
 
 type Variable struct {
