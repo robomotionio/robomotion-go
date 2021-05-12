@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"io/ioutil"
+	"log"
 	"os"
 	"os/signal"
 	"reflect"
@@ -9,6 +11,7 @@ import (
 
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
+	"github.com/tidwall/gjson"
 
 	"github.com/robomotionio/robomotion-go/debug"
 	"github.com/robomotionio/robomotion-go/tl"
@@ -40,14 +43,22 @@ var (
 
 func Start() {
 
-	if len(os.Args) > 3 && os.Args[1] == "-s" { // generate spec file
-		generateSpecFile(os.Args[2], os.Args[3])
-		return
+	if len(os.Args) > 1 { // start with arg
+		arg := os.Args[1]
+		config := ReadConfigFile()
 
-	} else if len(os.Args) > 2 && os.Args[1] == "-a" { // attach
-		ns = os.Args[2]
-		attached = true
-		go debug.Attach(os.Args[2])
+		ns := config.Get("namespace").String()
+		version := config.Get("version").String()
+
+		switch arg {
+		case "-a": // attach
+			attached = true
+			go debug.Attach(ns)
+
+		case "-s": // generate spec file
+			generateSpecFile(ns, version)
+			return
+		}
 	}
 
 	go plugin.Serve(serveCfg)
@@ -100,4 +111,13 @@ func GetNodeTypes() []reflect.Type {
 	}
 
 	return types
+}
+
+func ReadConfigFile() gjson.Result {
+	d, err := ioutil.ReadFile("config.json")
+	if err != nil {
+		log.Fatalf("Read config error: %+v", err)
+	}
+
+	return gjson.ParseBytes(d)
 }
