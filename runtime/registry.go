@@ -115,6 +115,11 @@ func GetNodeTypes() []reflect.Type {
 
 func ReadConfigFile() gjson.Result {
 	d, err := ioutil.ReadFile("config.json")
+	if err == nil {
+		return gjson.ParseBytes(d)
+	}
+
+	d, err = ioutil.ReadFile("../config.json")
 	if err != nil {
 		log.Fatalf("Read config error: %+v", err)
 	}
