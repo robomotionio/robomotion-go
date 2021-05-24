@@ -48,6 +48,7 @@ func Start() {
 		config := ReadConfigFile()
 
 		ns := config.Get("namespace").String()
+		name := config.Get("name").String()
 		version := config.Get("version").String()
 
 		switch arg {
@@ -56,7 +57,7 @@ func Start() {
 			go debug.Attach(ns)
 
 		case "-s": // generate spec file
-			generateSpecFile(ns, version)
+			generateSpecFile(name, version)
 			return
 		}
 	}
