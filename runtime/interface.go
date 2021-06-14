@@ -2,7 +2,7 @@
 package runtime
 
 import (
-	plugin "github.com/hashicorp/go-plugin"
+	plugin "github.com/mosteknoloji/go-plugin"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 

@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"time"
 
+	plugin "github.com/mosteknoloji/go-plugin"
 	"github.com/robomotionio/robomotion-go/proto"
 	"github.com/robomotionio/robomotion-go/utils"
 
@@ -36,11 +36,7 @@ const (
 	timeout = 30 * time.Second
 )
 
-func Attach(namespace string) {
-
-	old := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
+func Attach(namespace string, opts *plugin.ServeConfig) {
 
 	gAddr := ""
 	t1 := time.Now()
@@ -50,24 +46,12 @@ func Attach(namespace string) {
 			log.Fatalln("timeout: plugin listener is nil")
 		}
 
-		buf := make([]byte, 1024)
-		n, err := r.Read(buf)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		line := string(buf[:n])
-		if strings.Contains(line, "|") {
-			gAddr = strings.Split(line, "|")[3]
+		if opts.Listener != nil {
+			gAddr = opts.Listener.Addr().String()
 		}
 
 		time.Sleep(time.Second)
 	}
-
-	r.Close()
-	w.Close()
-
-	os.Stdout = old
 
 	cfg := &AttachConfig{
 		Protocol:  ProtocolGRPC,

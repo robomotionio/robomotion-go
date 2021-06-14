@@ -10,7 +10,7 @@ import (
 	"unsafe"
 
 	hclog "github.com/hashicorp/go-hclog"
-	plugin "github.com/hashicorp/go-plugin"
+	plugin "github.com/mosteknoloji/go-plugin"
 	"github.com/tidwall/gjson"
 
 	"github.com/robomotionio/robomotion-go/debug"
@@ -43,18 +43,17 @@ var (
 
 func Start() {
 
+	var config gjson.Result
 	if len(os.Args) > 1 { // start with arg
 		arg := os.Args[1]
-		config := ReadConfigFile()
+		config = ReadConfigFile()
 
-		ns := config.Get("namespace").String()
 		name := config.Get("name").String()
 		version := config.Get("version").String()
 
 		switch arg {
 		case "-a": // attach
 			attached = true
-			go debug.Attach(ns)
 
 		case "-s": // generate spec file
 			generateSpecFile(name, version)
@@ -63,6 +62,10 @@ func Start() {
 	}
 
 	go plugin.Serve(serveCfg)
+	if attached {
+		ns := config.Get("namespace").String()
+		go debug.Attach(ns, serveCfg)
+	}
 
 	RegisterFactories()
 
