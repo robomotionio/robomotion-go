@@ -63,7 +63,7 @@ func Start() {
 
 	go plugin.Serve(serveCfg)
 	if attached {
-		ns := config.Get("namespace").String()
+		ns = config.Get("namespace").String()
 		go debug.Attach(ns, serveCfg)
 	}
 
