@@ -9,7 +9,7 @@ import (
 	"path"
 	"time"
 
-	plugin "github.com/hashicorp/go-plugin"
+	plugin "github.com/mosteknoloji/go-plugin"
 	"github.com/robomotionio/robomotion-go/proto"
 	"github.com/robomotionio/robomotion-go/utils"
 

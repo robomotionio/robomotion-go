@@ -10,7 +10,7 @@ import (
 	"unsafe"
 
 	hclog "github.com/hashicorp/go-hclog"
-	plugin "github.com/hashicorp/go-plugin"
+	plugin "github.com/mosteknoloji/go-plugin"
 	"github.com/tidwall/gjson"
 
 	"github.com/robomotionio/robomotion-go/debug"
