@@ -8,7 +8,7 @@ import (
 
 	st "github.com/golang/protobuf/ptypes/struct"
 	hclog "github.com/hashicorp/go-hclog"
-	plugin "github.com/hashicorp/go-plugin"
+	plugin "github.com/mosteknoloji/go-plugin"
 	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
