@@ -61,6 +61,8 @@ func Start() {
 		}
 	}
 
+	os.Setenv(serveCfg.MagicCookieKey, serveCfg.MagicCookieValue)
+
 	go plugin.Serve(serveCfg)
 	if attached {
 		ns = config.Get("namespace").String()
