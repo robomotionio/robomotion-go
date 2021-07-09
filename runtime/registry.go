@@ -11,6 +11,7 @@ import (
 
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/mosteknoloji/go-plugin"
+	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 
 	"github.com/robomotionio/robomotion-go/debug"
@@ -41,6 +42,12 @@ var (
 	}
 )
 
+func initLogger() {
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+	logrus.SetLevel(logrus.InfoLevel)
+	logrus.SetOutput(os.Stderr)
+}
+
 func Start() {
 
 	var config gjson.Result
@@ -61,6 +68,7 @@ func Start() {
 		}
 	}
 
+	initLogger()
 	os.Setenv(serveCfg.MagicCookieKey, serveCfg.MagicCookieValue)
 
 	go plugin.Serve(serveCfg)
