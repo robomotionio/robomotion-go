@@ -7,6 +7,7 @@ require (
 	github.com/hashicorp/go-hclog v0.14.1
 	github.com/magiconair/properties v1.8.1
 	github.com/mosteknoloji/go-plugin v1.2.4
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/tidwall/gjson v1.6.0
 	github.com/tidwall/sjson v1.1.1
