@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/robomotionio/robomotion-go/message"
 )
@@ -29,11 +30,16 @@ func (v *InVariable) GetInt(ctx message.Context) (int64, error) {
 		return 0, err
 	}
 
-	if d, ok := val.(int64); ok {
-		return d, nil
+	switch v := val.(type) {
+	case int64:
+		return v, nil
+	case float64:
+		return int64(v), nil
+	case string:
+		return strconv.ParseInt(v, 10, 64)
+	default:
+		return 0, nil
 	}
-
-	return 0, nil
 }
 
 func (v *InVariable) GetString(ctx message.Context) (string, error) {
