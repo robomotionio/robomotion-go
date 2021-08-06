@@ -120,7 +120,7 @@ func generateSpecFile(pluginName, version string) {
 
 			if isVar {
 				sProp.Type = "object"
-				sProp.VariableType = getVariableType(field)
+				sProp.VariableType = getVariableType(field, fsMap)
 				sProp.Properties = &map[string]interface{}{"scope": map[string]string{"type": "string"}, "name": map[string]string{"type": "string"}}
 
 			} else if isCred {
@@ -132,13 +132,13 @@ func generateSpecFile(pluginName, version string) {
 				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
 
 			} else if isEnum {
-				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], getVariableType(field))
-				sProp.Type = strings.ToLower(getVariableType(field))
+				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], getVariableType(field, fsMap))
+				sProp.Type = strings.ToLower(getVariableType(field, fsMap))
 				multiple := true
 				sProp.Multiple = &multiple
 
 			} else {
-				sProp.Type = strings.ToLower(getVariableType(field))
+				sProp.Type = strings.ToLower(getVariableType(field, fsMap))
 			}
 
 			_, csScope := fsMap["csScope"]
@@ -358,10 +358,10 @@ func upperFirstLetter(text string) string {
 	return fmt.Sprintf("%s%s", strings.ToUpper(text[:1]), text[1:])
 }
 
-func getVariableType(f reflect.StructField) string {
+func getVariableType(f reflect.StructField, fsMap map[string]string) string {
 
 	if f.Type == reflect.TypeOf(Variable{}) {
-		return upperFirstLetter(strings.ToLower(f.Tag.Get("type")))
+		return upperFirstLetter(strings.ToLower(fsMap["type"]))
 	}
 
 	kinds := map[reflect.Kind]string{
