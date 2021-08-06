@@ -114,7 +114,7 @@ func generateSpecFile(pluginName, version string) {
 			}
 
 			sProp := SProperty{Title: title}
-			isVar := field.Type == reflect.TypeOf(InVariable{}) || field.Type == reflect.TypeOf(OutVariable{}) || field.Type == reflect.TypeOf(OptVariable{})
+			isVar := isVariable(field)
 			isCred := field.Type == reflect.TypeOf(Credential{})
 			isEnum := len(enum) > 0
 
@@ -360,7 +360,7 @@ func upperFirstLetter(text string) string {
 
 func getVariableType(f reflect.StructField, fsMap map[string]string) string {
 
-	if f.Type == reflect.TypeOf(Variable{}) {
+	if isVariable(f) {
 		return upperFirstLetter(strings.ToLower(fsMap["type"]))
 	}
 
@@ -375,4 +375,10 @@ func getVariableType(f reflect.StructField, fsMap map[string]string) string {
 	}
 
 	return "String"
+}
+
+func isVariable(f reflect.StructField) bool {
+	return f.Type == reflect.TypeOf(InVariable{}) ||
+		f.Type == reflect.TypeOf(OutVariable{}) ||
+		f.Type == reflect.TypeOf(OptVariable{})
 }
