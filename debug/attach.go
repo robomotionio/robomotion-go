@@ -3,17 +3,15 @@ package debug
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
-	"path"
+	"strings"
 	"time"
 
 	plugin "github.com/mosteknoloji/go-plugin"
 	"github.com/robomotionio/robomotion-go/proto"
-	"github.com/robomotionio/robomotion-go/utils"
 
-	"github.com/tidwall/gjson"
+	"github.com/cakturk/go-netstat/netstat"
 	"google.golang.org/grpc"
 )
 
@@ -84,14 +82,15 @@ func Attach(namespace string, opts *plugin.ServeConfig) {
 }
 
 func getRPCAddr() string {
-	dir := utils.TempDir()
-	fileName := "runcfg.json"
-
-	cfgFile := path.Join(dir, fileName)
-	data, err := ioutil.ReadFile(cfgFile)
+	tabs, err := netstat.TCPSocks(func(s *netstat.SockTabEntry) bool {
+		return s.State == netstat.Listen && s.Process != nil && strings.Contains(s.Process.Name, "robomotion-runner")
+	})
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return ""
 	}
-
-	return gjson.Get(string(data), "listen").String()
+	if len(tabs) == 0 {
+		return ""
+	}
+	return tabs[len(tabs)-1].LocalAddr.String()
 }
