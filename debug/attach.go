@@ -63,7 +63,11 @@ func Attach(namespace string, opts *plugin.ServeConfig) {
 		log.Fatalln(err)
 	}
 
-	addr := getRPCAddr()
+	addr := os.Getenv("ATTACH_TO")
+	if addr == "" {
+		addr = getRPCAddr()
+	}
+
 	if addr == "" {
 		log.Fatalln("runner RPC address is nil")
 	}
