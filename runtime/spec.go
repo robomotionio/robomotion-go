@@ -35,6 +35,7 @@ type Schema struct {
 type SProperty struct {
 	Type         string                  `json:"type"`
 	Title        string                  `json:"title"`
+	Description  *string                 `json:"description,omitempty"`
 	SubTitle     *string                 `json:"subtitle,omitempty"`
 	Category     *int                    `json:"category,omitempty"`
 	Properties   *map[string]interface{} `json:"properties,omitempty"`
@@ -109,11 +110,18 @@ func generateSpecFile(pluginName, version string) {
 			title, hasTitle := fsMap["title"]
 			enum := fsMap["enum"]
 
+			description, hasDescription := fsMap["description"]
+
 			if !hasTitle {
 				title = fieldName
 			}
 
 			sProp := SProperty{Title: title}
+
+			if hasDescription {
+				sProp.Description = &description
+			}
+
 			isVar := isVariable(field)
 			isCred := field.Type == reflect.TypeOf(Credential{})
 			isEnum := len(enum) > 0
