@@ -194,6 +194,10 @@ func generateSpecFile(pluginName, version string) {
 				inProperty.Schema.Properties[lowerFieldName] = sProp
 				inProperty.UISchema["ui:order"] = append(inProperty.UISchema["ui:order"].([]string), lowerFieldName)
 
+				if !isVar && isInput && hasDescription {
+					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "input"}
+				}
+
 				if isHidden {
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
 				}
@@ -210,6 +214,10 @@ func generateSpecFile(pluginName, version string) {
 				outProperty.Schema.Properties[lowerFieldName] = sProp
 				outProperty.UISchema["ui:order"] = append(outProperty.UISchema["ui:order"].([]string), lowerFieldName)
 
+				if !isVar && isOutput && hasDescription {
+					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "input"}
+				}
+
 				if isHidden {
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
 				}
@@ -225,6 +233,10 @@ func generateSpecFile(pluginName, version string) {
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
+
+				if !isVar && !isCred && isEnum && hasDescription {
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "input"}
+				}
 
 				if isHidden {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
@@ -243,6 +255,10 @@ func generateSpecFile(pluginName, version string) {
 				}
 
 			} else if isOption {
+
+				if hasDescription {
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "input"}
+				}
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
