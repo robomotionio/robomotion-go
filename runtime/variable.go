@@ -83,6 +83,10 @@ func (v *InVariable) GetBool(ctx message.Context) (bool, error) {
 
 func (v *InVariable) Get(ctx message.Context) (interface{}, error) {
 
+	if v.Scope == "Custom" {
+		return v.Name, nil
+	}
+
 	if v.Scope == "Message" {
 		return ctx.Get(v.Name), nil
 	}
