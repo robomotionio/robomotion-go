@@ -51,8 +51,8 @@ type SProperty struct {
 }
 
 type VarDataProperty struct {
-	Name  string `json:"name"`
-	Scope string `json:"scope"`
+	Name  interface{} `json:"name"`
+	Scope string      `json:"scope"`
 }
 
 func generateSpecFile(pluginName, version string) {
@@ -137,7 +137,13 @@ func generateSpecFile(pluginName, version string) {
 				subtitle := "Credentials"
 				sProp.SubTitle = &subtitle
 				sProp.Category = &category
-				sProp.Properties = &map[string]interface{}{"vaultId": map[string]string{"type": "string"}, "itemId": map[string]string{"type": "string"}}
+				sProp.Properties = &map[string]interface{}{
+					"scope": map[string]interface{}{"type": "string"},
+					"name": map[string]interface{}{"type": "object", "properties": map[string]interface{}{
+						"vaultId": map[string]string{"type": "string"},
+						"itemId":  map[string]string{"type": "string"},
+					}},
+				}
 
 			} else if isEnum {
 				sProp.Enum, sProp.EnumNames = parseEnum(enum, fsMap["enumNames"], getVariableType(field, fsMap))
@@ -246,7 +252,8 @@ func generateSpecFile(pluginName, version string) {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
-					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "credentials"}
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "vault"}
+					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: "Custom", Name: map[string]interface{}{"vaultId": "_", "itemId": "_"}}
 				} else if isEnum {
 					v := fsMap["value"]
 					optProperty.FormData[lowerFieldName] = parseValue(field, v)
