@@ -46,6 +46,7 @@ type SProperty struct {
 	MessageOnly  *bool                   `json:"messageOnly,omitempty"`
 	Multiple     *bool                   `json:"multiple,omitempty"`
 	VariableType string                  `json:"variableType,omitempty"`
+	Format       *string                 `json:"format,omitempty"`
 	Enum         []interface{}           `json:"enum,omitempty"`
 	EnumNames    []string                `json:"enumNames,omitempty"`
 }
@@ -109,6 +110,7 @@ func generateSpecFile(pluginName, version string) {
 
 			title, hasTitle := fsMap["title"]
 			enum := fsMap["enum"]
+			format, hasFormat := fsMap["format"]
 
 			description, hasDescription := fsMap["description"]
 
@@ -125,6 +127,10 @@ func generateSpecFile(pluginName, version string) {
 			isVar := isVariable(field)
 			isCred := field.Type == reflect.TypeOf(Credential{})
 			isEnum := len(enum) > 0
+
+			if hasFormat {
+				sProp.Format = &format
+			}
 
 			if isVar {
 				sProp.Type = "object"
@@ -208,7 +214,10 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
 				}
 
-				if isVar {
+				if hasFormat {
+					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
+					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": format}
+				} else if isVar {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else {
@@ -248,7 +257,10 @@ func generateSpecFile(pluginName, version string) {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
 				}
 
-				if isVar {
+				if hasFormat {
+					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": format}
+				} else if isVar {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else if isCred {
