@@ -8,8 +8,8 @@ import (
 )
 
 type Credential struct {
-	Scope string `json:"scope"`
-	Name  string `json:"name"`
+	Scope string      `json:"scope"`
+	Name  interface{} `json:"name"`
 
 	// Deprecated
 	VaultID string `json:"vaultId,omitempty"`
@@ -31,14 +31,21 @@ func (c *Credential) Get(ctx message.Context) (map[string]interface{}, error) {
 		return client.GetVaultItem(c.VaultID, c.ItemID)
 	}
 
-	v := &InVariable{Variable: Variable{Scope: c.Scope, Name: c.Name}}
-	cr, err := v.Get(ctx)
-	if err != nil {
-		return nil, err
+	var (
+		err   error
+		ci    interface{} = c.Name
+		creds credential
+	)
+
+	if c.Scope == "Message" {
+		v := &InVariable{Variable: Variable{Scope: c.Scope, Name: c.Name.(string)}}
+		ci, err = v.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	var creds credential
-	err = mapstructure.Decode(cr, &creds)
+	err = mapstructure.Decode(ci, &creds)
 	if err != nil {
 		return nil, err
 	}
