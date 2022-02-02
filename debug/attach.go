@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/cakturk/go-netstat/netstat"
 	plugin "github.com/mosteknoloji/go-plugin"
 	"github.com/robomotionio/robomotion-go/proto"
 
@@ -61,8 +63,7 @@ func Attach(namespace string, opts *plugin.ServeConfig) {
 		log.Fatalln(err)
 	}
 
-	addr := os.Getenv("ATTACH_TO")
-
+	addr := getRPCAddr()
 	if addr == "" {
 		log.Fatalln("runner RPC address is nil")
 	}
@@ -78,4 +79,21 @@ func Attach(namespace string, opts *plugin.ServeConfig) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func getRPCAddr() string {
+	tabs, err := netstat.TCPSocks(func(s *netstat.SockTabEntry) bool {
+		return s.State == netstat.Listen && s.Process != nil && strings.Contains(s.Process.Name, "robomotion-runner")
+	})
+
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+
+	if len(tabs) == 0 {
+		return ""
+	}
+
+	return tabs[0].LocalAddr.String()
 }
