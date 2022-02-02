@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-hclog v0.16.2
 	github.com/magiconair/properties v1.8.5
 	github.com/mitchellh/mapstructure v1.4.2
-	github.com/mosteknoloji/go-plugin v1.2.4
+	github.com/mosteknoloji/go-plugin v1.2.5
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tidwall/gjson v1.8.1
 	github.com/tidwall/sjson v1.1.7
