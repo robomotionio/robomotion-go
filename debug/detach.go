@@ -3,19 +3,17 @@ package debug
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/robomotionio/robomotion-go/proto"
 	"google.golang.org/grpc"
 )
 
 func Detach(namespace string) {
-	addr := os.Getenv("ATTACH_TO")
-	if addr == "" {
+	if attachedTo == "" {
 		log.Fatalln("runner RPC address is nil")
 	}
 
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(attachedTo, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalln(err)
 	}
