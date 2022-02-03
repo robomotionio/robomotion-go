@@ -32,6 +32,10 @@ const (
 	timeout = 30 * time.Second
 )
 
+var (
+	attachedTo string
+)
+
 func Attach(namespace string, opts *plugin.ServeConfig) {
 
 	gAddr := ""
@@ -61,13 +65,12 @@ func Attach(namespace string, opts *plugin.ServeConfig) {
 		log.Fatalln(err)
 	}
 
-	addr := os.Getenv("ATTACH_TO")
-
-	if addr == "" {
+	attachedTo = getRPCAddr()
+	if attachedTo == "" {
 		log.Fatalln("runner RPC address is nil")
 	}
 
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(attachedTo, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalln(err)
 	}
