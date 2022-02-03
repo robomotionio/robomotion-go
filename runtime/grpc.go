@@ -24,6 +24,8 @@ var (
 )
 
 type GRPCServer struct {
+	proto.UnimplementedNodeServer
+
 	broker *plugin.GRPCBroker
 
 	// Concrete implementation, written in Go. This is only used for plugins
