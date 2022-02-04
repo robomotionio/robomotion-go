@@ -67,8 +67,10 @@ func Attach(namespace string, opts *plugin.ServeConfig) {
 
 	attachedTo = getRPCAddr()
 	if attachedTo == "" {
-		log.Fatalln("runner RPC address is nil")
+		log.Fatalln("empty gRPC address")
 	}
+
+	log.Printf("Attached to %s", attachedTo)
 
 	conn, err := grpc.Dial(attachedTo, grpc.WithInsecure())
 	if err != nil {

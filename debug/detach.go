@@ -10,7 +10,7 @@ import (
 
 func Detach(namespace string) {
 	if attachedTo == "" {
-		log.Fatalln("runner RPC address is nil")
+		log.Fatalln("empty gRPC address")
 	}
 
 	conn, err := grpc.Dial(attachedTo, grpc.WithInsecure())
