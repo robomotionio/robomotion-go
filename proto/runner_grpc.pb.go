@@ -34,7 +34,7 @@ func NewRunnerClient(cc grpc.ClientConnInterface) RunnerClient {
 
 func (c *runnerClient) Init(ctx context.Context, in *InitRunnerRequest, opts ...grpc.CallOption) (*Null, error) {
 	out := new(Null)
-	err := c.cc.Invoke(ctx, "/Runner/Init", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.Runner/Init", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (c *runnerClient) Init(ctx context.Context, in *InitRunnerRequest, opts ...
 
 func (c *runnerClient) Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*Null, error) {
 	out := new(Null)
-	err := c.cc.Invoke(ctx, "/Runner/Run", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.Runner/Run", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (c *runnerClient) Run(ctx context.Context, in *RunRequest, opts ...grpc.Cal
 
 func (c *runnerClient) Clear(ctx context.Context, in *Null, opts ...grpc.CallOption) (*Null, error) {
 	out := new(Null)
-	err := c.cc.Invoke(ctx, "/Runner/Clear", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.Runner/Clear", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (c *runnerClient) Clear(ctx context.Context, in *Null, opts ...grpc.CallOpt
 
 func (c *runnerClient) RobotName(ctx context.Context, in *Null, opts ...grpc.CallOption) (*RobotNameResponse, error) {
 	out := new(RobotNameResponse)
-	err := c.cc.Invoke(ctx, "/Runner/RobotName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.Runner/RobotName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func _Runner_Init_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Runner/Init",
+		FullMethod: "/proto.Runner/Init",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RunnerServer).Init(ctx, req.(*InitRunnerRequest))
@@ -136,7 +136,7 @@ func _Runner_Run_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Runner/Run",
+		FullMethod: "/proto.Runner/Run",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RunnerServer).Run(ctx, req.(*RunRequest))
@@ -154,7 +154,7 @@ func _Runner_Clear_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Runner/Clear",
+		FullMethod: "/proto.Runner/Clear",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RunnerServer).Clear(ctx, req.(*Null))
@@ -172,7 +172,7 @@ func _Runner_RobotName_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Runner/RobotName",
+		FullMethod: "/proto.Runner/RobotName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RunnerServer).RobotName(ctx, req.(*Null))
@@ -184,7 +184,7 @@ func _Runner_RobotName_Handler(srv interface{}, ctx context.Context, dec func(in
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Runner_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Runner",
+	ServiceName: "proto.Runner",
 	HandlerType: (*RunnerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -250,7 +250,7 @@ func RegisterRobotHelperServer(s grpc.ServiceRegistrar, srv RobotHelperServer) {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var RobotHelper_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "RobotHelper",
+	ServiceName: "proto.RobotHelper",
 	HandlerType: (*RobotHelperServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams:     []grpc.StreamDesc{},
@@ -275,7 +275,7 @@ func NewDebugClient(cc grpc.ClientConnInterface) DebugClient {
 
 func (c *debugClient) Attach(ctx context.Context, in *AttachRequest, opts ...grpc.CallOption) (*Nil, error) {
 	out := new(Nil)
-	err := c.cc.Invoke(ctx, "/Debug/Attach", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.Debug/Attach", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (c *debugClient) Attach(ctx context.Context, in *AttachRequest, opts ...grp
 
 func (c *debugClient) Detach(ctx context.Context, in *DetachRequest, opts ...grpc.CallOption) (*Nil, error) {
 	out := new(Nil)
-	err := c.cc.Invoke(ctx, "/Debug/Detach", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.Debug/Detach", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func _Debug_Attach_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Debug/Attach",
+		FullMethod: "/proto.Debug/Attach",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DebugServer).Attach(ctx, req.(*AttachRequest))
@@ -351,7 +351,7 @@ func _Debug_Detach_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Debug/Detach",
+		FullMethod: "/proto.Debug/Detach",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DebugServer).Detach(ctx, req.(*DetachRequest))
@@ -363,7 +363,7 @@ func _Debug_Detach_Handler(srv interface{}, ctx context.Context, dec func(interf
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Debug_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Debug",
+	ServiceName: "proto.Debug",
 	HandlerType: (*DebugServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
