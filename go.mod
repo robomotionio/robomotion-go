@@ -7,6 +7,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/hashicorp/go-hclog v0.16.2
 	github.com/magiconair/properties v1.8.5
+	github.com/mitchellh/go-ps v1.0.0
 	github.com/mitchellh/mapstructure v1.4.2
 	github.com/mosteknoloji/go-plugin v1.2.5
 	github.com/sirupsen/logrus v1.8.1
