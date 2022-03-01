@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	plugin "github.com/mosteknoloji/go-plugin"
+	plugin "github.com/robomotionio/go-plugin"
 	"github.com/robomotionio/robomotion-go/proto"
 
 	"google.golang.org/grpc"
