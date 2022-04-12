@@ -135,7 +135,7 @@ func (l *List) First() interface{} {
 func GetNetStatPorts(state SocketState, processName string) []*SockTabEntry {
 	tabs := []*SockTabEntry{}
 
-	cmd := exec.Command("netstat", "-a", "-n", "-o")
+	cmd := exec.Command("netstat", "-a", "-n", "-o", "-p", "tcp")
 	out, err := cmd.Output()
 	if err != nil {
 		log.Println(err)
