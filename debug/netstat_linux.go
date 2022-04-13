@@ -47,10 +47,12 @@ func GetNetStatPorts(state SocketState, processName string) []*SockTabEntry {
 		proc := p.(gops.Process)
 		a := strings.ToLower(proc.Executable())
 		b := strings.ToLower(processName)
-		return strings.Contains(a, b)
+		return strings.Contains(a, b) || strings.Contains(b, a)
+		// Workaround: proc.Executable() might not contain full name of the process,
+		// should check if process names match in either way.
 	})
 
-	rr := regexp.MustCompile(`\r\n`)
+	rr := regexp.MustCompile(`\n`)
 	rows := rr.Split(string(out), -1)
 
 	for _, row := range rows {
