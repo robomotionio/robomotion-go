@@ -17,6 +17,7 @@ type Context interface {
 	GetFloat(path string) float64
 	GetRaw() json.RawMessage
 	SetRaw(data json.RawMessage)
+	IsEmpty() bool
 }
 
 type message struct {
@@ -66,4 +67,8 @@ func (msg *message) GetRaw() json.RawMessage {
 
 func (msg *message) SetRaw(data json.RawMessage) {
 	msg.data = data
+}
+
+func (msg *message) IsEmpty() bool {
+	return msg.data == nil || len(msg.data) == 0
 }
