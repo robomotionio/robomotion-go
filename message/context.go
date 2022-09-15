@@ -16,6 +16,7 @@ type Context interface {
 	GetInt(path string) int64
 	GetFloat(path string) float64
 	GetRaw() json.RawMessage
+	SetRaw(data json.RawMessage)
 }
 
 type message struct {
@@ -61,4 +62,8 @@ func (msg *message) GetFloat(path string) float64 {
 
 func (msg *message) GetRaw() json.RawMessage {
 	return json.RawMessage(msg.data)
+}
+
+func (msg *message) SetRaw(data json.RawMessage) {
+	msg.data = data
 }
