@@ -82,7 +82,7 @@ func (m *GRPCServer) OnCreate(ctx context.Context, req *proto.OnCreateRequest) (
 
 func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest) (*proto.OnMessageResponse, error) {
 
-	resp := &proto.OnMessageResponse{}
+	resp := &proto.OnMessageResponse{OutMessage: nil}
 	data, err := Decompress(req.InMessage)
 	if err != nil {
 		hclog.Default().Info("grpc.server.onmessage", "err", err)
@@ -92,6 +92,7 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 	node := GetNodeHandler(req.Guid)
 	if node == nil {
 		hclog.Default().Info("grpc.server.oncreate.node", "err", "no handler")
+		return nil, fmt.Errorf("node handler not found")
 	}
 
 	msgCtx := message.NewContext(data)
@@ -101,7 +102,11 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 	if err != nil && node.ContinueOnError {
 		err = nil
 	}
-	resp.OutMessage = []byte(msgCtx.GetRaw())
+
+	if !msgCtx.IsEmpty() {
+		resp.OutMessage = msgCtx.GetRaw()
+	}
+
 	time.Sleep(time.Duration(node.DelayAfter*1000) * time.Millisecond)
 
 	return resp, err
