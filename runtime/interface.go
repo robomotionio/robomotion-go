@@ -24,8 +24,10 @@ type RuntimeHelper interface {
 	EmitOutput(string, []byte, int32) error
 	EmitError(string, string, string) error
 	GetVaultItem(string, string) (map[string]interface{}, error)
+	SetVaultItem(string, string, []byte) (map[string]interface{}, error)
 	GetVariable(*Variable) (interface{}, error)
 	SetVariable(*Variable, interface{}) error
+	GetRobotInfo() (map[string]interface{}, error)
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.
