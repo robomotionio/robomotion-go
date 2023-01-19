@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	handlers = make(map[string]*NodeHandler)
-	hMux     sync.Mutex
+	handlerList []MessageHandler
+	handlers    = make(map[string]*NodeHandler)
+	hMux        sync.Mutex
 )
 
 type NodeHandler struct {
@@ -39,4 +40,9 @@ func GetNodeHandler(guid string) *NodeHandler {
 }
 
 func RegisterNodes(handlers ...MessageHandler) {
+	handlerList = handlers
+}
+
+func RegisteredNodes() []MessageHandler {
+	return handlerList
 }
