@@ -294,7 +294,7 @@ func (m *GRPCRuntimeHelperClient) AppRequest(request []byte) ([]byte, error) {
 	})
 
 	if err != nil {
-		hclog.Default().Info("runtime.getstringvariable", "err", err)
+		hclog.Default().Info("runtime.apprequest", "err", err)
 		return nil, err
 	}
 
