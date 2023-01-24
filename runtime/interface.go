@@ -30,6 +30,7 @@ type RuntimeHelper interface {
 	GetRobotInfo() (map[string]interface{}, error)
 	AppRequest([]byte) ([]byte, error)
 	GetRobotInfo() (map[string]interface{}, error)
+	AppRequest([]byte) ([]byte, error)
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.
