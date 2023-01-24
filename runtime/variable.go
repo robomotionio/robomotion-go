@@ -34,14 +34,14 @@ func (v *InVariable[T]) getInt(val interface{}) (t T, err error) {
 
 	switch v := val.(type) {
 	case int64:
-		reflect.ValueOf(t).SetInt(v)
+		reflect.ValueOf(&t).Elem().SetInt(v)
 	case float64:
-		reflect.ValueOf(t).SetInt(int64(v))
+		reflect.ValueOf(&t).Elem().SetInt(int64(v))
 	case string:
 		var d int64
 		d, err = strconv.ParseInt(v, 10, 64)
 		if err == nil {
-			reflect.ValueOf(t).SetInt(d)
+			reflect.ValueOf(&t).Elem().SetInt(d)
 		}
 	}
 
@@ -51,14 +51,14 @@ func (v *InVariable[T]) getInt(val interface{}) (t T, err error) {
 func (v *InVariable[T]) getFloat(val interface{}) (t T, err error) {
 	switch v := val.(type) {
 	case int64:
-		reflect.ValueOf(t).SetFloat(float64(v))
+		reflect.ValueOf(&t).Elem().SetFloat(float64(v))
 	case float64:
-		reflect.ValueOf(t).SetFloat(v)
+		reflect.ValueOf(&t).Elem().SetFloat(v)
 	case string:
 		var d float64
 		d, err = strconv.ParseFloat(v, 64)
 		if err == nil {
-			reflect.ValueOf(t).SetFloat(d)
+			reflect.ValueOf(&t).Elem().SetFloat(d)
 		}
 	}
 
@@ -68,14 +68,14 @@ func (v *InVariable[T]) getFloat(val interface{}) (t T, err error) {
 func (v *InVariable[T]) getBool(val interface{}) (t T, err error) {
 	switch v := val.(type) {
 	case int64:
-		reflect.ValueOf(t).SetBool(v > 0)
+		reflect.ValueOf(&t).Elem().SetBool(v > 0)
 	case float64:
-		reflect.ValueOf(t).SetBool(v > 0)
+		reflect.ValueOf(&t).Elem().SetBool(v > 0)
 	case string:
 		var d bool
 		d, err = strconv.ParseBool(v)
 		if err == nil {
-			reflect.ValueOf(t).SetBool(d)
+			reflect.ValueOf(&t).Elem().SetBool(d)
 		}
 	}
 
@@ -85,7 +85,7 @@ func (v *InVariable[T]) getBool(val interface{}) (t T, err error) {
 func (v *InVariable[T]) getString(val interface{}) (t T, err error) {
 	switch v := val.(type) {
 	case string:
-		reflect.ValueOf(t).SetString(v)
+		reflect.ValueOf(&t).Elem().SetString(v)
 	}
 
 	return t, err
@@ -121,19 +121,8 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			return v.getString(val)
 
 		default:
-			reflect.ValueOf(t).Set(reflect.ValueOf(val))
+			reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(val))
 		}
-	}
-
-	getValue := func(val interface{}) (T, error) {
-		t, ok := val.(T)
-		if !ok {
-			return t, fmt.Errorf("expected %s but got %s",
-				reflect.TypeOf(t).String(),
-				reflect.TypeOf(val).String(),
-			)
-		}
-		return t, nil
 	}
 
 	if client == nil {
@@ -145,10 +134,18 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		return t, err
 	}
 
-	return getValue(val)
+	t, ok := val.(T)
+	if !ok {
+		return t, fmt.Errorf("expected %s but got %s",
+			reflect.TypeOf(t).String(),
+			reflect.TypeOf(val).String(),
+		)
+	}
+
+	return t, nil
 }
 
-func (v *OutVariable[T]) Set(ctx message.Context, value interface{}) error {
+func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 
 	if v.Scope == "Message" {
 		if v.Name == "" {
