@@ -37,3 +37,10 @@ func EmitFlowEvent(guid, name string) error {
 
 	return client.EmitFlowEvent(guid, name)
 }
+func AppRequest(request []byte) ([]byte, error) {
+	if client == nil {
+		return nil, fmt.Errorf("Runtime was not initialized")
+	}
+
+	return client.AppRequest(request)
+}

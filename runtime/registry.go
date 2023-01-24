@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"reflect"
 	"time"
-	"unsafe"
 
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/robomotionio/go-plugin"
@@ -15,7 +14,6 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/robomotionio/robomotion-go/debug"
-	"github.com/robomotionio/robomotion-go/tl"
 )
 
 type PluginNode struct {
@@ -112,16 +110,10 @@ func RegisterFactories() {
 func GetNodeTypes() []reflect.Type {
 
 	types := []reflect.Type{}
-	sections, offsets := tl.Typelinks()
-	for i, base := range sections {
-		for _, offset := range offsets[i] {
-			typeAddr := tl.Add(base, uintptr(offset), "")
-			typ := reflect.TypeOf(*(*interface{})(unsafe.Pointer(&typeAddr)))
-			var handler *MessageHandler
-			if typ.Implements(reflect.TypeOf(handler).Elem()) {
-				types = append(types, typ.Elem())
-			}
-		}
+	nodes := RegisteredNodes()
+	for _, node := range nodes {
+		typ := reflect.TypeOf(node)
+		types = append(types, typ.Elem())
 	}
 
 	return types

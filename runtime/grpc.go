@@ -24,6 +24,7 @@ var (
 )
 
 type GRPCServer struct {
+	proto.UnimplementedNodeServer
 	broker *plugin.GRPCBroker
 
 	// Concrete implementation, written in Go. This is only used for plugins
@@ -299,6 +300,20 @@ func (m *GRPCRuntimeHelperClient) SetVariable(variable *Variable, value interfac
 	}
 
 	return nil
+}
+
+func (m *GRPCRuntimeHelperClient) AppRequest(request []byte) ([]byte, error) {
+
+	resp, err := m.client.AppRequest(context.Background(), &proto.AppRequestRequest{
+		Request: request,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.apprequest", "err", err)
+		return nil, err
+	}
+
+	return resp.Response, nil
 }
 
 func checkConnState() {
