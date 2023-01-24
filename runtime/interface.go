@@ -28,6 +28,7 @@ type RuntimeHelper interface {
 	GetVariable(*Variable) (interface{}, error)
 	SetVariable(*Variable, interface{}) error
 	GetRobotInfo() (map[string]interface{}, error)
+	AppRequest([]byte) ([]byte, error)
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.
