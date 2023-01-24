@@ -244,6 +244,21 @@ func (m *GRPCRuntimeHelperClient) GetVaultItem(vaultID, itemID string) (map[stri
 	return parseStruct(resp.Item).(map[string]interface{}), nil
 }
 
+func (m *GRPCRuntimeHelperClient) SetVaultItem(vaultID, itemID string, data []byte) (map[string]interface{}, error) {
+	resp, err := m.client.SetVaultItem(context.Background(), &proto.SetVaultItemRequest{
+		ItemId:  itemID,
+		VaultId: vaultID,
+		Data:    data,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.setvaultitem", "err", err)
+		return nil, err
+	}
+
+	return parseStruct(resp.Item).(map[string]interface{}), nil
+}
+
 func (m *GRPCRuntimeHelperClient) GetVariable(variable *Variable) (interface{}, error) {
 
 	v := &proto.Variable{
@@ -315,4 +330,15 @@ func checkConnState() {
 
 		time.Sleep(1 * time.Second)
 	}
+}
+
+func (m *GRPCRuntimeHelperClient) GetRobotInfo() (map[string]interface{}, error) {
+	resp, err := m.client.GetRobotInfo(context.Background(), &proto.Empty{})
+
+	if err != nil {
+		hclog.Default().Info("runtime.getrobotinfo", "err", err)
+		return nil, err
+	}
+
+	return parseStruct(resp.Robot).(map[string]interface{}), nil
 }
