@@ -201,7 +201,7 @@ func generateSpecFile(pluginName, version string) {
 				n = ""
 			}
 
-			if field.Type == reflect.TypeOf(InVariable{}) || isInput { // input
+			if field.Type == reflect.TypeOf(InVariable[any]{}) || isInput { // input
 
 				inProperty.Schema.Properties[lowerFieldName] = sProp
 				inProperty.UISchema["ui:order"] = append(inProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -224,7 +224,7 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OutVariable{}) || isOutput { // output
+			} else if field.Type == reflect.TypeOf(OutVariable[any]{}) || isOutput { // output
 
 				outProperty.Schema.Properties[lowerFieldName] = sProp
 				outProperty.UISchema["ui:order"] = append(outProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -244,7 +244,7 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum { // option
+			} else if field.Type == reflect.TypeOf(OptVariable[any]{}) || isCred || isEnum { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -421,7 +421,7 @@ func getVariableType(f reflect.StructField, fsMap map[string]string) string {
 }
 
 func isVariable(f reflect.StructField) bool {
-	return f.Type == reflect.TypeOf(InVariable{}) ||
-		f.Type == reflect.TypeOf(OutVariable{}) ||
-		f.Type == reflect.TypeOf(OptVariable{})
+	return f.Type == reflect.TypeOf(InVariable[any]{}) ||
+		f.Type == reflect.TypeOf(OutVariable[any]{}) ||
+		f.Type == reflect.TypeOf(OptVariable[any]{})
 }

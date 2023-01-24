@@ -2,103 +2,153 @@ package runtime
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 
 	"github.com/robomotionio/robomotion-go/message"
 )
 
-type Variable struct {
+type variable struct {
 	Scope string `json:"scope"`
 	Name  string `json:"name"`
 }
 
-type InVariable struct {
-	Variable
+type Variable[T any] struct {
+	Scope string `json:"scope"`
+	Name  string `json:"name"`
 }
 
-type OutVariable struct {
-	Variable
+type InVariable[T any] struct {
+	Variable[T]
 }
 
-type OptVariable struct {
-	InVariable
+type OutVariable[T any] struct {
+	Variable[T]
 }
 
-func (v *InVariable) GetInt(ctx message.Context) (int64, error) {
-	val, err := v.Get(ctx)
-	if err != nil {
-		return 0, err
-	}
+type OptVariable[T any] struct {
+	InVariable[T]
+}
+
+func (v *InVariable[T]) getInt(val interface{}) (t T, err error) {
 
 	switch v := val.(type) {
 	case int64:
-		return v, nil
+		reflect.ValueOf(t).SetInt(v)
 	case float64:
-		return int64(v), nil
+		reflect.ValueOf(t).SetInt(int64(v))
 	case string:
-		return strconv.ParseInt(v, 10, 64)
-	default:
-		return 0, nil
+		var d int64
+		d, err = strconv.ParseInt(v, 10, 64)
+		if err == nil {
+			reflect.ValueOf(t).SetInt(d)
+		}
 	}
+
+	return t, err
 }
 
-func (v *InVariable) GetString(ctx message.Context) (string, error) {
-	val, err := v.Get(ctx)
-	if err != nil {
-		return "", err
+func (v *InVariable[T]) getFloat(val interface{}) (t T, err error) {
+	switch v := val.(type) {
+	case int64:
+		reflect.ValueOf(t).SetFloat(float64(v))
+	case float64:
+		reflect.ValueOf(t).SetFloat(v)
+	case string:
+		var d float64
+		d, err = strconv.ParseFloat(v, 64)
+		if err == nil {
+			reflect.ValueOf(t).SetFloat(d)
+		}
 	}
 
-	if s, ok := val.(string); ok {
-		return s, nil
-	}
-
-	return "", nil
+	return t, err
 }
 
-func (v *InVariable) GetFloat(ctx message.Context) (float64, error) {
-	val, err := v.Get(ctx)
-	if err != nil {
-		return 0.0, err
+func (v *InVariable[T]) getBool(val interface{}) (t T, err error) {
+	switch v := val.(type) {
+	case int64:
+		reflect.ValueOf(t).SetBool(v > 0)
+	case float64:
+		reflect.ValueOf(t).SetBool(v > 0)
+	case string:
+		var d bool
+		d, err = strconv.ParseBool(v)
+		if err == nil {
+			reflect.ValueOf(t).SetBool(d)
+		}
 	}
 
-	if f, ok := val.(float64); ok {
-		return f, nil
-	}
-
-	return 0.0, nil
+	return t, err
 }
 
-func (v *InVariable) GetBool(ctx message.Context) (bool, error) {
-	val, err := v.Get(ctx)
-	if err != nil {
-		return false, err
+func (v *InVariable[T]) getString(val interface{}) (t T, err error) {
+	switch v := val.(type) {
+	case string:
+		reflect.ValueOf(t).SetString(v)
 	}
 
-	if f, ok := val.(bool); ok {
-		return f, nil
-	}
-
-	return false, nil
+	return t, err
 }
 
-func (v *InVariable) Get(ctx message.Context) (interface{}, error) {
+func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
+	var (
+		t   T
+		val interface{}
+	)
 
 	if v.Scope == "Custom" {
-		return v.Name, nil
+		val = v.Name
 	}
 
 	if v.Scope == "Message" {
-		return ctx.Get(v.Name), nil
+		val = ctx.Get(v.Name)
+	}
+
+	if val != nil {
+		switch reflect.TypeOf(t).Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return v.getInt(val)
+
+		case reflect.Float32, reflect.Float64:
+			return v.getFloat(val)
+
+		case reflect.Bool:
+			return v.getBool(val)
+
+		case reflect.String:
+			return v.getString(val)
+
+		default:
+			reflect.ValueOf(t).Set(reflect.ValueOf(val))
+		}
+	}
+
+	getValue := func(val interface{}) (T, error) {
+		t, ok := val.(T)
+		if !ok {
+			return t, fmt.Errorf("expected %s but got %s",
+				reflect.TypeOf(t).String(),
+				reflect.TypeOf(val).String(),
+			)
+		}
+		return t, nil
 	}
 
 	if client == nil {
-		return "", fmt.Errorf("Runtime was not initialized")
+		return t, fmt.Errorf("Runtime was not initialized")
 	}
 
-	return client.GetVariable(&v.Variable)
+	val, err := client.GetVariable(&variable{Scope: v.Scope, Name: v.Name})
+	if err != nil {
+		return t, err
+	}
+
+	return getValue(val)
 }
 
-func (v *OutVariable) Set(ctx message.Context, value interface{}) error {
+func (v *OutVariable[T]) Set(ctx message.Context, value interface{}) error {
 
 	if v.Scope == "Message" {
 		if v.Name == "" {
@@ -112,5 +162,5 @@ func (v *OutVariable) Set(ctx message.Context, value interface{}) error {
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	return client.SetVariable(&v.Variable, value)
+	return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name}, value)
 }
