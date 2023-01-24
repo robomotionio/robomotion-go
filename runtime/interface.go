@@ -25,8 +25,8 @@ type RuntimeHelper interface {
 	EmitError(string, string, string) error
 	GetVaultItem(string, string) (map[string]interface{}, error)
 	SetVaultItem(string, string, []byte) (map[string]interface{}, error)
-	GetVariable(*Variable) (interface{}, error)
-	SetVariable(*Variable, interface{}) error
+	GetVariable(*variable) (interface{}, error)
+	SetVariable(*variable, interface{}) error
 	GetRobotInfo() (map[string]interface{}, error)
 	AppRequest([]byte) ([]byte, error)
 }
