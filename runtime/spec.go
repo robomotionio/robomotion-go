@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -124,7 +125,8 @@ func generateSpecFile(pluginName, version string) {
 				sProp.Description = &description
 			}
 
-			isVar := isVariable(field)
+			isInVar, isOutVar, isOptVar := isInVariable(field.Type), isOutVariable(field.Type), isOptVariable(field.Type)
+			isVar := isInVar || isOutVar || isOptVar
 			isCred := field.Type == reflect.TypeOf(Credential{})
 			isEnum := len(enum) > 0
 
@@ -201,7 +203,7 @@ func generateSpecFile(pluginName, version string) {
 				n = ""
 			}
 
-			if field.Type == reflect.TypeOf(InVariable{}) || isInput { // input
+			if isInVar || isInput { // input
 
 				inProperty.Schema.Properties[lowerFieldName] = sProp
 				inProperty.UISchema["ui:order"] = append(inProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -224,7 +226,7 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OutVariable{}) || isOutput { // output
+			} else if isOutVar || isOutput { // output
 
 				outProperty.Schema.Properties[lowerFieldName] = sProp
 				outProperty.UISchema["ui:order"] = append(outProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -244,7 +246,7 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.FormData[lowerFieldName] = n
 				}
 
-			} else if field.Type == reflect.TypeOf(OptVariable{}) || isCred || isEnum { // option
+			} else if isOptVar || isCred || isEnum { // option
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
@@ -403,7 +405,7 @@ func upperFirstLetter(text string) string {
 
 func getVariableType(f reflect.StructField, fsMap map[string]string) string {
 
-	if isVariable(f) {
+	if isVariable(f.Type) {
 		return upperFirstLetter(strings.ToLower(fsMap["type"]))
 	}
 
@@ -420,8 +422,25 @@ func getVariableType(f reflect.StructField, fsMap map[string]string) string {
 	return "String"
 }
 
-func isVariable(f reflect.StructField) bool {
-	return f.Type == reflect.TypeOf(InVariable{}) ||
-		f.Type == reflect.TypeOf(OutVariable{}) ||
-		f.Type == reflect.TypeOf(OptVariable{})
+func isVariable(t reflect.Type) bool {
+	return isInVariable(t) || isOutVariable(t) || isOptVariable(t)
+}
+
+func isInVariable(t reflect.Type) bool {
+	return isGenericType(t, reflect.TypeOf(InVariable[any]{}))
+}
+
+func isOutVariable(t reflect.Type) bool {
+	return isGenericType(t, reflect.TypeOf(OutVariable[any]{}))
+}
+
+func isOptVariable(t reflect.Type) bool {
+	return isGenericType(t, reflect.TypeOf(OptVariable[any]{}))
+}
+
+func isGenericType(t1, t2 reflect.Type) bool {
+	var r = regexp.MustCompile(`\[(.*)\]`)
+	m1 := r.Split(t1.String(), -1)
+	m2 := r.Split(t2.String(), -1)
+	return m1[0] == m2[0]
 }

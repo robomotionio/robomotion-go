@@ -38,7 +38,7 @@ func (c *Credential) Set(ctx message.Context, data []byte) (map[string]interface
 	)
 
 	if c.Scope == "Message" {
-		v := &InVariable{Variable: Variable{Scope: c.Scope, Name: c.Name.(string)}}
+		v := &InVariable[any]{Variable: Variable[any]{Scope: c.Scope, Name: c.Name.(string)}}
 		ci, err = v.Get(ctx)
 		if err != nil {
 			return nil, err
@@ -69,7 +69,7 @@ func (c *Credential) Get(ctx message.Context) (map[string]interface{}, error) {
 	)
 
 	if c.Scope == "Message" {
-		v := &InVariable{Variable: Variable{Scope: c.Scope, Name: c.Name.(string)}}
+		v := &InVariable[any]{Variable: Variable[any]{Scope: c.Scope, Name: c.Name.(string)}}
 		ci, err = v.Get(ctx)
 		if err != nil {
 			return nil, err
