@@ -259,7 +259,7 @@ func (m *GRPCRuntimeHelperClient) SetVaultItem(vaultID, itemID string, data []by
 	return parseStruct(resp.Item).(map[string]interface{}), nil
 }
 
-func (m *GRPCRuntimeHelperClient) GetVariable(variable *Variable) (interface{}, error) {
+func (m *GRPCRuntimeHelperClient) GetVariable(variable *variable) (interface{}, error) {
 
 	v := &proto.Variable{
 		Name:  variable.Name,
@@ -278,7 +278,7 @@ func (m *GRPCRuntimeHelperClient) GetVariable(variable *Variable) (interface{}, 
 	return parseStruct(resp.Value), nil
 }
 
-func (m *GRPCRuntimeHelperClient) SetVariable(variable *Variable, value interface{}) error {
+func (m *GRPCRuntimeHelperClient) SetVariable(variable *variable, value interface{}) error {
 
 	v := &proto.Variable{
 		Name:  variable.Name,
