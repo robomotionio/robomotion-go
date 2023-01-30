@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -121,7 +122,18 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			return v.getString(val)
 
 		default:
-			reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(val))
+			d, err := json.Marshal(val)
+			if err != nil {
+				return t, err
+			}
+
+			err = json.Unmarshal(d, &t)
+			if err != nil {
+				return t, err
+			}
+
+			return t, nil
+			//reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(val))
 		}
 	}
 
