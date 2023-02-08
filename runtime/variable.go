@@ -106,8 +106,14 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		val = ctx.Get(v.Name)
 	}
 
+	kind := reflect.Invalid
+	typ := reflect.TypeOf(t)
+	if typ != nil {
+		kind = typ.Kind()
+	}
+
 	if val != nil {
-		switch reflect.TypeOf(t).Kind() {
+		switch kind {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			return v.getInt(val)
@@ -133,7 +139,6 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			}
 
 			return t, nil
-			//reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(val))
 		}
 	}
 
