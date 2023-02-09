@@ -476,6 +476,10 @@ func isOptVariable(t reflect.Type) bool {
 }
 
 func isGenericType(t1, t2 reflect.Type) bool {
+	if t1.Kind() == reflect.Slice || t1.Kind() == reflect.Array {
+		t1 = t1.Elem()
+	}
+
 	var r = regexp.MustCompile(`\[(.*)\]`)
 	m1 := r.Split(t1.String(), -1)
 	m2 := r.Split(t2.String(), -1)
