@@ -15,8 +15,8 @@ type variable struct {
 }
 
 type Variable[T any] struct {
-	Scope string `json:"scope"`
-	Name  string `json:"name"`
+	Scope string      `json:"scope"`
+	Name  interface{} `json:"name"`
 }
 
 type InVariable[T any] struct {
@@ -103,7 +103,7 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 	}
 
 	if v.Scope == "Message" {
-		val = ctx.Get(v.Name)
+		val = ctx.Get(v.Name.(string))
 	}
 
 	kind := reflect.Invalid
@@ -146,7 +146,7 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		return t, fmt.Errorf("Runtime was not initialized")
 	}
 
-	val, err := client.GetVariable(&variable{Scope: v.Scope, Name: v.Name})
+	val, err := client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)})
 	if err != nil {
 		return t, err
 	}
@@ -169,12 +169,12 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 			return fmt.Errorf("Empty message object")
 		}
 
-		return ctx.Set(v.Name, value)
+		return ctx.Set(v.Name.(string), value)
 	}
 
 	if client == nil {
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name}, value)
+	return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
 }
