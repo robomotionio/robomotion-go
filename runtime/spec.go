@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 type NodeSpec struct {
@@ -40,6 +42,7 @@ type SProperty struct {
 	SubTitle     *string                 `json:"subtitle,omitempty"`
 	Category     *int                    `json:"category,omitempty"`
 	Properties   *map[string]interface{} `json:"properties,omitempty"`
+	Items        *map[string]interface{} `json:"items,omitempty"`
 	CsScope      *bool                   `json:"csScope,omitempty"`
 	JsScope      *bool                   `json:"jsScope,omitempty"`
 	CustomScope  *bool                   `json:"customScope,omitempty"`
@@ -112,6 +115,7 @@ func generateSpecFile(pluginName, version string) {
 			title, hasTitle := fsMap["title"]
 			enum := fsMap["enum"]
 			format, hasFormat := fsMap["format"]
+			arrayFields, isArray := fsMap["arrayFields"]
 
 			description, hasDescription := fsMap["description"]
 
@@ -134,7 +138,27 @@ func generateSpecFile(pluginName, version string) {
 				sProp.Format = &format
 			}
 
-			if isVar {
+			if isArray {
+				sProp.Type = "array"
+
+				arrProps := map[string]interface{}{}
+				arrFields := strings.Split(arrayFields, "|")
+				for _, arrField := range arrFields {
+					arrProps[toSnakeCase(arrField)] = map[string]interface{}{
+						"type":  "string",
+						"title": arrField,
+					}
+				}
+
+				sProp.Items = &map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"scope": map[string]interface{}{"type": "string"},
+						"name":  map[string]interface{}{"properties": arrProps},
+					},
+				}
+
+			} else if isVar {
 				sProp.Type = "object"
 				sProp.VariableType = getVariableType(field, fsMap)
 				sProp.Properties = &map[string]interface{}{"scope": map[string]string{"type": "string"}, "name": map[string]string{"type": "string"}}
@@ -219,6 +243,9 @@ func generateSpecFile(pluginName, version string) {
 				if hasFormat {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": format}
+				} else if isArray {
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "array"}
+					optProperty.FormData[lowerFieldName] = []interface{}{}
 				} else if isVar {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
@@ -262,6 +289,9 @@ func generateSpecFile(pluginName, version string) {
 				if hasFormat {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": format}
+				} else if isArray {
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "array"}
+					optProperty.FormData[lowerFieldName] = []interface{}{}
 				} else if isVar {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
@@ -279,12 +309,19 @@ func generateSpecFile(pluginName, version string) {
 
 				if hasDescription {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "input"}
+				} else if isArray {
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "array"}
 				}
 
 				optProperty.Schema.Properties[lowerFieldName] = sProp
 				optProperty.UISchema["ui:order"] = append(optProperty.UISchema["ui:order"].([]string), lowerFieldName)
 				v := fsMap["value"]
-				optProperty.FormData[lowerFieldName] = parseValue(field, v)
+
+				if isArray {
+					optProperty.FormData[lowerFieldName] = []interface{}{}
+				} else {
+					optProperty.FormData[lowerFieldName] = parseValue(field, v)
+				}
 
 			}
 		}
@@ -443,4 +480,8 @@ func isGenericType(t1, t2 reflect.Type) bool {
 	m1 := r.Split(t1.String(), -1)
 	m2 := r.Split(t2.String(), -1)
 	return m1[0] == m2[0]
+}
+
+func toSnakeCase(text string) string {
+	return strcase.ToSnake(text)
 }
