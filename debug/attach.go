@@ -72,7 +72,12 @@ func Attach(namespace string, opts *plugin.ServeConfig) {
 
 	log.Printf("Attached to %s", attachedTo)
 
-	conn, err := grpc.Dial(attachedTo, grpc.WithInsecure())
+	// https://github.com/dapr/go-sdk/pull/197#issue-963528293
+	maxRequestBodySize := 64
+	var grpcCallOpts []grpc.CallOption
+	grpcCallOpts = append(grpcCallOpts, grpc.MaxCallRecvMsgSize((maxRequestBodySize)*1024*1024))
+
+	conn, err := grpc.Dial(attachedTo, grpc.WithDefaultCallOptions(grpcCallOpts...), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalln(err)
 	}
