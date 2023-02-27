@@ -302,10 +302,11 @@ func (m *GRPCRuntimeHelperClient) SetVariable(variable *variable, value interfac
 	return nil
 }
 
-func (m *GRPCRuntimeHelperClient) AppRequest(request []byte) ([]byte, error) {
+func (m *GRPCRuntimeHelperClient) AppRequest(request []byte, timeout int32) ([]byte, error) {
 
 	resp, err := m.client.AppRequest(context.Background(), &proto.AppRequestRequest{
 		Request: request,
+		Timeout: timeout,
 	})
 
 	if err != nil {
