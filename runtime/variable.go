@@ -104,6 +104,9 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 
 	if v.Scope == "Message" {
 		val = ctx.Get(v.Name.(string))
+		if val == nil {
+			return t, nil
+		}
 	}
 
 	kind := reflect.Invalid
