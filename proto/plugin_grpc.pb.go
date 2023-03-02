@@ -228,6 +228,7 @@ type RuntimeHelperClient interface {
 	SetVariable(ctx context.Context, in *SetVariableRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetRobotInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRobotInfoResponse, error)
 	AppRequest(ctx context.Context, in *AppRequestRequest, opts ...grpc.CallOption) (*AppRequestResponse, error)
+	AppPublish(ctx context.Context, in *AppPublishRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type runtimeHelperClient struct {
@@ -346,6 +347,15 @@ func (c *runtimeHelperClient) AppRequest(ctx context.Context, in *AppRequestRequ
 	return out, nil
 }
 
+func (c *runtimeHelperClient) AppPublish(ctx context.Context, in *AppPublishRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/proto.RuntimeHelper/AppPublish", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RuntimeHelperServer is the server API for RuntimeHelper service.
 // All implementations must embed UnimplementedRuntimeHelperServer
 // for forward compatibility
@@ -362,6 +372,7 @@ type RuntimeHelperServer interface {
 	SetVariable(context.Context, *SetVariableRequest) (*Empty, error)
 	GetRobotInfo(context.Context, *Empty) (*GetRobotInfoResponse, error)
 	AppRequest(context.Context, *AppRequestRequest) (*AppRequestResponse, error)
+	AppPublish(context.Context, *AppPublishRequest) (*Empty, error)
 	mustEmbedUnimplementedRuntimeHelperServer()
 }
 
@@ -404,6 +415,9 @@ func (UnimplementedRuntimeHelperServer) GetRobotInfo(context.Context, *Empty) (*
 }
 func (UnimplementedRuntimeHelperServer) AppRequest(context.Context, *AppRequestRequest) (*AppRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AppRequest not implemented")
+}
+func (UnimplementedRuntimeHelperServer) AppPublish(context.Context, *AppPublishRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AppPublish not implemented")
 }
 func (UnimplementedRuntimeHelperServer) mustEmbedUnimplementedRuntimeHelperServer() {}
 
@@ -634,6 +648,24 @@ func _RuntimeHelper_AppRequest_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RuntimeHelper_AppPublish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AppPublishRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuntimeHelperServer).AppPublish(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.RuntimeHelper/AppPublish",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuntimeHelperServer).AppPublish(ctx, req.(*AppPublishRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RuntimeHelper_ServiceDesc is the grpc.ServiceDesc for RuntimeHelper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -688,6 +720,10 @@ var RuntimeHelper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AppRequest",
 			Handler:    _RuntimeHelper_AppRequest_Handler,
+		},
+		{
+			MethodName: "AppPublish",
+			Handler:    _RuntimeHelper_AppPublish_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

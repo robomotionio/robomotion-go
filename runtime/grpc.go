@@ -317,6 +317,20 @@ func (m *GRPCRuntimeHelperClient) AppRequest(request []byte, timeout int32) ([]b
 	return resp.Response, nil
 }
 
+func (m *GRPCRuntimeHelperClient) AppPublish(request []byte) error {
+
+	_, err := m.client.AppPublish(context.Background(), &proto.AppPublishRequest{
+		Request: request,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.apppublish", "err", err)
+		return err
+	}
+
+	return nil
+}
+
 func checkConnState() {
 
 	for {

@@ -44,3 +44,10 @@ func AppRequest(request []byte, timeout int32) ([]byte, error) {
 
 	return client.AppRequest(request, timeout)
 }
+func AppPublish(request []byte) error {
+	if client == nil {
+		return fmt.Errorf("Runtime was not initialized")
+	}
+
+	return client.AppPublish(request)
+}
