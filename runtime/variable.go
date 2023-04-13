@@ -44,6 +44,15 @@ func (v *InVariable[T]) getInt(val interface{}) (t T, err error) {
 		if err == nil {
 			reflect.ValueOf(&t).Elem().SetInt(d)
 		}
+	case map[string]interface{}:
+		for _, val := range v {
+			dval, ok := val.(int64)
+			if !ok {
+				continue
+			}
+
+			reflect.ValueOf(&t).Elem().SetInt(dval)
+		}
 	}
 
 	return t, err
@@ -60,6 +69,15 @@ func (v *InVariable[T]) getFloat(val interface{}) (t T, err error) {
 		d, err = strconv.ParseFloat(v, 64)
 		if err == nil {
 			reflect.ValueOf(&t).Elem().SetFloat(d)
+		}
+	case map[string]interface{}:
+		for _, val := range v {
+			fval, ok := val.(float64)
+			if !ok {
+				continue
+			}
+
+			reflect.ValueOf(&t).Elem().SetFloat(fval)
 		}
 	}
 
@@ -78,6 +96,15 @@ func (v *InVariable[T]) getBool(val interface{}) (t T, err error) {
 		if err == nil {
 			reflect.ValueOf(&t).Elem().SetBool(d)
 		}
+	case map[string]interface{}:
+		for _, val := range v {
+			bval, ok := val.(bool)
+			if !ok {
+				continue
+			}
+
+			reflect.ValueOf(&t).Elem().SetBool(bval)
+		}
 	}
 
 	return t, err
@@ -87,6 +114,15 @@ func (v *InVariable[T]) getString(val interface{}) (t T, err error) {
 	switch v := val.(type) {
 	case string:
 		reflect.ValueOf(&t).Elem().SetString(v)
+	case map[string]interface{}:
+		for _, val := range v {
+			sval, ok := val.(string)
+			if !ok {
+				continue
+			}
+
+			reflect.ValueOf(&t).Elem().SetString(sval)
+		}
 	}
 
 	return t, err
