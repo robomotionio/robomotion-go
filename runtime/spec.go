@@ -244,8 +244,8 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": format}
 				} else if isArray {
-					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "array"}
-					optProperty.FormData[lowerFieldName] = []interface{}{}
+					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "array"}
+					inProperty.FormData[lowerFieldName] = []interface{}{}
 				} else if isVar {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
