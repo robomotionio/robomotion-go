@@ -90,6 +90,8 @@ func (v *InVariable[T]) getBool(val interface{}) (t T, err error) {
 		reflect.ValueOf(&t).Elem().SetBool(v > 0)
 	case float64:
 		reflect.ValueOf(&t).Elem().SetBool(v > 0)
+	case bool:
+		reflect.ValueOf(&t).Elem().SetBool(v)
 	case string:
 		var d bool
 		d, err = strconv.ParseBool(v)
