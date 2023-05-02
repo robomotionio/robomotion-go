@@ -140,6 +140,7 @@ func generateSpecFile(pluginName, version string) {
 
 			if isArray {
 				sProp.Type = "array"
+				sProp.VariableType = getVariableType(field, fsMap)
 
 				arrProps := map[string]interface{}{}
 				arrFields := strings.Split(arrayFields, "|")
