@@ -262,8 +262,9 @@ func (m *GRPCRuntimeHelperClient) SetVaultItem(vaultID, itemID string, data []by
 func (m *GRPCRuntimeHelperClient) GetVariable(variable *variable) (interface{}, error) {
 
 	v := &proto.Variable{
-		Name:  variable.Name,
-		Scope: variable.Scope,
+		Name:    variable.Name,
+		Scope:   variable.Scope,
+		Payload: variable.Payload,
 	}
 
 	resp, err := m.client.GetVariable(context.Background(), &proto.GetVariableRequest{
