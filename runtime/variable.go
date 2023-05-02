@@ -10,8 +10,9 @@ import (
 )
 
 type variable struct {
-	Scope string `json:"scope"`
-	Name  string `json:"name"`
+	Scope   string `json:"scope"`
+	Name    string `json:"name"`
+	Payload []byte `json:"payload,omitempty"`
 }
 
 type Variable[T any] struct {
@@ -187,7 +188,7 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		return t, fmt.Errorf("Runtime was not initialized")
 	}
 
-	val, err := client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)})
+	val, err := client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string), Payload: ctx.GetRaw()})
 	if err != nil {
 		return t, err
 	}
