@@ -24,3 +24,17 @@ func GetRobotInfo() (map[string]interface{}, error) {
 
 	return client.GetRobotInfo()
 }
+
+func GetRobotVersion() (string, error) {
+	info, err := GetRobotInfo()
+	if err != nil {
+		return "", nil
+	}
+
+	v, ok := info["version"].(string)
+	if !ok {
+		return "", fmt.Errorf("robot version not found")
+	}
+
+	return v, nil
+}
