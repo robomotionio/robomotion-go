@@ -13,6 +13,7 @@ import (
 
 func getRPCAddr() string {
 	tabs := GetNetStatPorts(SS_LISTENING, "robomotion-runner")
+	tabs = filterTabs(tabs)
 
 	switch len(tabs) {
 	case 0:
@@ -24,14 +25,32 @@ func getRPCAddr() string {
 	}
 }
 
+func filterTabs(tabs []*SockTabEntry) []*SockTabEntry {
+	var (
+		err      error
+		filtered = []*SockTabEntry{}
+	)
+
+	for _, tab := range tabs {
+		addr := tab.LocalAddress
+		tab.RobotName, err = getRobotName(addr)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		filtered = append(filtered, tab)
+	}
+
+	return filtered
+}
+
 func selectTab(tabs []*SockTabEntry) string {
 	count := len(tabs)
 
 	robots := ""
 	for i, tab := range tabs {
-		addr := tab.LocalAddress
-		name := getRobotName(addr)
-		robots += fmt.Sprintf("%d) %s\n", i+1, name)
+		robots += fmt.Sprintf("%d) %s\n", i+1, tab.RobotName)
 	}
 
 	flags := log.Flags()
@@ -51,21 +70,20 @@ func selectTab(tabs []*SockTabEntry) string {
 	}
 }
 
-func getRobotName(addr string) string {
+func getRobotName(addr string) (string, error) {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalln(err)
+		return "", err
 	}
 	defer conn.Close()
 
 	runnerCli := proto.NewRunnerClient(conn)
 	resp, err := runnerCli.RobotName(context.Background(), &proto.Null{})
 	if err != nil {
-		log.Println(err)
-		return ""
+		return "", err
 	}
 
-	return resp.RobotName
+	return resp.RobotName, nil
 }
 
 type SocketState string
@@ -76,6 +94,7 @@ type List struct {
 type SockTabEntry struct {
 	Process      gops.Process
 	LocalAddress string
+	RobotName    string
 }
 
 func NewList(d interface{}) *List {
