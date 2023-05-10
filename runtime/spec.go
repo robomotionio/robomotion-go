@@ -18,6 +18,7 @@ type NodeSpec struct {
 	Name       string     `json:"name"`
 	Color      string     `json:"color"`
 	Editor     *string    `json:"editor"`
+	Spec       *string    `json:"spec"`
 	Inputs     int        `json:"inputs"`
 	Outputs    int        `json:"outputs"`
 	Properties []Property `json:"properties"`
@@ -77,6 +78,7 @@ func generateSpecFile(pluginName, version string) {
 		editor := nsMap["editor"]
 		inputs, hasInputs := nsMap["inputs"]
 		outputs, hasOutputs := nsMap["outputs"]
+		docSpec, hasDocSpec := nsMap["spec"]
 
 		if !hasInputs {
 			inputs = "1"
@@ -90,6 +92,9 @@ func generateSpecFile(pluginName, version string) {
 		spec.Outputs, _ = strconv.Atoi(outputs)
 		if editor != "" {
 			spec.Editor = &editor
+		}
+		if hasDocSpec {
+			spec.Spec = &docSpec
 		}
 
 		inProperty := Property{FormData: make(map[string]interface{}), UISchema: make(map[string]interface{})}
