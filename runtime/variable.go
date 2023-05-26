@@ -59,6 +59,36 @@ func (v *InVariable[T]) getInt(val interface{}) (t T, err error) {
 	return t, err
 }
 
+func (v *InVariable[T]) getIntPtr(val interface{}) (t T, err error) {
+	switch v := val.(type) {
+	case int64:
+		reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&v))
+	case float64:
+		var d int64
+		d = int64(v)
+		reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&d))
+	case string:
+		if v == "" {
+			return
+		}
+		var d int64
+		d, err = strconv.ParseInt(v, 10, 64)
+		if err == nil {
+			reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&d))
+		}
+	case map[string]interface{}:
+		for _, val := range v {
+			dval, ok := val.(int64)
+			if !ok {
+				continue
+			}
+
+			reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&dval))
+		}
+	}
+	return t, err
+}
+
 func (v *InVariable[T]) getFloat(val interface{}) (t T, err error) {
 	switch v := val.(type) {
 	case int64:
@@ -113,6 +143,36 @@ func (v *InVariable[T]) getBool(val interface{}) (t T, err error) {
 	return t, err
 }
 
+func (v *InVariable[T]) getBoolPtr(val interface{}) (t T, err error) {
+	switch v := val.(type) {
+	case int64:
+		reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(v > 0))
+	case float64:
+		reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(v > 0))
+	case bool:
+		reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&v))
+	case string:
+		if v == "" {
+			return
+		}
+		var d bool
+		d, err = strconv.ParseBool(v)
+		if err == nil {
+			reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&d))
+		}
+	case map[string]interface{}:
+		for _, val := range v {
+			bval, ok := val.(bool)
+			if !ok {
+				continue
+			}
+
+			reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&bval))
+		}
+	}
+	return t, err
+}
+
 func (v *InVariable[T]) getString(val interface{}) (t T, err error) {
 	switch v := val.(type) {
 	case string:
@@ -156,6 +216,14 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 
 	if val != nil {
 		switch kind {
+		case reflect.Ptr:
+			switch typ.Elem().Kind() {
+			case reflect.Bool:
+				return v.getBoolPtr(val)
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				return v.getIntPtr(val)
+			}
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			return v.getInt(val)
