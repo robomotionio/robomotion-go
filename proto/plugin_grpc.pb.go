@@ -228,6 +228,9 @@ type RuntimeHelperClient interface {
 	SetVariable(ctx context.Context, in *SetVariableRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetRobotInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRobotInfoResponse, error)
 	AppRequest(ctx context.Context, in *AppRequestRequest, opts ...grpc.CallOption) (*AppRequestResponse, error)
+	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*Empty, error)
+	AppDownload(ctx context.Context, in *AppDownloadRequest, opts ...grpc.CallOption) (*AppDownloadResponse, error)
+	AppUpload(ctx context.Context, in *AppUploadRequest, opts ...grpc.CallOption) (*AppUploadResponse, error)
 }
 
 type runtimeHelperClient struct {
@@ -346,6 +349,33 @@ func (c *runtimeHelperClient) AppRequest(ctx context.Context, in *AppRequestRequ
 	return out, nil
 }
 
+func (c *runtimeHelperClient) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/proto.RuntimeHelper/DownloadFile", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *runtimeHelperClient) AppDownload(ctx context.Context, in *AppDownloadRequest, opts ...grpc.CallOption) (*AppDownloadResponse, error) {
+	out := new(AppDownloadResponse)
+	err := c.cc.Invoke(ctx, "/proto.RuntimeHelper/AppDownload", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *runtimeHelperClient) AppUpload(ctx context.Context, in *AppUploadRequest, opts ...grpc.CallOption) (*AppUploadResponse, error) {
+	out := new(AppUploadResponse)
+	err := c.cc.Invoke(ctx, "/proto.RuntimeHelper/AppUpload", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RuntimeHelperServer is the server API for RuntimeHelper service.
 // All implementations must embed UnimplementedRuntimeHelperServer
 // for forward compatibility
@@ -362,6 +392,9 @@ type RuntimeHelperServer interface {
 	SetVariable(context.Context, *SetVariableRequest) (*Empty, error)
 	GetRobotInfo(context.Context, *Empty) (*GetRobotInfoResponse, error)
 	AppRequest(context.Context, *AppRequestRequest) (*AppRequestResponse, error)
+	DownloadFile(context.Context, *DownloadFileRequest) (*Empty, error)
+	AppDownload(context.Context, *AppDownloadRequest) (*AppDownloadResponse, error)
+	AppUpload(context.Context, *AppUploadRequest) (*AppUploadResponse, error)
 	mustEmbedUnimplementedRuntimeHelperServer()
 }
 
@@ -404,6 +437,15 @@ func (UnimplementedRuntimeHelperServer) GetRobotInfo(context.Context, *Empty) (*
 }
 func (UnimplementedRuntimeHelperServer) AppRequest(context.Context, *AppRequestRequest) (*AppRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AppRequest not implemented")
+}
+func (UnimplementedRuntimeHelperServer) DownloadFile(context.Context, *DownloadFileRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
+}
+func (UnimplementedRuntimeHelperServer) AppDownload(context.Context, *AppDownloadRequest) (*AppDownloadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AppDownload not implemented")
+}
+func (UnimplementedRuntimeHelperServer) AppUpload(context.Context, *AppUploadRequest) (*AppUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AppUpload not implemented")
 }
 func (UnimplementedRuntimeHelperServer) mustEmbedUnimplementedRuntimeHelperServer() {}
 
@@ -634,6 +676,60 @@ func _RuntimeHelper_AppRequest_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RuntimeHelper_DownloadFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuntimeHelperServer).DownloadFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.RuntimeHelper/DownloadFile",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuntimeHelperServer).DownloadFile(ctx, req.(*DownloadFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuntimeHelper_AppDownload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AppDownloadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuntimeHelperServer).AppDownload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.RuntimeHelper/AppDownload",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuntimeHelperServer).AppDownload(ctx, req.(*AppDownloadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuntimeHelper_AppUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AppUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuntimeHelperServer).AppUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.RuntimeHelper/AppUpload",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuntimeHelperServer).AppUpload(ctx, req.(*AppUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RuntimeHelper_ServiceDesc is the grpc.ServiceDesc for RuntimeHelper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -688,6 +784,18 @@ var RuntimeHelper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AppRequest",
 			Handler:    _RuntimeHelper_AppRequest_Handler,
+		},
+		{
+			MethodName: "DownloadFile",
+			Handler:    _RuntimeHelper_DownloadFile_Handler,
+		},
+		{
+			MethodName: "AppDownload",
+			Handler:    _RuntimeHelper_AppDownload_Handler,
+		},
+		{
+			MethodName: "AppUpload",
+			Handler:    _RuntimeHelper_AppUpload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
