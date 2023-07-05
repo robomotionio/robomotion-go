@@ -318,6 +318,37 @@ func (m *GRPCRuntimeHelperClient) AppRequest(request []byte, timeout int32) ([]b
 	return resp.Response, nil
 }
 
+func (m *GRPCRuntimeHelperClient) AppDownload(id, dir, file string) (string, error) {
+
+	resp, err := m.client.AppDownload(context.Background(), &proto.AppDownloadRequest{
+		Directory: dir,
+		File:      file,
+		Id:        id,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.appdownload", "err", err)
+		return "", err
+	}
+
+	return resp.Path, nil
+}
+
+func (m *GRPCRuntimeHelperClient) AppUpload(id, path string) (string, error) {
+
+	resp, err := m.client.AppUpload(context.Background(), &proto.AppUploadRequest{
+		Id:   id,
+		Path: path,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.appupload", "err", err)
+		return "", err
+	}
+
+	return resp.Url, nil
+}
+
 func checkConnState() {
 
 	for {

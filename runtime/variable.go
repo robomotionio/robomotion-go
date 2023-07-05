@@ -32,6 +32,10 @@ type OptVariable[T any] struct {
 	InVariable[T]
 }
 
+func (v *Variable[T]) IsNil() bool {
+	return v.Name == nil
+}
+
 func (v *InVariable[T]) getInt(val interface{}) (t T, err error) {
 
 	switch v := val.(type) {
@@ -191,6 +195,24 @@ func (v *InVariable[T]) getString(val interface{}) (t T, err error) {
 	return t, err
 }
 
+func (v *InVariable[T]) getStringPtr(val interface{}) (t T, err error) {
+	switch v := val.(type) {
+	case string:
+		reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&v))
+	case map[string]interface{}:
+		for _, val := range v {
+			sval, ok := val.(string)
+			if !ok {
+				continue
+			}
+
+			reflect.ValueOf(&t).Elem().Set(reflect.ValueOf(&sval))
+		}
+	}
+
+	return t, err
+}
+
 func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 	var (
 		t   T
@@ -223,6 +245,8 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 				return v.getIntPtr(val)
+			case reflect.String:
+				return v.getStringPtr(val)
 			}
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
