@@ -231,6 +231,7 @@ type RuntimeHelperClient interface {
 	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*Empty, error)
 	AppDownload(ctx context.Context, in *AppDownloadRequest, opts ...grpc.CallOption) (*AppDownloadResponse, error)
 	AppUpload(ctx context.Context, in *AppUploadRequest, opts ...grpc.CallOption) (*AppUploadResponse, error)
+	GatewayRequest(ctx context.Context, in *GatewayRequestRequest, opts ...grpc.CallOption) (*GatewayRequestResponse, error)
 }
 
 type runtimeHelperClient struct {
@@ -376,6 +377,15 @@ func (c *runtimeHelperClient) AppUpload(ctx context.Context, in *AppUploadReques
 	return out, nil
 }
 
+func (c *runtimeHelperClient) GatewayRequest(ctx context.Context, in *GatewayRequestRequest, opts ...grpc.CallOption) (*GatewayRequestResponse, error) {
+	out := new(GatewayRequestResponse)
+	err := c.cc.Invoke(ctx, "/proto.RuntimeHelper/GatewayRequest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RuntimeHelperServer is the server API for RuntimeHelper service.
 // All implementations must embed UnimplementedRuntimeHelperServer
 // for forward compatibility
@@ -395,6 +405,7 @@ type RuntimeHelperServer interface {
 	DownloadFile(context.Context, *DownloadFileRequest) (*Empty, error)
 	AppDownload(context.Context, *AppDownloadRequest) (*AppDownloadResponse, error)
 	AppUpload(context.Context, *AppUploadRequest) (*AppUploadResponse, error)
+	GatewayRequest(context.Context, *GatewayRequestRequest) (*GatewayRequestResponse, error)
 	mustEmbedUnimplementedRuntimeHelperServer()
 }
 
@@ -446,6 +457,9 @@ func (UnimplementedRuntimeHelperServer) AppDownload(context.Context, *AppDownloa
 }
 func (UnimplementedRuntimeHelperServer) AppUpload(context.Context, *AppUploadRequest) (*AppUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AppUpload not implemented")
+}
+func (UnimplementedRuntimeHelperServer) GatewayRequest(context.Context, *GatewayRequestRequest) (*GatewayRequestResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GatewayRequest not implemented")
 }
 func (UnimplementedRuntimeHelperServer) mustEmbedUnimplementedRuntimeHelperServer() {}
 
@@ -730,6 +744,24 @@ func _RuntimeHelper_AppUpload_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RuntimeHelper_GatewayRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GatewayRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuntimeHelperServer).GatewayRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.RuntimeHelper/GatewayRequest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuntimeHelperServer).GatewayRequest(ctx, req.(*GatewayRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RuntimeHelper_ServiceDesc is the grpc.ServiceDesc for RuntimeHelper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -796,6 +828,10 @@ var RuntimeHelper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AppUpload",
 			Handler:    _RuntimeHelper_AppUpload_Handler,
+		},
+		{
+			MethodName: "GatewayRequest",
+			Handler:    _RuntimeHelper_GatewayRequest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
