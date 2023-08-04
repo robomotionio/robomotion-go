@@ -1,6 +1,10 @@
 package runtime
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/robomotionio/robomotion-go/proto"
+)
 
 func EmitDebug(guid, name string, message interface{}) error {
 	if client == nil {
@@ -57,4 +61,11 @@ func AppUpload(id, path string) (string, error) {
 	}
 
 	return client.AppUpload(id, path)
+}
+func GatewayRequest(method, endpoint, body string, headers map[string]string) (*proto.GatewayRequestResponse, error) {
+	if client == nil {
+		return nil, fmt.Errorf("Runtime was not initialized")
+	}
+
+	return client.GatewayRequest(method, endpoint, body, headers)
 }
