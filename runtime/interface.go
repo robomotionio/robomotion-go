@@ -31,6 +31,7 @@ type RuntimeHelper interface {
 	AppRequest([]byte, int32) ([]byte, error)
 	AppDownload(string, string, string) (string, error)
 	AppUpload(string, string) (string, error)
+	GatewayRequest(string, string, string, map[string]string) (*proto.GatewayRequestResponse, error)
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.

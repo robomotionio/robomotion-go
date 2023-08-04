@@ -349,6 +349,23 @@ func (m *GRPCRuntimeHelperClient) AppUpload(id, path string) (string, error) {
 	return resp.Url, nil
 }
 
+func (m *GRPCRuntimeHelperClient) GatewayRequest(method, endpoint, body string, headers map[string]string) (*proto.GatewayRequestResponse, error) {
+
+	resp, err := m.client.GatewayRequest(context.Background(), &proto.GatewayRequestRequest{
+		Method:   method,
+		Endpoint: endpoint,
+		Body:     body,
+		Headers:  headers,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.appupload", "err", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func checkConnState() {
 
 	for {
