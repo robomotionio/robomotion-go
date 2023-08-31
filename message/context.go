@@ -2,6 +2,7 @@ package message
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -33,6 +34,8 @@ func NewContext(data []byte) Context {
 }
 
 func (msg *message) Set(path string, value interface{}) (err error) {
+	path = strings.ReplaceAll(path, "[", ".")
+	path = strings.ReplaceAll(path, "]", "")
 	msg.data, err = sjson.SetBytes(msg.data, path, value)
 	return
 }
