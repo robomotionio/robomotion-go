@@ -45,22 +45,32 @@ func (msg *message) GetID() string {
 }
 
 func (msg *message) Get(path string) interface{} {
+	path = strings.ReplaceAll(path, "[", ".")
+	path = strings.ReplaceAll(path, "]", "")
 	return gjson.GetBytes(msg.data, path).Value()
 }
 
 func (msg *message) GetString(path string) string {
+	path = strings.ReplaceAll(path, "[", ".")
+	path = strings.ReplaceAll(path, "]", "")
 	return gjson.GetBytes(msg.data, path).String()
 }
 
 func (msg *message) GetBool(path string) bool {
+	path = strings.ReplaceAll(path, "[", ".")
+	path = strings.ReplaceAll(path, "]", "")
 	return gjson.GetBytes(msg.data, path).Bool()
 }
 
 func (msg *message) GetInt(path string) int64 {
+	path = strings.ReplaceAll(path, "[", ".")
+	path = strings.ReplaceAll(path, "]", "")
 	return gjson.GetBytes(msg.data, path).Int()
 }
 
 func (msg *message) GetFloat(path string) float64 {
+	path = strings.ReplaceAll(path, "[", ".")
+	path = strings.ReplaceAll(path, "]", "")
 	return gjson.GetBytes(msg.data, path).Float()
 }
 
