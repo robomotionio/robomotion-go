@@ -49,29 +49,29 @@ func (msg *message) GetID() string {
 	return msg.ID
 }
 
-func (msg *message) Get(path string) interface{} {
+func (msg *message) get(path string) gjson.Result {
 	path = convertPath(path)
-	return gjson.GetBytes(msg.data, path).Value()
+	return gjson.GetBytes(msg.data, path)
+}
+
+func (msg *message) Get(path string) interface{} {
+	return msg.get(path).Value()
 }
 
 func (msg *message) GetString(path string) string {
-	path = convertPath(path)
-	return gjson.GetBytes(msg.data, path).String()
+	return msg.get(path).String()
 }
 
 func (msg *message) GetBool(path string) bool {
-	path = convertPath(path)
-	return gjson.GetBytes(msg.data, path).Bool()
+	return msg.get(path).Bool()
 }
 
 func (msg *message) GetInt(path string) int64 {
-	path = convertPath(path)
-	return gjson.GetBytes(msg.data, path).Int()
+	return msg.get(path).Int()
 }
 
 func (msg *message) GetFloat(path string) float64 {
-	path = convertPath(path)
-	return gjson.GetBytes(msg.data, path).Float()
+	return msg.get(path).Float()
 }
 
 func (msg *message) GetRaw() json.RawMessage {
