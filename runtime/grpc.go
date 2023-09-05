@@ -372,10 +372,10 @@ func checkConnState() {
 		state := conn.GetState()
 
 		switch state {
-		case connectivity.Connecting, connectivity.Idle, connectivity.Ready:
-			break
+		case connectivity.Connecting, connectivity.Ready:
 		default:
 			done <- true
+			return
 		}
 
 		time.Sleep(1 * time.Second)
