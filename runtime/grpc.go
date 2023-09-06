@@ -369,10 +369,11 @@ func (m *GRPCRuntimeHelperClient) GatewayRequest(method, endpoint, body string, 
 func checkConnState() {
 
 	for {
+		conn.Connect()
 		state := conn.GetState()
 
 		switch state {
-		case connectivity.Connecting, connectivity.Ready:
+		case connectivity.Connecting, connectivity.Idle, connectivity.Ready:
 		default:
 			done <- true
 			return
