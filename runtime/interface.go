@@ -29,6 +29,8 @@ type RuntimeHelper interface {
 	SetVariable(*variable, interface{}) error
 	GetRobotInfo() (map[string]interface{}, error)
 	AppRequest([]byte, int32) ([]byte, error)
+	AppRequestV2([]byte) ([]byte, error)
+	AppPublish([]byte) error
 	AppDownload(string, string, string) (string, error)
 	AppUpload(string, string) (string, error)
 	GatewayRequest(string, string, string, map[string]string) (*proto.GatewayRequestResponse, error)

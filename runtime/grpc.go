@@ -318,6 +318,34 @@ func (m *GRPCRuntimeHelperClient) AppRequest(request []byte, timeout int32) ([]b
 	return resp.Response, nil
 }
 
+func (m *GRPCRuntimeHelperClient) AppRequestV2(request []byte) ([]byte, error) {
+
+	resp, err := m.client.AppRequestV2(context.Background(), &proto.AppRequestV2Request{
+		Request: request,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.apprequest", "err", err)
+		return nil, err
+	}
+
+	return resp.Response, nil
+}
+
+func (m *GRPCRuntimeHelperClient) AppPublish(request []byte) error {
+
+	_, err := m.client.AppPublish(context.Background(), &proto.AppPublishRequest{
+		Request: request,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.apppublish", "err", err)
+		return err
+	}
+
+	return nil
+}
+
 func (m *GRPCRuntimeHelperClient) AppDownload(id, dir, file string) (string, error) {
 
 	resp, err := m.client.AppDownload(context.Background(), &proto.AppDownloadRequest{

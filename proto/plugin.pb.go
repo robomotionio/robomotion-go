@@ -1308,6 +1308,53 @@ func (x *AppRequestRequest) GetTimeout() int32 {
 	return 0
 }
 
+type AppRequestV2Request struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Request []byte `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+}
+
+func (x *AppRequestV2Request) Reset() {
+	*x = AppRequestV2Request{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_plugin_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AppRequestV2Request) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppRequestV2Request) ProtoMessage() {}
+
+func (x *AppRequestV2Request) ProtoReflect() protoreflect.Message {
+	mi := &file_plugin_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppRequestV2Request.ProtoReflect.Descriptor instead.
+func (*AppRequestV2Request) Descriptor() ([]byte, []int) {
+	return file_plugin_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *AppRequestV2Request) GetRequest() []byte {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
 type AppRequestResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1319,7 +1366,7 @@ type AppRequestResponse struct {
 func (x *AppRequestResponse) Reset() {
 	*x = AppRequestResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[24]
+		mi := &file_plugin_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1332,7 +1379,7 @@ func (x *AppRequestResponse) String() string {
 func (*AppRequestResponse) ProtoMessage() {}
 
 func (x *AppRequestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[24]
+	mi := &file_plugin_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1345,12 +1392,59 @@ func (x *AppRequestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppRequestResponse.ProtoReflect.Descriptor instead.
 func (*AppRequestResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{24}
+	return file_plugin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *AppRequestResponse) GetResponse() []byte {
 	if x != nil {
 		return x.Response
+	}
+	return nil
+}
+
+type AppPublishRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Request []byte `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+}
+
+func (x *AppPublishRequest) Reset() {
+	*x = AppPublishRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_plugin_proto_msgTypes[26]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AppPublishRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppPublishRequest) ProtoMessage() {}
+
+func (x *AppPublishRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_plugin_proto_msgTypes[26]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppPublishRequest.ProtoReflect.Descriptor instead.
+func (*AppPublishRequest) Descriptor() ([]byte, []int) {
+	return file_plugin_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *AppPublishRequest) GetRequest() []byte {
+	if x != nil {
+		return x.Request
 	}
 	return nil
 }
@@ -1367,7 +1461,7 @@ type DownloadFileRequest struct {
 func (x *DownloadFileRequest) Reset() {
 	*x = DownloadFileRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[25]
+		mi := &file_plugin_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1380,7 +1474,7 @@ func (x *DownloadFileRequest) String() string {
 func (*DownloadFileRequest) ProtoMessage() {}
 
 func (x *DownloadFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[25]
+	mi := &file_plugin_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1393,7 +1487,7 @@ func (x *DownloadFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadFileRequest.ProtoReflect.Descriptor instead.
 func (*DownloadFileRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{25}
+	return file_plugin_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *DownloadFileRequest) GetUrl() string {
@@ -1423,7 +1517,7 @@ type AppDownloadRequest struct {
 func (x *AppDownloadRequest) Reset() {
 	*x = AppDownloadRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[26]
+		mi := &file_plugin_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1436,7 +1530,7 @@ func (x *AppDownloadRequest) String() string {
 func (*AppDownloadRequest) ProtoMessage() {}
 
 func (x *AppDownloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[26]
+	mi := &file_plugin_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1449,7 +1543,7 @@ func (x *AppDownloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppDownloadRequest.ProtoReflect.Descriptor instead.
 func (*AppDownloadRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{26}
+	return file_plugin_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *AppDownloadRequest) GetDirectory() string {
@@ -1484,7 +1578,7 @@ type AppDownloadResponse struct {
 func (x *AppDownloadResponse) Reset() {
 	*x = AppDownloadResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[27]
+		mi := &file_plugin_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1497,7 +1591,7 @@ func (x *AppDownloadResponse) String() string {
 func (*AppDownloadResponse) ProtoMessage() {}
 
 func (x *AppDownloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[27]
+	mi := &file_plugin_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1510,7 +1604,7 @@ func (x *AppDownloadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppDownloadResponse.ProtoReflect.Descriptor instead.
 func (*AppDownloadResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{27}
+	return file_plugin_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *AppDownloadResponse) GetPath() string {
@@ -1532,7 +1626,7 @@ type AppUploadRequest struct {
 func (x *AppUploadRequest) Reset() {
 	*x = AppUploadRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[28]
+		mi := &file_plugin_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1545,7 +1639,7 @@ func (x *AppUploadRequest) String() string {
 func (*AppUploadRequest) ProtoMessage() {}
 
 func (x *AppUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[28]
+	mi := &file_plugin_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1558,7 +1652,7 @@ func (x *AppUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppUploadRequest.ProtoReflect.Descriptor instead.
 func (*AppUploadRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{28}
+	return file_plugin_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *AppUploadRequest) GetId() string {
@@ -1586,7 +1680,7 @@ type AppUploadResponse struct {
 func (x *AppUploadResponse) Reset() {
 	*x = AppUploadResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[29]
+		mi := &file_plugin_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1599,7 +1693,7 @@ func (x *AppUploadResponse) String() string {
 func (*AppUploadResponse) ProtoMessage() {}
 
 func (x *AppUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[29]
+	mi := &file_plugin_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1612,7 +1706,7 @@ func (x *AppUploadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppUploadResponse.ProtoReflect.Descriptor instead.
 func (*AppUploadResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{29}
+	return file_plugin_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *AppUploadResponse) GetUrl() string {
@@ -1636,7 +1730,7 @@ type GatewayRequestRequest struct {
 func (x *GatewayRequestRequest) Reset() {
 	*x = GatewayRequestRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[30]
+		mi := &file_plugin_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1649,7 +1743,7 @@ func (x *GatewayRequestRequest) String() string {
 func (*GatewayRequestRequest) ProtoMessage() {}
 
 func (x *GatewayRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[30]
+	mi := &file_plugin_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1662,7 +1756,7 @@ func (x *GatewayRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GatewayRequestRequest.ProtoReflect.Descriptor instead.
 func (*GatewayRequestRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{30}
+	return file_plugin_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GatewayRequestRequest) GetMethod() string {
@@ -1706,7 +1800,7 @@ type GatewayRequestResponse struct {
 func (x *GatewayRequestResponse) Reset() {
 	*x = GatewayRequestResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[31]
+		mi := &file_plugin_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1719,7 +1813,7 @@ func (x *GatewayRequestResponse) String() string {
 func (*GatewayRequestResponse) ProtoMessage() {}
 
 func (x *GatewayRequestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[31]
+	mi := &file_plugin_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1732,7 +1826,7 @@ func (x *GatewayRequestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GatewayRequestResponse.ProtoReflect.Descriptor instead.
 func (*GatewayRequestResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{31}
+	return file_plugin_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GatewayRequestResponse) GetStatusCode() int32 {
@@ -1866,10 +1960,16 @@ var file_plugin_proto_rawDesc = []byte{
 	0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,
 	0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x74, 0x69, 0x6d, 0x65,
 	0x6f, 0x75, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x74, 0x69, 0x6d, 0x65, 0x6f,
-	0x75, 0x74, 0x22, 0x30, 0x0a, 0x12, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x72, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x3b, 0x0a, 0x13, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64,
+	0x75, 0x74, 0x22, 0x2f, 0x0a, 0x13, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x56, 0x32, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x72, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x22, 0x30, 0x0a, 0x12, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x72, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x0a, 0x11, 0x41, 0x70, 0x70, 0x50, 0x75, 0x62, 0x6c,
+	0x69, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x72, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x72, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x22, 0x3b, 0x0a, 0x13, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64,
 	0x46, 0x69, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x75,
 	0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x12, 0x0a,
 	0x04, 0x70, 0x61, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74,
@@ -1929,7 +2029,7 @@ var file_plugin_proto_rawDesc = []byte{
 	0x73, 0x65, 0x12, 0x15, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x4f, 0x6e, 0x43, 0x6c, 0x6f,
 	0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2e, 0x4f, 0x6e, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x32, 0xd7, 0x07, 0x0a, 0x0d, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x48, 0x65, 0x6c,
+	0x65, 0x32, 0xd4, 0x08, 0x0a, 0x0d, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x48, 0x65, 0x6c,
 	0x70, 0x65, 0x72, 0x12, 0x23, 0x0a, 0x05, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x12, 0x0c, 0x2e, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x2a, 0x0a, 0x05, 0x44, 0x65, 0x62, 0x75,
@@ -1973,27 +2073,35 @@ var file_plugin_proto_rawDesc = []byte{
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e,
 	0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
 	0x74, 0x1a, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x38, 0x0a, 0x0c,
-	0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x1a, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c,
-	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x44, 0x0a, 0x0b, 0x41, 0x70, 0x70, 0x44, 0x6f, 0x77,
-	0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70,
-	0x70, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x44, 0x6f, 0x77, 0x6e,
-	0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x09,
-	0x41, 0x70, 0x70, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2e, 0x41, 0x70, 0x70, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x55, 0x70,
-	0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d, 0x0a, 0x0e,
-	0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x24, 0x5a, 0x22, 0x72,
-	0x6f, 0x62, 0x6f, 0x6d, 0x6f, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x72, 0x6f, 0x62, 0x6f, 0x6d, 0x6f,
-	0x74, 0x69, 0x6f, 0x6e, 0x2d, 0x72, 0x75, 0x6e, 0x6e, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x45, 0x0a, 0x0c,
+	0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x56, 0x32, 0x12, 0x1a, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x56,
+	0x32, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x0a, 0x41, 0x70, 0x70, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73,
+	0x68, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x50, 0x75, 0x62,
+	0x6c, 0x69, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x38, 0x0a, 0x0c, 0x44, 0x6f, 0x77,
+	0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d,
+	0x70, 0x74, 0x79, 0x12, 0x44, 0x0a, 0x0b, 0x41, 0x70, 0x70, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f,
+	0x61, 0x64, 0x12, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x44, 0x6f,
+	0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61,
+	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x09, 0x41, 0x70, 0x70,
+	0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41,
+	0x70, 0x70, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x55, 0x70, 0x6c, 0x6f, 0x61,
+	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d, 0x0a, 0x0e, 0x47, 0x61, 0x74,
+	0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x24, 0x5a, 0x22, 0x72, 0x6f, 0x62, 0x6f,
+	0x6d, 0x6f, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x72, 0x6f, 0x62, 0x6f, 0x6d, 0x6f, 0x74, 0x69, 0x6f,
+	0x6e, 0x2d, 0x72, 0x75, 0x6e, 0x6e, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2008,7 +2116,7 @@ func file_plugin_proto_rawDescGZIP() []byte {
 	return file_plugin_proto_rawDescData
 }
 
-var file_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_plugin_proto_goTypes = []interface{}{
 	(*Error)(nil),                  // 0: proto.Error
 	(*InitRequest)(nil),            // 1: proto.InitRequest
@@ -2034,31 +2142,33 @@ var file_plugin_proto_goTypes = []interface{}{
 	(*SetVariableRequest)(nil),     // 21: proto.SetVariableRequest
 	(*GetRobotInfoResponse)(nil),   // 22: proto.GetRobotInfoResponse
 	(*AppRequestRequest)(nil),      // 23: proto.AppRequestRequest
-	(*AppRequestResponse)(nil),     // 24: proto.AppRequestResponse
-	(*DownloadFileRequest)(nil),    // 25: proto.DownloadFileRequest
-	(*AppDownloadRequest)(nil),     // 26: proto.AppDownloadRequest
-	(*AppDownloadResponse)(nil),    // 27: proto.AppDownloadResponse
-	(*AppUploadRequest)(nil),       // 28: proto.AppUploadRequest
-	(*AppUploadResponse)(nil),      // 29: proto.AppUploadResponse
-	(*GatewayRequestRequest)(nil),  // 30: proto.GatewayRequestRequest
-	(*GatewayRequestResponse)(nil), // 31: proto.GatewayRequestResponse
-	nil,                            // 32: proto.GatewayRequestRequest.HeadersEntry
-	nil,                            // 33: proto.GatewayRequestResponse.HeadersEntry
-	(*_struct.Struct)(nil),         // 34: google.protobuf.Struct
+	(*AppRequestV2Request)(nil),    // 24: proto.AppRequestV2Request
+	(*AppRequestResponse)(nil),     // 25: proto.AppRequestResponse
+	(*AppPublishRequest)(nil),      // 26: proto.AppPublishRequest
+	(*DownloadFileRequest)(nil),    // 27: proto.DownloadFileRequest
+	(*AppDownloadRequest)(nil),     // 28: proto.AppDownloadRequest
+	(*AppDownloadResponse)(nil),    // 29: proto.AppDownloadResponse
+	(*AppUploadRequest)(nil),       // 30: proto.AppUploadRequest
+	(*AppUploadResponse)(nil),      // 31: proto.AppUploadResponse
+	(*GatewayRequestRequest)(nil),  // 32: proto.GatewayRequestRequest
+	(*GatewayRequestResponse)(nil), // 33: proto.GatewayRequestResponse
+	nil,                            // 34: proto.GatewayRequestRequest.HeadersEntry
+	nil,                            // 35: proto.GatewayRequestResponse.HeadersEntry
+	(*_struct.Struct)(nil),         // 36: google.protobuf.Struct
 }
 var file_plugin_proto_depIdxs = []int32{
 	0,  // 0: proto.OnCreateResponse.error:type_name -> proto.Error
 	0,  // 1: proto.OnMessageResponse.error:type_name -> proto.Error
 	0,  // 2: proto.OnCloseResponse.error:type_name -> proto.Error
-	34, // 3: proto.GetVaultItemResponse.item:type_name -> google.protobuf.Struct
-	34, // 4: proto.SetVaultItemResponse.item:type_name -> google.protobuf.Struct
+	36, // 3: proto.GetVaultItemResponse.item:type_name -> google.protobuf.Struct
+	36, // 4: proto.SetVaultItemResponse.item:type_name -> google.protobuf.Struct
 	18, // 5: proto.GetVariableRequest.variable:type_name -> proto.Variable
-	34, // 6: proto.GetVariableResponse.value:type_name -> google.protobuf.Struct
+	36, // 6: proto.GetVariableResponse.value:type_name -> google.protobuf.Struct
 	18, // 7: proto.SetVariableRequest.variable:type_name -> proto.Variable
-	34, // 8: proto.SetVariableRequest.value:type_name -> google.protobuf.Struct
-	34, // 9: proto.GetRobotInfoResponse.robot:type_name -> google.protobuf.Struct
-	32, // 10: proto.GatewayRequestRequest.headers:type_name -> proto.GatewayRequestRequest.HeadersEntry
-	33, // 11: proto.GatewayRequestResponse.headers:type_name -> proto.GatewayRequestResponse.HeadersEntry
+	36, // 8: proto.SetVariableRequest.value:type_name -> google.protobuf.Struct
+	36, // 9: proto.GetRobotInfoResponse.robot:type_name -> google.protobuf.Struct
+	34, // 10: proto.GatewayRequestRequest.headers:type_name -> proto.GatewayRequestRequest.HeadersEntry
+	35, // 11: proto.GatewayRequestResponse.headers:type_name -> proto.GatewayRequestResponse.HeadersEntry
 	1,  // 12: proto.Node.Init:input_type -> proto.InitRequest
 	2,  // 13: proto.Node.OnCreate:input_type -> proto.OnCreateRequest
 	4,  // 14: proto.Node.OnMessage:input_type -> proto.OnMessageRequest
@@ -2075,32 +2185,36 @@ var file_plugin_proto_depIdxs = []int32{
 	21, // 25: proto.RuntimeHelper.SetVariable:input_type -> proto.SetVariableRequest
 	8,  // 26: proto.RuntimeHelper.GetRobotInfo:input_type -> proto.Empty
 	23, // 27: proto.RuntimeHelper.AppRequest:input_type -> proto.AppRequestRequest
-	25, // 28: proto.RuntimeHelper.DownloadFile:input_type -> proto.DownloadFileRequest
-	26, // 29: proto.RuntimeHelper.AppDownload:input_type -> proto.AppDownloadRequest
-	28, // 30: proto.RuntimeHelper.AppUpload:input_type -> proto.AppUploadRequest
-	30, // 31: proto.RuntimeHelper.GatewayRequest:input_type -> proto.GatewayRequestRequest
-	8,  // 32: proto.Node.Init:output_type -> proto.Empty
-	3,  // 33: proto.Node.OnCreate:output_type -> proto.OnCreateResponse
-	5,  // 34: proto.Node.OnMessage:output_type -> proto.OnMessageResponse
-	7,  // 35: proto.Node.OnClose:output_type -> proto.OnCloseResponse
-	8,  // 36: proto.RuntimeHelper.Close:output_type -> proto.Empty
-	8,  // 37: proto.RuntimeHelper.Debug:output_type -> proto.Empty
-	8,  // 38: proto.RuntimeHelper.EmitFlowEvent:output_type -> proto.Empty
-	8,  // 39: proto.RuntimeHelper.EmitInput:output_type -> proto.Empty
-	8,  // 40: proto.RuntimeHelper.EmitOutput:output_type -> proto.Empty
-	8,  // 41: proto.RuntimeHelper.EmitError:output_type -> proto.Empty
-	15, // 42: proto.RuntimeHelper.GetVaultItem:output_type -> proto.GetVaultItemResponse
-	17, // 43: proto.RuntimeHelper.SetVaultItem:output_type -> proto.SetVaultItemResponse
-	20, // 44: proto.RuntimeHelper.GetVariable:output_type -> proto.GetVariableResponse
-	8,  // 45: proto.RuntimeHelper.SetVariable:output_type -> proto.Empty
-	22, // 46: proto.RuntimeHelper.GetRobotInfo:output_type -> proto.GetRobotInfoResponse
-	24, // 47: proto.RuntimeHelper.AppRequest:output_type -> proto.AppRequestResponse
-	8,  // 48: proto.RuntimeHelper.DownloadFile:output_type -> proto.Empty
-	27, // 49: proto.RuntimeHelper.AppDownload:output_type -> proto.AppDownloadResponse
-	29, // 50: proto.RuntimeHelper.AppUpload:output_type -> proto.AppUploadResponse
-	31, // 51: proto.RuntimeHelper.GatewayRequest:output_type -> proto.GatewayRequestResponse
-	32, // [32:52] is the sub-list for method output_type
-	12, // [12:32] is the sub-list for method input_type
+	24, // 28: proto.RuntimeHelper.AppRequestV2:input_type -> proto.AppRequestV2Request
+	26, // 29: proto.RuntimeHelper.AppPublish:input_type -> proto.AppPublishRequest
+	27, // 30: proto.RuntimeHelper.DownloadFile:input_type -> proto.DownloadFileRequest
+	28, // 31: proto.RuntimeHelper.AppDownload:input_type -> proto.AppDownloadRequest
+	30, // 32: proto.RuntimeHelper.AppUpload:input_type -> proto.AppUploadRequest
+	32, // 33: proto.RuntimeHelper.GatewayRequest:input_type -> proto.GatewayRequestRequest
+	8,  // 34: proto.Node.Init:output_type -> proto.Empty
+	3,  // 35: proto.Node.OnCreate:output_type -> proto.OnCreateResponse
+	5,  // 36: proto.Node.OnMessage:output_type -> proto.OnMessageResponse
+	7,  // 37: proto.Node.OnClose:output_type -> proto.OnCloseResponse
+	8,  // 38: proto.RuntimeHelper.Close:output_type -> proto.Empty
+	8,  // 39: proto.RuntimeHelper.Debug:output_type -> proto.Empty
+	8,  // 40: proto.RuntimeHelper.EmitFlowEvent:output_type -> proto.Empty
+	8,  // 41: proto.RuntimeHelper.EmitInput:output_type -> proto.Empty
+	8,  // 42: proto.RuntimeHelper.EmitOutput:output_type -> proto.Empty
+	8,  // 43: proto.RuntimeHelper.EmitError:output_type -> proto.Empty
+	15, // 44: proto.RuntimeHelper.GetVaultItem:output_type -> proto.GetVaultItemResponse
+	17, // 45: proto.RuntimeHelper.SetVaultItem:output_type -> proto.SetVaultItemResponse
+	20, // 46: proto.RuntimeHelper.GetVariable:output_type -> proto.GetVariableResponse
+	8,  // 47: proto.RuntimeHelper.SetVariable:output_type -> proto.Empty
+	22, // 48: proto.RuntimeHelper.GetRobotInfo:output_type -> proto.GetRobotInfoResponse
+	25, // 49: proto.RuntimeHelper.AppRequest:output_type -> proto.AppRequestResponse
+	25, // 50: proto.RuntimeHelper.AppRequestV2:output_type -> proto.AppRequestResponse
+	8,  // 51: proto.RuntimeHelper.AppPublish:output_type -> proto.Empty
+	8,  // 52: proto.RuntimeHelper.DownloadFile:output_type -> proto.Empty
+	29, // 53: proto.RuntimeHelper.AppDownload:output_type -> proto.AppDownloadResponse
+	31, // 54: proto.RuntimeHelper.AppUpload:output_type -> proto.AppUploadResponse
+	33, // 55: proto.RuntimeHelper.GatewayRequest:output_type -> proto.GatewayRequestResponse
+	34, // [34:56] is the sub-list for method output_type
+	12, // [12:34] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
 	12, // [12:12] is the sub-list for extension extendee
 	0,  // [0:12] is the sub-list for field type_name
@@ -2401,7 +2515,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppRequestResponse); i {
+			switch v := v.(*AppRequestV2Request); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2413,7 +2527,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DownloadFileRequest); i {
+			switch v := v.(*AppRequestResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2425,7 +2539,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppDownloadRequest); i {
+			switch v := v.(*AppPublishRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2437,7 +2551,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppDownloadResponse); i {
+			switch v := v.(*DownloadFileRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2449,7 +2563,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppUploadRequest); i {
+			switch v := v.(*AppDownloadRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2461,7 +2575,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppUploadResponse); i {
+			switch v := v.(*AppDownloadResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2473,7 +2587,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GatewayRequestRequest); i {
+			switch v := v.(*AppUploadRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2485,6 +2599,30 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AppUploadResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_plugin_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GatewayRequestRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_plugin_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GatewayRequestResponse); i {
 			case 0:
 				return &v.state
@@ -2503,7 +2641,7 @@ func file_plugin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_plugin_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   34,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
