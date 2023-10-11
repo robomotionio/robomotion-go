@@ -48,6 +48,20 @@ func AppRequest(request []byte, timeout int32) ([]byte, error) {
 
 	return client.AppRequest(request, timeout)
 }
+func AppRequestV2(request []byte) ([]byte, error) {
+	if client == nil {
+		return nil, fmt.Errorf("Runtime was not initialized")
+	}
+
+	return client.AppRequestV2(request)
+}
+func AppPublish(request []byte) error {
+	if client == nil {
+		return fmt.Errorf("Runtime was not initialized")
+	}
+
+	return client.AppPublish(request)
+}
 func AppDownload(id, dir, file string) (string, error) {
 	if client == nil {
 		return "", fmt.Errorf("Runtime was not initialized")
