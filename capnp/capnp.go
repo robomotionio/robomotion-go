@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -13,23 +14,25 @@ import (
 
 const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp-"
 
-var CAPNP_LIMIT = 4 << 10 //4KB
-func WriteToFile(value interface{}) (interface{}, error) {
+// var CAPNP_LIMIT = 4 << 10 //4KB
+var CAPNP_LIMIT = 5
 
+func WriteToFile(value interface{}) (interface{}, error) {
+	log.Printf("00000000000")
 	data, err := json.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
-
+	log.Printf("1111111111111")
 	if len(data) < CAPNP_LIMIT {
 		return value, nil
 	}
-
+	log.Printf("22222222222222")
 	msg, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
 	if err != nil {
 		return nil, err
 	}
-
+	log.Printf("333333333333")
 	// Create a new Book struct.  Every message must have a root struct.
 	nodeMessage, err := NewRootNodeMessage(seg)
 	if err != nil {
