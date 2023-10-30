@@ -6,7 +6,9 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 
+	robocapnp "github.com/robomotionio/robomotion-go/capnp"
 	"github.com/robomotionio/robomotion-go/message"
 )
 
@@ -226,6 +228,11 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 	}
 
 	if v.Scope == "Message" {
+		if strings.HasPrefix(v.Name.(string), "robomotion-capnp-") {
+			val, _ = robocapnp.ReadFromFile(v.Name.(string))
+
+		}
+
 		val = ctx.Get(v.Name.(string))
 		if val == nil {
 			return t, nil
