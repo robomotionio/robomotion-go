@@ -3,7 +3,6 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -217,7 +216,6 @@ func (v *InVariable[T]) getStringPtr(val interface{}) (t T, err error) {
 }
 
 func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
-	log.Printf("get e geldi")
 	var (
 		t   T
 		val interface{}
@@ -228,14 +226,13 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 	}
 
 	if v.Scope == "Message" {
-		if strings.HasPrefix(v.Name.(string), "robomotion-capnp-") {
-			val, _ = robocapnp.ReadFromFile(v.Name.(string))
-
-		}
-
 		val = ctx.Get(v.Name.(string))
 		if val == nil {
 			return t, nil
+		}
+		if strings.HasPrefix(val.(string), "robomotion-capnp-") {
+
+			val, _ = robocapnp.ReadFromFile(val.(string))
 		}
 	}
 
