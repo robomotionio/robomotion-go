@@ -3,6 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 
@@ -213,91 +214,8 @@ func (v *InVariable[T]) getStringPtr(val interface{}) (t T, err error) {
 	return t, err
 }
 
-func (v *InVariable[T]) Get2(ctx message.Context) (T, error) {
-
-	var (
-		t   T
-		val interface{}
-	)
-
-	if v.Scope == "Custom" {
-		val = v.Name
-	}
-
-	if v.Scope == "Message" {
-		val = ctx.Get(v.Name.(string))
-		if val == nil {
-			return t, nil
-		}
-	}
-
-	kind := reflect.Invalid
-	typ := reflect.TypeOf(t)
-	if typ != nil {
-		kind = typ.Kind()
-	}
-
-	if val != nil {
-		switch kind {
-		case reflect.Ptr:
-			switch typ.Elem().Kind() {
-			case reflect.Bool:
-				return v.getBoolPtr(val)
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-				return v.getIntPtr(val)
-			case reflect.String:
-				return v.getStringPtr(val)
-			}
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			return v.getInt(val)
-
-		case reflect.Float32, reflect.Float64:
-			return v.getFloat(val)
-
-		case reflect.Bool:
-			return v.getBool(val)
-
-		case reflect.String:
-			return v.getString(val)
-
-		default:
-			d, err := json.Marshal(val)
-			if err != nil {
-				return t, err
-			}
-
-			err = json.Unmarshal(d, &t)
-			if err != nil {
-				return t, err
-			}
-
-			return t, nil
-		}
-	}
-
-	if client == nil {
-		return t, fmt.Errorf("Runtime was not initialized")
-	}
-
-	val, err := client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string), Payload: ctx.GetRaw()})
-	if err != nil {
-		return t, err
-	}
-
-	t, ok := val.(T)
-	if !ok {
-		return t, fmt.Errorf("expected %s but got %s",
-			reflect.TypeOf(t).String(),
-			reflect.TypeOf(val).String(),
-		)
-	}
-
-	return t, nil
-}
 func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
-
+	log.Printf("get e geldi")
 	var (
 		t   T
 		val interface{}
