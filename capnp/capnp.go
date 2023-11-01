@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -22,12 +21,9 @@ func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("len of data %+v ", len(data))
 	if len(data) < CAPNP_LIMIT {
-		log.Printf("return e girdi\n")
 		return value, nil
 	}
-	log.Printf("if i gecti")
 	robotID := robotInfo["id"].(string)
 	cacheDir := robotInfo["cache_dir"].(string)
 
@@ -46,7 +42,6 @@ func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface
 		return nil, err
 	}
 	dir := path.Join(cacheDir, "temp", "robots", robotID)
-	log.Printf("the dir is %+v \n ", dir)
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
 		return nil, err
@@ -62,7 +57,6 @@ func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface
 		return nil, err
 	}
 	result := fmt.Sprintf("%s%s", ROBOMOTION_CAPNP_PREFIX, hex.EncodeToString([]byte(file.Name())))
-	log.Printf("the result is %+v \n ", result)
 	return result, nil
 
 }
