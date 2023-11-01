@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
+	"path"
 	"strings"
 
 	"capnproto.org/go/capnp/v3"
@@ -16,8 +16,9 @@ const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp-"
 // var CAPNP_LIMIT = 4 << 10 //4KB
 var CAPNP_LIMIT = 5
 
-func WriteToFile(value interface{}, info map[string]interface{}) (interface{}, error) {
-	log.Printf("00000000000 %+v\n", info)
+func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface{}, error) {
+	robotID := robotInfo["id"].(string)
+	cacheDir := robotInfo["cache_dir"].(string)
 	data, err := json.Marshal(value)
 	if err != nil {
 		return nil, err
@@ -39,8 +40,12 @@ func WriteToFile(value interface{}, info map[string]interface{}) (interface{}, e
 	if err != nil {
 		return nil, err
 	}
-
-	file, err := os.CreateTemp("", "robomotion-capnproto")
+	dir := path.Join(cacheDir, "temp", "robots", robotID)
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return nil, err
+	}
+	file, err := os.CreateTemp(dir, "robomotion-capnp")
 	if err != nil {
 		return nil, err
 	}

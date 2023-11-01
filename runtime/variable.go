@@ -308,8 +308,8 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 		if v.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
-		inf, _ := GetRobotInfo()
-		robocapnp.WriteToFile(value, inf)
+		info, _ := GetRobotInfo()
+		robocapnp.WriteToFile(value, info)
 		return ctx.Set(v.Name.(string), value)
 	}
 
