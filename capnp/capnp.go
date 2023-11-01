@@ -46,6 +46,7 @@ func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface
 		return nil, err
 	}
 	dir := path.Join(cacheDir, "temp", "robots", robotID)
+	log.Printf("the dir is %+v \n ", dir)
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
 		return nil, err
@@ -61,6 +62,7 @@ func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface
 		return nil, err
 	}
 	result := fmt.Sprintf("%s%s", ROBOMOTION_CAPNP_PREFIX, hex.EncodeToString([]byte(file.Name())))
+	log.Printf("the result is %+v \n ", result)
 	return result, nil
 
 }
