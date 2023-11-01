@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"strings"
@@ -17,15 +18,19 @@ const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp-"
 var CAPNP_LIMIT = 5
 
 func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface{}, error) {
-	robotID := robotInfo["id"].(string)
-	cacheDir := robotInfo["cache_dir"].(string)
 	data, err := json.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("len of data %+v ", len(data))
 	if len(data) < CAPNP_LIMIT {
+		log.Printf("return e girdi\n")
 		return value, nil
 	}
+	log.Printf("if i gecti")
+	robotID := robotInfo["id"].(string)
+	cacheDir := robotInfo["cache_dir"].(string)
+
 	msg, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
 	if err != nil {
 		return nil, err
