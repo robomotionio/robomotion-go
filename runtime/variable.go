@@ -233,11 +233,13 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		}
 
 		if res, ok := val.(map[string]interface{}); ok {
-			capnp_id := res["robomotion_capnp_id"].(string)
-			if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
-				val, _ = robocapnp.ReadFromFile(capnp_id)
-				log.Printf("the final result is %+v", val)
+			if capnp_id, ok := res["robomotion_capnp_id"].(string); ok {
+				if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
+					val, _ = robocapnp.ReadFromFile(capnp_id)
+					log.Printf("the final result is %+v", val)
+				}
 			}
+
 		}
 
 	}
