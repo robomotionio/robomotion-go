@@ -3,9 +3,9 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
-	"strings"
 
 	robocapnp "github.com/robomotionio/robomotion-go/capnp"
 	"github.com/robomotionio/robomotion-go/message"
@@ -230,10 +230,12 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		if val == nil {
 			return t, nil
 		}
-		if strings.HasPrefix(val.(string), "robomotion-capnp-") {
 
-			val, _ = robocapnp.ReadFromFile(val.(string))
-		}
+		log.Printf("the result %T ", val)
+		// if strings.HasPrefix(val.(string),robocapnp.ROBOMOTION_CAPNP_PREFIX) {
+
+		// 	val, _ = robocapnp.ReadFromFile(val.(string))
+		// }
 	}
 
 	kind := reflect.Invalid
@@ -309,9 +311,9 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 			return fmt.Errorf("Empty message object")
 		}
 		info, _ := GetRobotInfo()
-		value, err := robocapnp.WriteToFile(value, info)
+		value, err := robocapnp.WriteToFile(value, info, v.Name.(string))
 		if err != nil {
-			//TODO handle err
+			return err
 		}
 		return ctx.Set(v.Name.(string), value)
 	}

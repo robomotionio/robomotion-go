@@ -11,27 +11,30 @@ import (
 	"capnproto.org/go/capnp/v3"
 )
 
-const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp-"
+const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp"
 
 // var CAPNP_LIMIT = 4 << 10 //4KB
 var CAPNP_LIMIT = 5
 
-func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface{}, error) {
+func WriteToFile(value interface{}, robotInfo map[string]interface{}, varName string) (interface{}, error) {
+
 	data, err := json.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
+
 	if len(data) < CAPNP_LIMIT {
 		return value, nil
 	}
+
 	robotID := robotInfo["id"].(string)
 	cacheDir := robotInfo["cache_dir"].(string)
 
+	//Set content for capnp
 	msg, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
 	if err != nil {
 		return nil, err
 	}
-	// Create a new Book struct.  Every message must have a root struct.
 	nodeMessage, err := NewRootNodeMessage(seg)
 	if err != nil {
 		return nil, err
@@ -41,23 +44,36 @@ func WriteToFile(value interface{}, robotInfo map[string]interface{}) (interface
 	if err != nil {
 		return nil, err
 	}
-	dir := path.Join(cacheDir, "temp", "robots", robotID)
+
+	//Prepare path
+	dir := path.Join(cacheDir, "temp", "robots", robotID, varName)
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
 		return nil, err
 	}
-	file, err := os.CreateTemp(dir, "robomotion-capnp")
+	file, err := os.CreateTemp(dir, ROBOMOTION_CAPNP_PREFIX)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
+	//Write to the path
 	err = capnp.NewEncoder(file).Encode(msg)
 	if err != nil {
 		return nil, err
 	}
-	result := fmt.Sprintf("%s%s", ROBOMOTION_CAPNP_PREFIX, hex.EncodeToString([]byte(file.Name())))
-	return result, nil
+
+	dataLen := len(data)
+	//bu kısım küçük datalarla çalışmak için ekledin. Burası silinecek
+	dataLimit := 100
+	if dataLen < 100 {
+		dataLimit = dataLen
+	}
+	//silinecek
+
+	cut_result := fmt.Sprintf("%+s...+ %dkb", string(data[0:dataLimit]), len(data)/10)          //user will show only some part
+	id := fmt.Sprintf("%s%s", ROBOMOTION_CAPNP_PREFIX, hex.EncodeToString([]byte(file.Name()))) //Points the place whole body is stored
+	return map[string]interface{}{"robomotion_capnp_id": id, "is_data_cut": true, "cut_result": cut_result}, nil
 
 }
 
