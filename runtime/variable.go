@@ -3,6 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -235,7 +236,7 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			capnp_id := res["robomotion_capnp_id"].(string)
 			if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
 				val, _ = robocapnp.ReadFromFile(capnp_id)
-				fmt.Printf("the final result is %+v", val)
+				log.Printf("the final result is %+v", val)
 			}
 		}
 
