@@ -14,7 +14,7 @@ import (
 const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp"
 
 // var CAPNP_LIMIT = 4 << 10 //4KB
-var CAPNP_LIMIT = 5
+var CAPNP_LIMIT = 50
 
 func WriteToFile(value interface{}, robotInfo map[string]interface{}, varName string) (interface{}, error) {
 
