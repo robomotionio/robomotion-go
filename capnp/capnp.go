@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"capnproto.org/go/capnp/v3"
+	"github.com/robomotionio/robomotion-go/runtime"
+	"github.com/robomotionio/robomotion-go/utils"
 )
 
 const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp"
@@ -16,7 +18,18 @@ const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp"
 // var CAPNP_LIMIT = 4 << 10 //4KB
 var CAPNP_LIMIT = 50
 
+const MINIMUM_ROBOT_VERSION = "23.10.2"
+
 func WriteToFile(value interface{}, robotInfo map[string]interface{}, varName string) (interface{}, error) {
+	info, err := runtime.GetRobotInfo()
+	if err != nil {
+		return value, nil
+	}
+
+	v, ok := info["version"].(string)
+	if !ok || utils.IsVersionLessThan(v, MINIMUM_ROBOT_VERSION) {
+		return value, nil
+	}
 
 	data, err := json.Marshal(value)
 	if err != nil {
