@@ -132,6 +132,10 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 	return &proto.OnCloseResponse{}, err
 }
 
+func (m *GRPCServer) GetCapabilities(ctx context.Context, req *proto.GetCapabilitiesRequest) (*proto.GetCapabilitiesResponse, error) {
+	return &proto.GetCapabilitiesResponse{Capabilities: 150}, nil
+}
+
 // GRPCClient is an implementation of KV that talks over RPC.
 type GRPCRuntimeHelperClient struct{ client proto.RuntimeHelperClient }
 
