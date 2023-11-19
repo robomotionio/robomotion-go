@@ -3,7 +3,6 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -231,15 +230,15 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		if val == nil {
 			return t, nil
 		}
-
-		if res, ok := val.(map[string]interface{}); ok {
-			if capnp_id, ok := res["robomotion_capnp_id"].(string); ok {
-				if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
-					val, _ = robocapnp.ReadFromFile(capnp_id)
-					log.Printf("the final result is %+v", val)
+		if IsCapnpCapable() {
+			if res, ok := val.(map[string]interface{}); ok {
+				if capnp_id, ok := res[robocapnp.ROBOMOTION_CAPNP_ID].(string); ok {
+					if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
+						val, _ = robocapnp.Deserialize(capnp_id)
+					}
 				}
-			}
 
+			}
 		}
 
 	}
@@ -316,10 +315,14 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 		if v.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
-		info, _ := GetRobotInfo()
-		value, err := robocapnp.WriteToFile(value, info, v.Name.(string))
-		if err != nil {
-			return err
+
+		if IsCapnpCapable() {
+			info, _ := GetRobotInfo()
+			serializedValue, err := robocapnp.Serialize(value, info, v.Name.(string))
+			if err != nil {
+				return err
+			}
+			return ctx.Set(v.Name.(string), serializedValue)
 		}
 		return ctx.Set(v.Name.(string), value)
 	}

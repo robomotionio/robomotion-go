@@ -26,7 +26,7 @@ type RunnerClient interface {
 	Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*Null, error)
 	Clear(ctx context.Context, in *Null, opts ...grpc.CallOption) (*Null, error)
 	RobotName(ctx context.Context, in *Null, opts ...grpc.CallOption) (*RobotNameResponse, error)
-	GetCapabilities(ctx context.Context, in *GetCapabilitiesRequest, opts ...grpc.CallOption) (*GetCapabilitiesResponse, error)
+	GetCapabilities(ctx context.Context, in *Null, opts ...grpc.CallOption) (*GetCapabilitiesResponse, error)
 }
 
 type runnerClient struct {
@@ -73,7 +73,7 @@ func (c *runnerClient) RobotName(ctx context.Context, in *Null, opts ...grpc.Cal
 	return out, nil
 }
 
-func (c *runnerClient) GetCapabilities(ctx context.Context, in *GetCapabilitiesRequest, opts ...grpc.CallOption) (*GetCapabilitiesResponse, error) {
+func (c *runnerClient) GetCapabilities(ctx context.Context, in *Null, opts ...grpc.CallOption) (*GetCapabilitiesResponse, error) {
 	out := new(GetCapabilitiesResponse)
 	err := c.cc.Invoke(ctx, "/proto.Runner/GetCapabilities", in, out, opts...)
 	if err != nil {
@@ -90,7 +90,7 @@ type RunnerServer interface {
 	Run(context.Context, *RunRequest) (*Null, error)
 	Clear(context.Context, *Null) (*Null, error)
 	RobotName(context.Context, *Null) (*RobotNameResponse, error)
-	GetCapabilities(context.Context, *GetCapabilitiesRequest) (*GetCapabilitiesResponse, error)
+	GetCapabilities(context.Context, *Null) (*GetCapabilitiesResponse, error)
 	mustEmbedUnimplementedRunnerServer()
 }
 
@@ -110,7 +110,7 @@ func (UnimplementedRunnerServer) Clear(context.Context, *Null) (*Null, error) {
 func (UnimplementedRunnerServer) RobotName(context.Context, *Null) (*RobotNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RobotName not implemented")
 }
-func (UnimplementedRunnerServer) GetCapabilities(context.Context, *GetCapabilitiesRequest) (*GetCapabilitiesResponse, error) {
+func (UnimplementedRunnerServer) GetCapabilities(context.Context, *Null) (*GetCapabilitiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCapabilities not implemented")
 }
 func (UnimplementedRunnerServer) mustEmbedUnimplementedRunnerServer() {}
@@ -199,7 +199,7 @@ func _Runner_RobotName_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 func _Runner_GetCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCapabilitiesRequest)
+	in := new(Null)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func _Runner_GetCapabilities_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: "/proto.Runner/GetCapabilities",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RunnerServer).GetCapabilities(ctx, req.(*GetCapabilitiesRequest))
+		return srv.(RunnerServer).GetCapabilities(ctx, req.(*Null))
 	}
 	return interceptor(ctx, in, info, handler)
 }
