@@ -18,7 +18,7 @@ const ROBOMOTION_CAPNP_ID = "robomotion_capnp_id"
 // var CAPNP_LIMIT = 4 << 10 //4KB
 var CAPNP_LIMIT = 50
 
-const MINIMUM_ROBOT_VERSION = "23.10.0"
+const MINIMUM_ROBOT_VERSION = "23.11.1"
 
 func Serialize(value interface{}, robotInfo map[string]interface{}, varName string) (interface{}, error) {
 
