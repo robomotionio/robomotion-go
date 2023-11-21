@@ -230,19 +230,9 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		if val == nil {
 			return t, nil
 		}
-		if IsCapnpCapable() {
-			if res, ok := val.(map[string]interface{}); ok {
-				if capnp_id, ok := res[robocapnp.ROBOMOTION_CAPNP_ID].(string); ok {
-					if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
-						val, _ = robocapnp.Deserialize(capnp_id)
-					}
-				}
-
-			}
-		}
+		val = deserialize(val)
 
 	}
-
 	kind := reflect.Invalid
 	typ := reflect.TypeOf(t)
 	if typ != nil {
@@ -298,6 +288,8 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		return t, err
 	}
 
+	val = deserialize(val)
+
 	t, ok := val.(T)
 	if !ok {
 		return t, fmt.Errorf("expected %s but got %s",
@@ -305,7 +297,6 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			reflect.TypeOf(val).String(),
 		)
 	}
-
 	return t, nil
 }
 
@@ -330,6 +321,31 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 	if client == nil {
 		return fmt.Errorf("Runtime was not initialized")
 	}
+	if IsCapnpCapable() {
+		info, _ := GetRobotInfo()
+		temp, err := robocapnp.Serialize(value, info, v.Name.(string))
+		if err != nil {
+			return err
+		}
+		value := temp.(map[string]interface{})
+		return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
+	} else {
+		return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
+	}
 
-	return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
+}
+
+func deserialize(val interface{}) interface{} {
+	if IsCapnpCapable() {
+		if res, ok := val.(map[string]interface{}); ok {
+			if capnp_id, ok := res[robocapnp.ROBOMOTION_CAPNP_ID].(string); ok {
+				if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
+					val, _ = robocapnp.Deserialize(capnp_id)
+
+				}
+			}
+
+		}
+	}
+	return val
 }
