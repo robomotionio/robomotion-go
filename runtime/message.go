@@ -8,7 +8,7 @@ import (
 	"github.com/robomotionio/robomotion-go/message"
 )
 
-func GetRaw(ctx message.Context) json.RawMessage {
+func GetRaw(ctx message.Context) (json.RawMessage, error) {
 
 	raw := ctx.GetRaw()
 
@@ -16,7 +16,7 @@ func GetRaw(ctx message.Context) json.RawMessage {
 		var msg = make(map[string]interface{})
 		err := json.Unmarshal(raw, &msg)
 		if err != nil {
-			//TODO HANDLE
+			return nil, err
 		}
 		for key, value := range msg {
 			if capnp, ok := value.(map[string]interface{}); ok && capnp[robocapnp.ROBOMOTION_CAPNP_ID] != nil {
@@ -25,7 +25,7 @@ func GetRaw(ctx message.Context) json.RawMessage {
 				if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
 					result, err := robocapnp.Deserialize(capnp_id)
 					if err != nil {
-						//TODO handle
+						return nil, err
 					}
 					msg[key] = result
 
@@ -35,36 +35,37 @@ func GetRaw(ctx message.Context) json.RawMessage {
 		}
 		inMsg, err := json.Marshal(msg)
 		if err != nil {
-			//TODO Handle
+			return nil, err
 		}
-		return json.RawMessage(inMsg)
+		return json.RawMessage(inMsg), nil
 	}
-	return raw
+	return raw, nil
 }
 
-func SetRaw(ctx message.Context, data json.RawMessage) {
+func SetRaw(ctx message.Context, data json.RawMessage) error {
 	if IsCapnpCapable() {
 		var temp map[string]interface{}
 		err := json.Unmarshal(data, &temp)
 		if err != nil {
-			//TODO HANDLE ERROR
+			return err
 		}
 		robotInfo, err := GetRobotInfo()
 		if err != nil {
-			//TODO HANDLE ERROR
+			return err
 		}
 		for key, value := range temp {
 			value, err := robocapnp.Serialize(value, robotInfo, key)
 			if err != nil {
-				//TODO Handle error
+				return err
 			}
 			temp[key] = value
 		}
 		data, err = json.Marshal(temp)
 		if err != nil {
-			//TODO Handle error
+			return err
 		}
 	}
 
 	ctx.SetRaw(data)
+	return nil
 }

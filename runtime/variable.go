@@ -3,6 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -220,7 +221,6 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		t   T
 		val interface{}
 	)
-
 	if v.Scope == "Custom" {
 		val = v.Name
 	}
@@ -287,9 +287,9 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 	if err != nil {
 		return t, err
 	}
-
+	log.Printf("before: %+v \n ", val)
 	val = deserialize(val)
-
+	log.Printf("after: %+v \n ", val)
 	t, ok := val.(T)
 	if !ok {
 		return t, fmt.Errorf("expected %s but got %s",
