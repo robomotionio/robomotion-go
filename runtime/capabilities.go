@@ -15,17 +15,15 @@ const (
 
 var (
 	capabilities = []Capability{}
-	robotInfo    map[string]interface{}
+	//robotInfo    map[string]interface{}
 )
 
 func IsCapnpCapable() bool {
-	if len(robotInfo) == 0 {
-		var err error
-		robotInfo, err = GetRobotInfo()
-		if err != nil {
-			return false
-		}
+	robotInfo, err := GetRobotInfo()
+	if err != nil {
+		return false
 	}
+
 	if version, ok := robotInfo["version"].(string); ok {
 		if !utils.IsVersionLessThan(version, robocapnp.MINIMUM_ROBOT_VERSION) {
 			return true

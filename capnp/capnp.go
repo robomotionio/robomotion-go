@@ -16,7 +16,7 @@ const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp"
 const ROBOMOTION_CAPNP_ID = "robomotion_capnp_id"
 
 // var CAPNP_LIMIT = 4 << 10 //4KB
-var CAPNP_LIMIT = 50
+var CAPNP_LIMIT = 5
 
 const MINIMUM_ROBOT_VERSION = "23.11.1"
 
@@ -92,9 +92,10 @@ func Serialize(value interface{}, robotInfo map[string]interface{}, varName stri
 	}
 	//silinecek
 
-	capnp_cut_data := fmt.Sprintf("%+s...+ %dkb", string(data[0:dataLimit]), len(data)/10)      //user will show only some part
+	_data := fmt.Sprintf("%+s...+ %dkb", string(data[0:dataLimit]), len(data)/10)               //user will show only some part
 	id := fmt.Sprintf("%s%s", ROBOMOTION_CAPNP_PREFIX, hex.EncodeToString([]byte(file.Name()))) //Points the place whole body is stored
-	return map[string]interface{}{ROBOMOTION_CAPNP_ID: id, "capnp_cut_data": capnp_cut_data}, nil
+	result := map[string]interface{}{ROBOMOTION_CAPNP_ID: id, "data": _data}
+	return result, nil
 
 }
 
@@ -104,28 +105,28 @@ func Deserialize(id string) (interface{}, error) {
 	id = strings.TrimPrefix(id, ROBOMOTION_CAPNP_PREFIX)
 	temp, err := hex.DecodeString(id)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	path := string(temp)
 	file, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	//Read message
 	msg, err := capnp.NewDecoder(file).Decode()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	nodeMessage, err := ReadRootNodeMessage(msg)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	data, err := nodeMessage.Content()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var result interface{}
 	err = json.Unmarshal(data, &result)
