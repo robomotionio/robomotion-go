@@ -8,9 +8,12 @@ import (
 	"github.com/robomotionio/robomotion-go/message"
 )
 
-func GetRaw(ctx message.Context) (json.RawMessage, error) {
+func init() {
+	message.GetRaw = getRaw
+	message.SetRaw = setRaw
+}
 
-	raw := ctx.GetRaw()
+func getRaw(raw json.RawMessage) (json.RawMessage, error) {
 
 	if IsCapnpCapable() {
 		var msg = make(map[string]interface{})
@@ -42,30 +45,29 @@ func GetRaw(ctx message.Context) (json.RawMessage, error) {
 	return raw, nil
 }
 
-func SetRaw(ctx message.Context, data json.RawMessage) error {
+func setRaw(data json.RawMessage) (json.RawMessage, error) {
 	if IsCapnpCapable() {
 		var temp map[string]interface{}
 		err := json.Unmarshal(data, &temp)
 		if err != nil {
-			return err
+			return data, err
 		}
 		robotInfo, err := GetRobotInfo()
 		if err != nil {
-			return err
+			return data, err
 		}
 		for key, value := range temp {
 			value, err := robocapnp.Serialize(value, robotInfo, key)
 			if err != nil {
-				return err
+				return data, err
 			}
 			temp[key] = value
 		}
 		data, err = json.Marshal(temp)
 		if err != nil {
-			return err
+			return data, err
 		}
 	}
 
-	ctx.SetRaw(data)
-	return nil
+	return data, nil
 }

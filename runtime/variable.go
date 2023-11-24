@@ -283,7 +283,12 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		return t, fmt.Errorf("Runtime was not initialized")
 	}
 
-	val, err := client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string), Payload: ctx.GetRaw()})
+	payload, err := ctx.GetRaw()
+	if err != nil {
+		return t, err
+	}
+
+	val, err = client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string), Payload: payload})
 	if err != nil {
 		return t, err
 	}
