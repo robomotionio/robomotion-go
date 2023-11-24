@@ -15,8 +15,7 @@ import (
 const ROBOMOTION_CAPNP_PREFIX = "robomotion-capnp"
 const ROBOMOTION_CAPNP_ID = "robomotion_capnp_id"
 
-// var CAPNP_LIMIT = 4 << 10 //4KB
-var CAPNP_LIMIT = 5
+var CAPNP_LIMIT = 4 << 10 //4KB
 
 const MINIMUM_ROBOT_VERSION = "23.11.1"
 
@@ -94,7 +93,9 @@ func Serialize(value interface{}, robotInfo map[string]interface{}, varName stri
 
 	_data := fmt.Sprintf("%+s...+ %dkb", string(data[0:dataLimit]), len(data)/10)               //user will show only some part
 	id := fmt.Sprintf("%s%s", ROBOMOTION_CAPNP_PREFIX, hex.EncodeToString([]byte(file.Name()))) //Points the place whole body is stored
-	result := map[string]interface{}{ROBOMOTION_CAPNP_ID: id, "data": _data}
+	result := map[string]interface{}{
+		ROBOMOTION_CAPNP_ID: id,
+		"data":              _data}
 	return result, nil
 
 }
