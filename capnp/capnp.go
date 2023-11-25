@@ -46,7 +46,8 @@ func Serialize(value interface{}, robotInfo map[string]interface{}, varName stri
 		return value, err
 	}
 
-	if len(data) < CAPNP_LIMIT { //If the value is small enough, dont serialize it
+	dataLen := len(data)
+	if dataLen < CAPNP_LIMIT { //If the value is small enough, dont serialize it
 		return value, nil
 	}
 
@@ -83,13 +84,14 @@ func Serialize(value interface{}, robotInfo map[string]interface{}, varName stri
 		return value, err
 	}
 
-	dataLen := len(data)
-	//bu kısım küçük datalarla çalışmak için ekledin. Burası silinecek
 	dataLimit := 100
-	if dataLen < 100 {
-		dataLimit = dataLen
-	}
-	//silinecek
+
+	//*********************** Can be opened if it is tested with small data
+	//
+	// if dataLen < 100 {
+	// 	dataLimit = dataLen
+	// }
+	//***********************
 
 	_data := fmt.Sprintf("%+s...+ %dkb", string(data[0:dataLimit]), len(data)/10)               //user will show only some part
 	id := fmt.Sprintf("%s%s", ROBOMOTION_CAPNP_PREFIX, hex.EncodeToString([]byte(file.Name()))) //Points the place whole body is stored
