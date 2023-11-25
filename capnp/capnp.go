@@ -93,7 +93,7 @@ func Serialize(value interface{}, robotInfo map[string]interface{}, varName stri
 	// }
 	//***********************
 
-	_data := fmt.Sprintf("%+s...+ %dkb", string(data[0:dataLimit]), len(data)/10)               //user will show only some part
+	_data := fmt.Sprintf("%+s...+ %dkb", string(data[0:dataLimit]), len(data)/1000)             //user will show only some part
 	id := fmt.Sprintf("%s%s", ROBOMOTION_CAPNP_PREFIX, hex.EncodeToString([]byte(file.Name()))) //Points the place whole body is stored
 	result := map[string]interface{}{
 		ROBOMOTION_CAPNP_ID: id,
