@@ -8,7 +8,7 @@ import (
 
 type Capability uint64
 
-const MINIMUM_ROBOT_VERSION = "23.11.1"
+const MINIMUM_ROBOT_VERSION = "23.12.0"
 const (
 	CapabilityLMO Capability = (1 << iota)
 )
