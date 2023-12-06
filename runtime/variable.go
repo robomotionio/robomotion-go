@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 
-	robocapnp "github.com/robomotionio/robomotion-go/capnp"
 	"github.com/robomotionio/robomotion-go/message"
+	"github.com/tidwall/gjson"
 )
 
 type variable struct {
@@ -220,6 +219,7 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		t   T
 		val interface{}
 	)
+
 	if v.Scope == "Custom" {
 		val = v.Name
 	}
@@ -229,7 +229,6 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		if val == nil {
 			return t, nil
 		}
-		val = deserialize(val)
 
 	}
 	kind := reflect.Invalid
@@ -262,36 +261,53 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 
 		case reflect.String:
 			return v.getString(val)
-
 		default:
+
 			d, err := json.Marshal(val)
 			if err != nil {
 				return t, err
 			}
 
+			gRes := gjson.ParseBytes(d)
+			if IsLMO(gRes) {
+				var lmo = LargeMessageObject{}
+				json.Unmarshal(d, &lmo)
+				res, _ := DeserializeLMO(lmo.ID)
+				t = res.Data.(T)
+				return t, nil
+
+			}
 			err = json.Unmarshal(d, &t)
 			if err != nil {
 				return t, err
 			}
 
-			return t, nil
 		}
 	}
-
 	if client == nil {
 		return t, fmt.Errorf("Runtime was not initialized")
 	}
-
 	payload, err := ctx.GetRaw()
 	if err != nil {
 		return t, err
 	}
-
 	val, err = client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string), Payload: payload})
 	if err != nil {
 		return t, err
 	}
-	val = deserialize(val)
+
+	valBytes, _ := json.Marshal(val)
+	gRes := gjson.ParseBytes(valBytes)
+	if IsLMO(gRes) {
+		var lmo = &LargeMessageObject{}
+		json.Unmarshal(valBytes, lmo)
+
+		lmo, _ = DeserializeLMO(lmo.ID)
+		t = lmo.Data.(T)
+		return t, nil
+
+	}
+
 	t, ok := val.(T)
 	if !ok {
 		return t, fmt.Errorf("expected %s but got %s",
@@ -303,19 +319,19 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 }
 
 func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
-
 	if v.Scope == "Message" {
 		if v.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
-
-		if IsCapnpCapable() {
-			info, _ := GetRobotInfo()
-			serializedValue, err := robocapnp.Serialize(value, info, v.Name.(string))
+		if IsLMOCapable() {
+			serializedValue, err := SerializeLMO(value)
 			if err != nil {
 				return err
 			}
-			return ctx.Set(v.Name.(string), serializedValue)
+			if serializedValue != nil {
+				return ctx.Set(v.Name.(string), serializedValue)
+			}
+
 		}
 		return ctx.Set(v.Name.(string), value)
 	}
@@ -323,31 +339,16 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 	if client == nil {
 		return fmt.Errorf("Runtime was not initialized")
 	}
-	if IsCapnpCapable() {
-		info, _ := GetRobotInfo()
-		temp, err := robocapnp.Serialize(value, info, v.Name.(string))
+
+	if IsLMOCapable() {
+		lmo, err := SerializeLMO(value)
 		if err != nil {
 			return err
 		}
-		value := temp.(map[string]interface{})
-		return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
-	} else {
-		return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
-	}
-
-}
-
-func deserialize(val interface{}) interface{} {
-	if IsCapnpCapable() {
-		if res, ok := val.(map[string]interface{}); ok {
-			if capnp_id, ok := res[robocapnp.ROBOMOTION_CAPNP_ID].(string); ok {
-				if strings.HasPrefix(capnp_id, robocapnp.ROBOMOTION_CAPNP_PREFIX) {
-					val, _ = robocapnp.Deserialize(capnp_id)
-
-				}
-			}
-
+		if lmo != nil {
+			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, lmo)
 		}
+
 	}
-	return val
+	return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
 }

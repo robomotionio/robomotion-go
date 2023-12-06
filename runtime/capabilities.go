@@ -3,14 +3,14 @@ package runtime
 import (
 	"math"
 
-	robocapnp "github.com/robomotionio/robomotion-go/capnp"
 	"github.com/robomotionio/robomotion-go/utils"
 )
 
 type Capability uint64
 
+const MINIMUM_ROBOT_VERSION = "23.11.1"
 const (
-	CapabilityCapnp Capability = (1 << iota)
+	CapabilityLMO Capability = (1 << iota)
 )
 
 var (
@@ -18,17 +18,19 @@ var (
 	//robotInfo    map[string]interface{}
 )
 
-func IsCapnpCapable() bool {
+func IsLMOCapable() bool {
 	robotInfo, err := GetRobotInfo()
 	if err != nil {
 		return false
 	}
-
-	if version, ok := robotInfo["version"].(string); ok {
-		if !utils.IsVersionLessThan(version, robocapnp.MINIMUM_ROBOT_VERSION) {
-			return true
+	if lmoFlag, _ := robotInfo["lmo_enabled"].(bool); lmoFlag {
+		if version, ok := robotInfo["version"].(string); ok {
+			if !utils.IsVersionLessThan(version, MINIMUM_ROBOT_VERSION) {
+				return true
+			}
 		}
 	}
+
 	return false
 }
 func AddCapability(capability Capability) {
@@ -36,7 +38,7 @@ func AddCapability(capability Capability) {
 }
 
 func init() {
-	AddCapability(CapabilityCapnp)
+	AddCapability(CapabilityLMO)
 
 }
 
