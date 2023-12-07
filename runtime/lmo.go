@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
+
+	"github.com/robomotionio/robomotion-go/utils"
 )
 
 const (
@@ -87,10 +89,8 @@ func SerializeLMO(value interface{}) (*LargeMessageObject, error) {
 	if robotID, ok = robotInfo["id"].(string); !ok {
 		return nil, nil
 	}
-	tempPath := ""
-	if tempPath, ok = robotInfo["temp_dir"].(string); !ok {
-		return nil, nil
-	}
+
+	tempPath := utils.GetTempPath()
 	dir := path.Join(tempPath, "robots", robotID)
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
@@ -126,10 +126,8 @@ func DeserializeLMO(id string) (*LargeMessageObject, error) {
 	if robotID, ok = robotInfo["id"].(string); !ok {
 		return nil, nil
 	}
-	tempPath := ""
-	if tempPath, ok = robotInfo["temp_dir"].(string); !ok {
-		return nil, nil
-	}
+
+	tempPath := utils.GetTempPath()
 	dir := path.Join(tempPath, "robots", robotID)
 	filePath := path.Join(dir, id+".lmo")
 
@@ -264,17 +262,13 @@ func IsLMO(value gjson.Result) bool {
 
 func DeleteLMObyID(id string) {
 	robotID := ""
-	tempDir := ""
 	var ok bool
 	if robotID, ok = robotInfo["id"].(string); !ok {
 		log.Println("id not found")
 		return
 	}
+	tempPath := utils.GetTempPath()
 
-	if tempDir, ok = robotInfo["temp_dir"].(string); !ok {
-		log.Println("temp_dir not found")
-		return
-	}
-	dir := path.Join(tempDir, "robots", robotID, id)
+	dir := path.Join(tempPath, "robots", robotID, id)
 	os.Remove(dir)
 }

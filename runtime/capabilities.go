@@ -23,12 +23,15 @@ func IsLMOCapable() bool {
 	if err != nil {
 		return false
 	}
-	if lmoFlag, _ := robotInfo["lmo_enabled"].(bool); lmoFlag {
-		if version, ok := robotInfo["version"].(string); ok {
-			if !utils.IsVersionLessThan(version, MINIMUM_ROBOT_VERSION) {
-				return true
+	if rc, ok := robotInfo["capabilities"].(map[string]interface{}); ok {
+		if lmoEnabled, _ := rc["lmo"].(bool); lmoEnabled {
+			if version, ok := robotInfo["version"].(string); ok {
+				if !utils.IsVersionLessThan(version, MINIMUM_ROBOT_VERSION) {
+					return true
+				}
 			}
 		}
+
 	}
 
 	return false
