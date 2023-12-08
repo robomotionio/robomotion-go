@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Props = &properties.Properties{}
+	Props     = &properties.Properties{}
+	robotInfo map[string]interface{}
 )
 
 func GetProps() {
@@ -21,8 +22,11 @@ func GetRobotInfo() (map[string]interface{}, error) {
 	if client == nil {
 		return nil, fmt.Errorf("Runtime was not initialized")
 	}
-
-	return client.GetRobotInfo()
+	var err error
+	if len(robotInfo) == 0 {
+		robotInfo, err = client.GetRobotInfo()
+	}
+	return robotInfo, err
 }
 
 func GetRobotVersion() (string, error) {

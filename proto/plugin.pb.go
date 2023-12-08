@@ -445,6 +445,53 @@ func (x *OnCloseResponse) GetError() *Error {
 	return nil
 }
 
+type PGetCapabilitiesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Capabilities uint64 `protobuf:"varint,1,opt,name=capabilities,proto3" json:"capabilities,omitempty"`
+}
+
+func (x *PGetCapabilitiesResponse) Reset() {
+	*x = PGetCapabilitiesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_plugin_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PGetCapabilitiesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PGetCapabilitiesResponse) ProtoMessage() {}
+
+func (x *PGetCapabilitiesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_plugin_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PGetCapabilitiesResponse.ProtoReflect.Descriptor instead.
+func (*PGetCapabilitiesResponse) Descriptor() ([]byte, []int) {
+	return file_plugin_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *PGetCapabilitiesResponse) GetCapabilities() uint64 {
+	if x != nil {
+		return x.Capabilities
+	}
+	return 0
+}
+
 type Empty struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -454,7 +501,7 @@ type Empty struct {
 func (x *Empty) Reset() {
 	*x = Empty{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[8]
+		mi := &file_plugin_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -467,7 +514,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[8]
+	mi := &file_plugin_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -480,7 +527,7 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{8}
+	return file_plugin_proto_rawDescGZIP(), []int{9}
 }
 
 type DebugRequest struct {
@@ -496,7 +543,7 @@ type DebugRequest struct {
 func (x *DebugRequest) Reset() {
 	*x = DebugRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[9]
+		mi := &file_plugin_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -509,7 +556,7 @@ func (x *DebugRequest) String() string {
 func (*DebugRequest) ProtoMessage() {}
 
 func (x *DebugRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[9]
+	mi := &file_plugin_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +569,7 @@ func (x *DebugRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DebugRequest.ProtoReflect.Descriptor instead.
 func (*DebugRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{9}
+	return file_plugin_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DebugRequest) GetGuid() string {
@@ -558,7 +605,7 @@ type EmitFlowEventRequest struct {
 func (x *EmitFlowEventRequest) Reset() {
 	*x = EmitFlowEventRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[10]
+		mi := &file_plugin_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -571,7 +618,7 @@ func (x *EmitFlowEventRequest) String() string {
 func (*EmitFlowEventRequest) ProtoMessage() {}
 
 func (x *EmitFlowEventRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[10]
+	mi := &file_plugin_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -584,7 +631,7 @@ func (x *EmitFlowEventRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmitFlowEventRequest.ProtoReflect.Descriptor instead.
 func (*EmitFlowEventRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{10}
+	return file_plugin_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *EmitFlowEventRequest) GetGuid() string {
@@ -613,7 +660,7 @@ type EmitInputRequest struct {
 func (x *EmitInputRequest) Reset() {
 	*x = EmitInputRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[11]
+		mi := &file_plugin_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -626,7 +673,7 @@ func (x *EmitInputRequest) String() string {
 func (*EmitInputRequest) ProtoMessage() {}
 
 func (x *EmitInputRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[11]
+	mi := &file_plugin_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -639,7 +686,7 @@ func (x *EmitInputRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmitInputRequest.ProtoReflect.Descriptor instead.
 func (*EmitInputRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{11}
+	return file_plugin_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *EmitInputRequest) GetGuid() string {
@@ -669,7 +716,7 @@ type EmitOutputRequest struct {
 func (x *EmitOutputRequest) Reset() {
 	*x = EmitOutputRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[12]
+		mi := &file_plugin_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -682,7 +729,7 @@ func (x *EmitOutputRequest) String() string {
 func (*EmitOutputRequest) ProtoMessage() {}
 
 func (x *EmitOutputRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[12]
+	mi := &file_plugin_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -695,7 +742,7 @@ func (x *EmitOutputRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmitOutputRequest.ProtoReflect.Descriptor instead.
 func (*EmitOutputRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{12}
+	return file_plugin_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *EmitOutputRequest) GetGuid() string {
@@ -732,7 +779,7 @@ type EmitErrorRequest struct {
 func (x *EmitErrorRequest) Reset() {
 	*x = EmitErrorRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[13]
+		mi := &file_plugin_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -745,7 +792,7 @@ func (x *EmitErrorRequest) String() string {
 func (*EmitErrorRequest) ProtoMessage() {}
 
 func (x *EmitErrorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[13]
+	mi := &file_plugin_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -758,7 +805,7 @@ func (x *EmitErrorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmitErrorRequest.ProtoReflect.Descriptor instead.
 func (*EmitErrorRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{13}
+	return file_plugin_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *EmitErrorRequest) GetGuid() string {
@@ -794,7 +841,7 @@ type GetVaultItemRequest struct {
 func (x *GetVaultItemRequest) Reset() {
 	*x = GetVaultItemRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[14]
+		mi := &file_plugin_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -807,7 +854,7 @@ func (x *GetVaultItemRequest) String() string {
 func (*GetVaultItemRequest) ProtoMessage() {}
 
 func (x *GetVaultItemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[14]
+	mi := &file_plugin_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -820,7 +867,7 @@ func (x *GetVaultItemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVaultItemRequest.ProtoReflect.Descriptor instead.
 func (*GetVaultItemRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{14}
+	return file_plugin_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetVaultItemRequest) GetVaultId() string {
@@ -848,7 +895,7 @@ type GetVaultItemResponse struct {
 func (x *GetVaultItemResponse) Reset() {
 	*x = GetVaultItemResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[15]
+		mi := &file_plugin_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -861,7 +908,7 @@ func (x *GetVaultItemResponse) String() string {
 func (*GetVaultItemResponse) ProtoMessage() {}
 
 func (x *GetVaultItemResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[15]
+	mi := &file_plugin_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -874,7 +921,7 @@ func (x *GetVaultItemResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVaultItemResponse.ProtoReflect.Descriptor instead.
 func (*GetVaultItemResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{15}
+	return file_plugin_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetVaultItemResponse) GetItem() *_struct.Struct {
@@ -897,7 +944,7 @@ type SetVaultItemRequest struct {
 func (x *SetVaultItemRequest) Reset() {
 	*x = SetVaultItemRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[16]
+		mi := &file_plugin_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -910,7 +957,7 @@ func (x *SetVaultItemRequest) String() string {
 func (*SetVaultItemRequest) ProtoMessage() {}
 
 func (x *SetVaultItemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[16]
+	mi := &file_plugin_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -923,7 +970,7 @@ func (x *SetVaultItemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetVaultItemRequest.ProtoReflect.Descriptor instead.
 func (*SetVaultItemRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{16}
+	return file_plugin_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SetVaultItemRequest) GetVaultId() string {
@@ -958,7 +1005,7 @@ type SetVaultItemResponse struct {
 func (x *SetVaultItemResponse) Reset() {
 	*x = SetVaultItemResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[17]
+		mi := &file_plugin_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -971,7 +1018,7 @@ func (x *SetVaultItemResponse) String() string {
 func (*SetVaultItemResponse) ProtoMessage() {}
 
 func (x *SetVaultItemResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[17]
+	mi := &file_plugin_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -984,7 +1031,7 @@ func (x *SetVaultItemResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetVaultItemResponse.ProtoReflect.Descriptor instead.
 func (*SetVaultItemResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{17}
+	return file_plugin_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SetVaultItemResponse) GetItem() *_struct.Struct {
@@ -1007,7 +1054,7 @@ type Variable struct {
 func (x *Variable) Reset() {
 	*x = Variable{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[18]
+		mi := &file_plugin_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1020,7 +1067,7 @@ func (x *Variable) String() string {
 func (*Variable) ProtoMessage() {}
 
 func (x *Variable) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[18]
+	mi := &file_plugin_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1033,7 +1080,7 @@ func (x *Variable) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Variable.ProtoReflect.Descriptor instead.
 func (*Variable) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{18}
+	return file_plugin_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Variable) GetScope() string {
@@ -1068,7 +1115,7 @@ type GetVariableRequest struct {
 func (x *GetVariableRequest) Reset() {
 	*x = GetVariableRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[19]
+		mi := &file_plugin_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1081,7 +1128,7 @@ func (x *GetVariableRequest) String() string {
 func (*GetVariableRequest) ProtoMessage() {}
 
 func (x *GetVariableRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[19]
+	mi := &file_plugin_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1094,7 +1141,7 @@ func (x *GetVariableRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVariableRequest.ProtoReflect.Descriptor instead.
 func (*GetVariableRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{19}
+	return file_plugin_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetVariableRequest) GetVariable() *Variable {
@@ -1115,7 +1162,7 @@ type GetVariableResponse struct {
 func (x *GetVariableResponse) Reset() {
 	*x = GetVariableResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[20]
+		mi := &file_plugin_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1128,7 +1175,7 @@ func (x *GetVariableResponse) String() string {
 func (*GetVariableResponse) ProtoMessage() {}
 
 func (x *GetVariableResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[20]
+	mi := &file_plugin_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1141,7 +1188,7 @@ func (x *GetVariableResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVariableResponse.ProtoReflect.Descriptor instead.
 func (*GetVariableResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{20}
+	return file_plugin_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetVariableResponse) GetValue() *_struct.Struct {
@@ -1163,7 +1210,7 @@ type SetVariableRequest struct {
 func (x *SetVariableRequest) Reset() {
 	*x = SetVariableRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[21]
+		mi := &file_plugin_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1176,7 +1223,7 @@ func (x *SetVariableRequest) String() string {
 func (*SetVariableRequest) ProtoMessage() {}
 
 func (x *SetVariableRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[21]
+	mi := &file_plugin_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1189,7 +1236,7 @@ func (x *SetVariableRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetVariableRequest.ProtoReflect.Descriptor instead.
 func (*SetVariableRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{21}
+	return file_plugin_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SetVariableRequest) GetVariable() *Variable {
@@ -1217,7 +1264,7 @@ type GetRobotInfoResponse struct {
 func (x *GetRobotInfoResponse) Reset() {
 	*x = GetRobotInfoResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[22]
+		mi := &file_plugin_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1230,7 +1277,7 @@ func (x *GetRobotInfoResponse) String() string {
 func (*GetRobotInfoResponse) ProtoMessage() {}
 
 func (x *GetRobotInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[22]
+	mi := &file_plugin_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1243,7 +1290,7 @@ func (x *GetRobotInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRobotInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetRobotInfoResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{22}
+	return file_plugin_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetRobotInfoResponse) GetRobot() *_struct.Struct {
@@ -1265,7 +1312,7 @@ type AppRequestRequest struct {
 func (x *AppRequestRequest) Reset() {
 	*x = AppRequestRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[23]
+		mi := &file_plugin_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1278,7 +1325,7 @@ func (x *AppRequestRequest) String() string {
 func (*AppRequestRequest) ProtoMessage() {}
 
 func (x *AppRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[23]
+	mi := &file_plugin_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1291,7 +1338,7 @@ func (x *AppRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppRequestRequest.ProtoReflect.Descriptor instead.
 func (*AppRequestRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{23}
+	return file_plugin_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *AppRequestRequest) GetRequest() []byte {
@@ -1319,7 +1366,7 @@ type AppRequestV2Request struct {
 func (x *AppRequestV2Request) Reset() {
 	*x = AppRequestV2Request{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[24]
+		mi := &file_plugin_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1332,7 +1379,7 @@ func (x *AppRequestV2Request) String() string {
 func (*AppRequestV2Request) ProtoMessage() {}
 
 func (x *AppRequestV2Request) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[24]
+	mi := &file_plugin_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1345,7 +1392,7 @@ func (x *AppRequestV2Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppRequestV2Request.ProtoReflect.Descriptor instead.
 func (*AppRequestV2Request) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{24}
+	return file_plugin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *AppRequestV2Request) GetRequest() []byte {
@@ -1366,7 +1413,7 @@ type AppRequestResponse struct {
 func (x *AppRequestResponse) Reset() {
 	*x = AppRequestResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[25]
+		mi := &file_plugin_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1379,7 +1426,7 @@ func (x *AppRequestResponse) String() string {
 func (*AppRequestResponse) ProtoMessage() {}
 
 func (x *AppRequestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[25]
+	mi := &file_plugin_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1392,7 +1439,7 @@ func (x *AppRequestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppRequestResponse.ProtoReflect.Descriptor instead.
 func (*AppRequestResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{25}
+	return file_plugin_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *AppRequestResponse) GetResponse() []byte {
@@ -1413,7 +1460,7 @@ type AppPublishRequest struct {
 func (x *AppPublishRequest) Reset() {
 	*x = AppPublishRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[26]
+		mi := &file_plugin_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1426,7 +1473,7 @@ func (x *AppPublishRequest) String() string {
 func (*AppPublishRequest) ProtoMessage() {}
 
 func (x *AppPublishRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[26]
+	mi := &file_plugin_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1439,7 +1486,7 @@ func (x *AppPublishRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppPublishRequest.ProtoReflect.Descriptor instead.
 func (*AppPublishRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{26}
+	return file_plugin_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *AppPublishRequest) GetRequest() []byte {
@@ -1461,7 +1508,7 @@ type DownloadFileRequest struct {
 func (x *DownloadFileRequest) Reset() {
 	*x = DownloadFileRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[27]
+		mi := &file_plugin_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1474,7 +1521,7 @@ func (x *DownloadFileRequest) String() string {
 func (*DownloadFileRequest) ProtoMessage() {}
 
 func (x *DownloadFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[27]
+	mi := &file_plugin_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1487,7 +1534,7 @@ func (x *DownloadFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadFileRequest.ProtoReflect.Descriptor instead.
 func (*DownloadFileRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{27}
+	return file_plugin_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *DownloadFileRequest) GetUrl() string {
@@ -1517,7 +1564,7 @@ type AppDownloadRequest struct {
 func (x *AppDownloadRequest) Reset() {
 	*x = AppDownloadRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[28]
+		mi := &file_plugin_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1530,7 +1577,7 @@ func (x *AppDownloadRequest) String() string {
 func (*AppDownloadRequest) ProtoMessage() {}
 
 func (x *AppDownloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[28]
+	mi := &file_plugin_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1543,7 +1590,7 @@ func (x *AppDownloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppDownloadRequest.ProtoReflect.Descriptor instead.
 func (*AppDownloadRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{28}
+	return file_plugin_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *AppDownloadRequest) GetDirectory() string {
@@ -1578,7 +1625,7 @@ type AppDownloadResponse struct {
 func (x *AppDownloadResponse) Reset() {
 	*x = AppDownloadResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[29]
+		mi := &file_plugin_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1591,7 +1638,7 @@ func (x *AppDownloadResponse) String() string {
 func (*AppDownloadResponse) ProtoMessage() {}
 
 func (x *AppDownloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[29]
+	mi := &file_plugin_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1604,7 +1651,7 @@ func (x *AppDownloadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppDownloadResponse.ProtoReflect.Descriptor instead.
 func (*AppDownloadResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{29}
+	return file_plugin_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *AppDownloadResponse) GetPath() string {
@@ -1626,7 +1673,7 @@ type AppUploadRequest struct {
 func (x *AppUploadRequest) Reset() {
 	*x = AppUploadRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[30]
+		mi := &file_plugin_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1639,7 +1686,7 @@ func (x *AppUploadRequest) String() string {
 func (*AppUploadRequest) ProtoMessage() {}
 
 func (x *AppUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[30]
+	mi := &file_plugin_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1652,7 +1699,7 @@ func (x *AppUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppUploadRequest.ProtoReflect.Descriptor instead.
 func (*AppUploadRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{30}
+	return file_plugin_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *AppUploadRequest) GetId() string {
@@ -1680,7 +1727,7 @@ type AppUploadResponse struct {
 func (x *AppUploadResponse) Reset() {
 	*x = AppUploadResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[31]
+		mi := &file_plugin_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1693,7 +1740,7 @@ func (x *AppUploadResponse) String() string {
 func (*AppUploadResponse) ProtoMessage() {}
 
 func (x *AppUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[31]
+	mi := &file_plugin_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1706,7 +1753,7 @@ func (x *AppUploadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppUploadResponse.ProtoReflect.Descriptor instead.
 func (*AppUploadResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{31}
+	return file_plugin_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *AppUploadResponse) GetUrl() string {
@@ -1730,7 +1777,7 @@ type GatewayRequestRequest struct {
 func (x *GatewayRequestRequest) Reset() {
 	*x = GatewayRequestRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[32]
+		mi := &file_plugin_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1743,7 +1790,7 @@ func (x *GatewayRequestRequest) String() string {
 func (*GatewayRequestRequest) ProtoMessage() {}
 
 func (x *GatewayRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[32]
+	mi := &file_plugin_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1756,7 +1803,7 @@ func (x *GatewayRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GatewayRequestRequest.ProtoReflect.Descriptor instead.
 func (*GatewayRequestRequest) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{32}
+	return file_plugin_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GatewayRequestRequest) GetMethod() string {
@@ -1800,7 +1847,7 @@ type GatewayRequestResponse struct {
 func (x *GatewayRequestResponse) Reset() {
 	*x = GatewayRequestResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_plugin_proto_msgTypes[33]
+		mi := &file_plugin_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1813,7 +1860,7 @@ func (x *GatewayRequestResponse) String() string {
 func (*GatewayRequestResponse) ProtoMessage() {}
 
 func (x *GatewayRequestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_plugin_proto_msgTypes[33]
+	mi := &file_plugin_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1826,7 +1873,7 @@ func (x *GatewayRequestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GatewayRequestResponse.ProtoReflect.Descriptor instead.
 func (*GatewayRequestResponse) Descriptor() ([]byte, []int) {
-	return file_plugin_proto_rawDescGZIP(), []int{33}
+	return file_plugin_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *GatewayRequestResponse) GetStatusCode() int32 {
@@ -1887,7 +1934,11 @@ var file_plugin_proto_rawDesc = []byte{
 	0x4f, 0x6e, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
 	0x22, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72,
-	0x72, 0x6f, 0x72, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x50, 0x0a, 0x0c,
+	0x72, 0x6f, 0x72, 0x22, 0x3e, 0x0a, 0x18, 0x50, 0x47, 0x65, 0x74, 0x43, 0x61, 0x70, 0x61, 0x62,
+	0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x22, 0x0a, 0x0c, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x63, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74,
+	0x69, 0x65, 0x73, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x50, 0x0a, 0x0c,
 	0x44, 0x65, 0x62, 0x75, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04,
 	0x67, 0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x67, 0x75, 0x69, 0x64,
 	0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
@@ -2014,7 +2065,7 @@ var file_plugin_proto_rawDesc = []byte{
 	0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b,
 	0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a,
 	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61,
-	0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x32, 0xe7, 0x01, 0x0a, 0x04, 0x4e, 0x6f, 0x64, 0x65,
+	0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x32, 0xa9, 0x02, 0x0a, 0x04, 0x4e, 0x6f, 0x64, 0x65,
 	0x12, 0x28, 0x0a, 0x04, 0x49, 0x6e, 0x69, 0x74, 0x12, 0x12, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x2e, 0x49, 0x6e, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x3b, 0x0a, 0x08, 0x4f, 0x6e,
@@ -2029,79 +2080,83 @@ var file_plugin_proto_rawDesc = []byte{
 	0x73, 0x65, 0x12, 0x15, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x4f, 0x6e, 0x43, 0x6c, 0x6f,
 	0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2e, 0x4f, 0x6e, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x32, 0xd4, 0x08, 0x0a, 0x0d, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x48, 0x65, 0x6c,
-	0x70, 0x65, 0x72, 0x12, 0x23, 0x0a, 0x05, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x12, 0x0c, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x2a, 0x0a, 0x05, 0x44, 0x65, 0x62, 0x75,
-	0x67, 0x12, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x44, 0x65, 0x62, 0x75, 0x67, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45,
-	0x6d, 0x70, 0x74, 0x79, 0x12, 0x3a, 0x0a, 0x0d, 0x45, 0x6d, 0x69, 0x74, 0x46, 0x6c, 0x6f, 0x77,
-	0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d,
-	0x69, 0x74, 0x46, 0x6c, 0x6f, 0x77, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x65, 0x12, 0x40, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x43, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69,
+	0x74, 0x69, 0x65, 0x73, 0x12, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70,
+	0x74, 0x79, 0x1a, 0x1f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x50, 0x47, 0x65, 0x74, 0x43,
+	0x61, 0x70, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x32, 0xd4, 0x08, 0x0a, 0x0d, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x48,
+	0x65, 0x6c, 0x70, 0x65, 0x72, 0x12, 0x23, 0x0a, 0x05, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x12, 0x0c,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0c, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x2a, 0x0a, 0x05, 0x44, 0x65,
+	0x62, 0x75, 0x67, 0x12, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x44, 0x65, 0x62, 0x75,
+	0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x3a, 0x0a, 0x0d, 0x45, 0x6d, 0x69, 0x74, 0x46, 0x6c,
+	0x6f, 0x77, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e,
+	0x45, 0x6d, 0x69, 0x74, 0x46, 0x6c, 0x6f, 0x77, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70,
+	0x74, 0x79, 0x12, 0x32, 0x0a, 0x09, 0x45, 0x6d, 0x69, 0x74, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x12,
+	0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x69, 0x74, 0x49, 0x6e, 0x70, 0x75,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x34, 0x0a, 0x0a, 0x45, 0x6d, 0x69, 0x74, 0x4f, 0x75,
+	0x74, 0x70, 0x75, 0x74, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x69,
+	0x74, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x32, 0x0a, 0x09,
+	0x45, 0x6d, 0x69, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2e, 0x45, 0x6d, 0x69, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
-	0x12, 0x32, 0x0a, 0x09, 0x45, 0x6d, 0x69, 0x74, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x12, 0x17, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x69, 0x74, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45,
-	0x6d, 0x70, 0x74, 0x79, 0x12, 0x34, 0x0a, 0x0a, 0x45, 0x6d, 0x69, 0x74, 0x4f, 0x75, 0x74, 0x70,
-	0x75, 0x74, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x69, 0x74, 0x4f,
-	0x75, 0x74, 0x70, 0x75, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x32, 0x0a, 0x09, 0x45, 0x6d,
-	0x69, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e,
-	0x45, 0x6d, 0x69, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x47,
-	0x0a, 0x0c, 0x47, 0x65, 0x74, 0x56, 0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d, 0x12, 0x1a,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x75, 0x6c, 0x74, 0x49,
-	0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x47, 0x0a, 0x0c, 0x53, 0x65, 0x74, 0x56, 0x61,
-	0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d, 0x12, 0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e,
-	0x53, 0x65, 0x74, 0x56, 0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x53, 0x65, 0x74, 0x56,
-	0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x44, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12,
-	0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
-	0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x36, 0x0a, 0x0b, 0x53, 0x65, 0x74, 0x56, 0x61, 0x72,
-	0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x53, 0x65,
-	0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x39,
-	0x0a, 0x0c, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x62, 0x6f, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x0c,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x1b, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x62, 0x6f, 0x74, 0x49, 0x6e, 0x66,
-	0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x0a, 0x41, 0x70, 0x70,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e,
-	0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x45, 0x0a, 0x0c,
-	0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x56, 0x32, 0x12, 0x1a, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x56,
-	0x32, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x0a, 0x41, 0x70, 0x70, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73,
-	0x68, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x50, 0x75, 0x62,
-	0x6c, 0x69, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x38, 0x0a, 0x0c, 0x44, 0x6f, 0x77,
-	0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d,
-	0x70, 0x74, 0x79, 0x12, 0x44, 0x0a, 0x0b, 0x41, 0x70, 0x70, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f,
-	0x61, 0x64, 0x12, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x44, 0x6f,
-	0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61,
-	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x09, 0x41, 0x70, 0x70,
-	0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41,
-	0x70, 0x70, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x55, 0x70, 0x6c, 0x6f, 0x61,
-	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d, 0x0a, 0x0e, 0x47, 0x61, 0x74,
-	0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x2e, 0x70, 0x72,
+	0x12, 0x47, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x56, 0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d,
+	0x12, 0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x75, 0x6c,
+	0x74, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65,
+	0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x47, 0x0a, 0x0c, 0x53, 0x65, 0x74,
+	0x56, 0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d, 0x12, 0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2e, 0x53, 0x65, 0x74, 0x56, 0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x53, 0x65,
+	0x74, 0x56, 0x61, 0x75, 0x6c, 0x74, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x44, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c,
+	0x65, 0x12, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x36, 0x0a, 0x0b, 0x53, 0x65, 0x74, 0x56,
+	0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e,
+	0x53, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
+	0x12, 0x39, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x62, 0x6f, 0x74, 0x49, 0x6e, 0x66, 0x6f,
+	0x12, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x1b,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x62, 0x6f, 0x74, 0x49,
+	0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x0a, 0x41,
+	0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x45,
+	0x0a, 0x0c, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x56, 0x32, 0x12, 0x1a,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x56, 0x32, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a, 0x0a, 0x41, 0x70, 0x70, 0x50, 0x75, 0x62, 0x6c,
+	0x69, 0x73, 0x68, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x50,
+	0x75, 0x62, 0x6c, 0x69, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x38, 0x0a, 0x0c, 0x44,
+	0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x1a, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e,
+	0x45, 0x6d, 0x70, 0x74, 0x79, 0x12, 0x44, 0x0a, 0x0b, 0x41, 0x70, 0x70, 0x44, 0x6f, 0x77, 0x6e,
+	0x6c, 0x6f, 0x61, 0x64, 0x12, 0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70,
+	0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x44, 0x6f, 0x77, 0x6e, 0x6c,
+	0x6f, 0x61, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x09, 0x41,
+	0x70, 0x70, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2e, 0x41, 0x70, 0x70, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x41, 0x70, 0x70, 0x55, 0x70, 0x6c,
+	0x6f, 0x61, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4d, 0x0a, 0x0e, 0x47,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x24, 0x5a, 0x22, 0x72, 0x6f, 0x62, 0x6f,
-	0x6d, 0x6f, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x72, 0x6f, 0x62, 0x6f, 0x6d, 0x6f, 0x74, 0x69, 0x6f,
-	0x6e, 0x2d, 0x72, 0x75, 0x6e, 0x6e, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x24, 0x5a, 0x22, 0x72, 0x6f,
+	0x62, 0x6f, 0x6d, 0x6f, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x72, 0x6f, 0x62, 0x6f, 0x6d, 0x6f, 0x74,
+	0x69, 0x6f, 0x6e, 0x2d, 0x72, 0x75, 0x6e, 0x6e, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2116,105 +2171,108 @@ func file_plugin_proto_rawDescGZIP() []byte {
 	return file_plugin_proto_rawDescData
 }
 
-var file_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
+var file_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_plugin_proto_goTypes = []interface{}{
-	(*Error)(nil),                  // 0: proto.Error
-	(*InitRequest)(nil),            // 1: proto.InitRequest
-	(*OnCreateRequest)(nil),        // 2: proto.OnCreateRequest
-	(*OnCreateResponse)(nil),       // 3: proto.OnCreateResponse
-	(*OnMessageRequest)(nil),       // 4: proto.OnMessageRequest
-	(*OnMessageResponse)(nil),      // 5: proto.OnMessageResponse
-	(*OnCloseRequest)(nil),         // 6: proto.OnCloseRequest
-	(*OnCloseResponse)(nil),        // 7: proto.OnCloseResponse
-	(*Empty)(nil),                  // 8: proto.Empty
-	(*DebugRequest)(nil),           // 9: proto.DebugRequest
-	(*EmitFlowEventRequest)(nil),   // 10: proto.EmitFlowEventRequest
-	(*EmitInputRequest)(nil),       // 11: proto.EmitInputRequest
-	(*EmitOutputRequest)(nil),      // 12: proto.EmitOutputRequest
-	(*EmitErrorRequest)(nil),       // 13: proto.EmitErrorRequest
-	(*GetVaultItemRequest)(nil),    // 14: proto.GetVaultItemRequest
-	(*GetVaultItemResponse)(nil),   // 15: proto.GetVaultItemResponse
-	(*SetVaultItemRequest)(nil),    // 16: proto.SetVaultItemRequest
-	(*SetVaultItemResponse)(nil),   // 17: proto.SetVaultItemResponse
-	(*Variable)(nil),               // 18: proto.Variable
-	(*GetVariableRequest)(nil),     // 19: proto.GetVariableRequest
-	(*GetVariableResponse)(nil),    // 20: proto.GetVariableResponse
-	(*SetVariableRequest)(nil),     // 21: proto.SetVariableRequest
-	(*GetRobotInfoResponse)(nil),   // 22: proto.GetRobotInfoResponse
-	(*AppRequestRequest)(nil),      // 23: proto.AppRequestRequest
-	(*AppRequestV2Request)(nil),    // 24: proto.AppRequestV2Request
-	(*AppRequestResponse)(nil),     // 25: proto.AppRequestResponse
-	(*AppPublishRequest)(nil),      // 26: proto.AppPublishRequest
-	(*DownloadFileRequest)(nil),    // 27: proto.DownloadFileRequest
-	(*AppDownloadRequest)(nil),     // 28: proto.AppDownloadRequest
-	(*AppDownloadResponse)(nil),    // 29: proto.AppDownloadResponse
-	(*AppUploadRequest)(nil),       // 30: proto.AppUploadRequest
-	(*AppUploadResponse)(nil),      // 31: proto.AppUploadResponse
-	(*GatewayRequestRequest)(nil),  // 32: proto.GatewayRequestRequest
-	(*GatewayRequestResponse)(nil), // 33: proto.GatewayRequestResponse
-	nil,                            // 34: proto.GatewayRequestRequest.HeadersEntry
-	nil,                            // 35: proto.GatewayRequestResponse.HeadersEntry
-	(*_struct.Struct)(nil),         // 36: google.protobuf.Struct
+	(*Error)(nil),                    // 0: proto.Error
+	(*InitRequest)(nil),              // 1: proto.InitRequest
+	(*OnCreateRequest)(nil),          // 2: proto.OnCreateRequest
+	(*OnCreateResponse)(nil),         // 3: proto.OnCreateResponse
+	(*OnMessageRequest)(nil),         // 4: proto.OnMessageRequest
+	(*OnMessageResponse)(nil),        // 5: proto.OnMessageResponse
+	(*OnCloseRequest)(nil),           // 6: proto.OnCloseRequest
+	(*OnCloseResponse)(nil),          // 7: proto.OnCloseResponse
+	(*PGetCapabilitiesResponse)(nil), // 8: proto.PGetCapabilitiesResponse
+	(*Empty)(nil),                    // 9: proto.Empty
+	(*DebugRequest)(nil),             // 10: proto.DebugRequest
+	(*EmitFlowEventRequest)(nil),     // 11: proto.EmitFlowEventRequest
+	(*EmitInputRequest)(nil),         // 12: proto.EmitInputRequest
+	(*EmitOutputRequest)(nil),        // 13: proto.EmitOutputRequest
+	(*EmitErrorRequest)(nil),         // 14: proto.EmitErrorRequest
+	(*GetVaultItemRequest)(nil),      // 15: proto.GetVaultItemRequest
+	(*GetVaultItemResponse)(nil),     // 16: proto.GetVaultItemResponse
+	(*SetVaultItemRequest)(nil),      // 17: proto.SetVaultItemRequest
+	(*SetVaultItemResponse)(nil),     // 18: proto.SetVaultItemResponse
+	(*Variable)(nil),                 // 19: proto.Variable
+	(*GetVariableRequest)(nil),       // 20: proto.GetVariableRequest
+	(*GetVariableResponse)(nil),      // 21: proto.GetVariableResponse
+	(*SetVariableRequest)(nil),       // 22: proto.SetVariableRequest
+	(*GetRobotInfoResponse)(nil),     // 23: proto.GetRobotInfoResponse
+	(*AppRequestRequest)(nil),        // 24: proto.AppRequestRequest
+	(*AppRequestV2Request)(nil),      // 25: proto.AppRequestV2Request
+	(*AppRequestResponse)(nil),       // 26: proto.AppRequestResponse
+	(*AppPublishRequest)(nil),        // 27: proto.AppPublishRequest
+	(*DownloadFileRequest)(nil),      // 28: proto.DownloadFileRequest
+	(*AppDownloadRequest)(nil),       // 29: proto.AppDownloadRequest
+	(*AppDownloadResponse)(nil),      // 30: proto.AppDownloadResponse
+	(*AppUploadRequest)(nil),         // 31: proto.AppUploadRequest
+	(*AppUploadResponse)(nil),        // 32: proto.AppUploadResponse
+	(*GatewayRequestRequest)(nil),    // 33: proto.GatewayRequestRequest
+	(*GatewayRequestResponse)(nil),   // 34: proto.GatewayRequestResponse
+	nil,                              // 35: proto.GatewayRequestRequest.HeadersEntry
+	nil,                              // 36: proto.GatewayRequestResponse.HeadersEntry
+	(*_struct.Struct)(nil),           // 37: google.protobuf.Struct
 }
 var file_plugin_proto_depIdxs = []int32{
 	0,  // 0: proto.OnCreateResponse.error:type_name -> proto.Error
 	0,  // 1: proto.OnMessageResponse.error:type_name -> proto.Error
 	0,  // 2: proto.OnCloseResponse.error:type_name -> proto.Error
-	36, // 3: proto.GetVaultItemResponse.item:type_name -> google.protobuf.Struct
-	36, // 4: proto.SetVaultItemResponse.item:type_name -> google.protobuf.Struct
-	18, // 5: proto.GetVariableRequest.variable:type_name -> proto.Variable
-	36, // 6: proto.GetVariableResponse.value:type_name -> google.protobuf.Struct
-	18, // 7: proto.SetVariableRequest.variable:type_name -> proto.Variable
-	36, // 8: proto.SetVariableRequest.value:type_name -> google.protobuf.Struct
-	36, // 9: proto.GetRobotInfoResponse.robot:type_name -> google.protobuf.Struct
-	34, // 10: proto.GatewayRequestRequest.headers:type_name -> proto.GatewayRequestRequest.HeadersEntry
-	35, // 11: proto.GatewayRequestResponse.headers:type_name -> proto.GatewayRequestResponse.HeadersEntry
+	37, // 3: proto.GetVaultItemResponse.item:type_name -> google.protobuf.Struct
+	37, // 4: proto.SetVaultItemResponse.item:type_name -> google.protobuf.Struct
+	19, // 5: proto.GetVariableRequest.variable:type_name -> proto.Variable
+	37, // 6: proto.GetVariableResponse.value:type_name -> google.protobuf.Struct
+	19, // 7: proto.SetVariableRequest.variable:type_name -> proto.Variable
+	37, // 8: proto.SetVariableRequest.value:type_name -> google.protobuf.Struct
+	37, // 9: proto.GetRobotInfoResponse.robot:type_name -> google.protobuf.Struct
+	35, // 10: proto.GatewayRequestRequest.headers:type_name -> proto.GatewayRequestRequest.HeadersEntry
+	36, // 11: proto.GatewayRequestResponse.headers:type_name -> proto.GatewayRequestResponse.HeadersEntry
 	1,  // 12: proto.Node.Init:input_type -> proto.InitRequest
 	2,  // 13: proto.Node.OnCreate:input_type -> proto.OnCreateRequest
 	4,  // 14: proto.Node.OnMessage:input_type -> proto.OnMessageRequest
 	6,  // 15: proto.Node.OnClose:input_type -> proto.OnCloseRequest
-	8,  // 16: proto.RuntimeHelper.Close:input_type -> proto.Empty
-	9,  // 17: proto.RuntimeHelper.Debug:input_type -> proto.DebugRequest
-	10, // 18: proto.RuntimeHelper.EmitFlowEvent:input_type -> proto.EmitFlowEventRequest
-	11, // 19: proto.RuntimeHelper.EmitInput:input_type -> proto.EmitInputRequest
-	12, // 20: proto.RuntimeHelper.EmitOutput:input_type -> proto.EmitOutputRequest
-	13, // 21: proto.RuntimeHelper.EmitError:input_type -> proto.EmitErrorRequest
-	14, // 22: proto.RuntimeHelper.GetVaultItem:input_type -> proto.GetVaultItemRequest
-	16, // 23: proto.RuntimeHelper.SetVaultItem:input_type -> proto.SetVaultItemRequest
-	19, // 24: proto.RuntimeHelper.GetVariable:input_type -> proto.GetVariableRequest
-	21, // 25: proto.RuntimeHelper.SetVariable:input_type -> proto.SetVariableRequest
-	8,  // 26: proto.RuntimeHelper.GetRobotInfo:input_type -> proto.Empty
-	23, // 27: proto.RuntimeHelper.AppRequest:input_type -> proto.AppRequestRequest
-	24, // 28: proto.RuntimeHelper.AppRequestV2:input_type -> proto.AppRequestV2Request
-	26, // 29: proto.RuntimeHelper.AppPublish:input_type -> proto.AppPublishRequest
-	27, // 30: proto.RuntimeHelper.DownloadFile:input_type -> proto.DownloadFileRequest
-	28, // 31: proto.RuntimeHelper.AppDownload:input_type -> proto.AppDownloadRequest
-	30, // 32: proto.RuntimeHelper.AppUpload:input_type -> proto.AppUploadRequest
-	32, // 33: proto.RuntimeHelper.GatewayRequest:input_type -> proto.GatewayRequestRequest
-	8,  // 34: proto.Node.Init:output_type -> proto.Empty
-	3,  // 35: proto.Node.OnCreate:output_type -> proto.OnCreateResponse
-	5,  // 36: proto.Node.OnMessage:output_type -> proto.OnMessageResponse
-	7,  // 37: proto.Node.OnClose:output_type -> proto.OnCloseResponse
-	8,  // 38: proto.RuntimeHelper.Close:output_type -> proto.Empty
-	8,  // 39: proto.RuntimeHelper.Debug:output_type -> proto.Empty
-	8,  // 40: proto.RuntimeHelper.EmitFlowEvent:output_type -> proto.Empty
-	8,  // 41: proto.RuntimeHelper.EmitInput:output_type -> proto.Empty
-	8,  // 42: proto.RuntimeHelper.EmitOutput:output_type -> proto.Empty
-	8,  // 43: proto.RuntimeHelper.EmitError:output_type -> proto.Empty
-	15, // 44: proto.RuntimeHelper.GetVaultItem:output_type -> proto.GetVaultItemResponse
-	17, // 45: proto.RuntimeHelper.SetVaultItem:output_type -> proto.SetVaultItemResponse
-	20, // 46: proto.RuntimeHelper.GetVariable:output_type -> proto.GetVariableResponse
-	8,  // 47: proto.RuntimeHelper.SetVariable:output_type -> proto.Empty
-	22, // 48: proto.RuntimeHelper.GetRobotInfo:output_type -> proto.GetRobotInfoResponse
-	25, // 49: proto.RuntimeHelper.AppRequest:output_type -> proto.AppRequestResponse
-	25, // 50: proto.RuntimeHelper.AppRequestV2:output_type -> proto.AppRequestResponse
-	8,  // 51: proto.RuntimeHelper.AppPublish:output_type -> proto.Empty
-	8,  // 52: proto.RuntimeHelper.DownloadFile:output_type -> proto.Empty
-	29, // 53: proto.RuntimeHelper.AppDownload:output_type -> proto.AppDownloadResponse
-	31, // 54: proto.RuntimeHelper.AppUpload:output_type -> proto.AppUploadResponse
-	33, // 55: proto.RuntimeHelper.GatewayRequest:output_type -> proto.GatewayRequestResponse
-	34, // [34:56] is the sub-list for method output_type
-	12, // [12:34] is the sub-list for method input_type
+	9,  // 16: proto.Node.GetCapabilities:input_type -> proto.Empty
+	9,  // 17: proto.RuntimeHelper.Close:input_type -> proto.Empty
+	10, // 18: proto.RuntimeHelper.Debug:input_type -> proto.DebugRequest
+	11, // 19: proto.RuntimeHelper.EmitFlowEvent:input_type -> proto.EmitFlowEventRequest
+	12, // 20: proto.RuntimeHelper.EmitInput:input_type -> proto.EmitInputRequest
+	13, // 21: proto.RuntimeHelper.EmitOutput:input_type -> proto.EmitOutputRequest
+	14, // 22: proto.RuntimeHelper.EmitError:input_type -> proto.EmitErrorRequest
+	15, // 23: proto.RuntimeHelper.GetVaultItem:input_type -> proto.GetVaultItemRequest
+	17, // 24: proto.RuntimeHelper.SetVaultItem:input_type -> proto.SetVaultItemRequest
+	20, // 25: proto.RuntimeHelper.GetVariable:input_type -> proto.GetVariableRequest
+	22, // 26: proto.RuntimeHelper.SetVariable:input_type -> proto.SetVariableRequest
+	9,  // 27: proto.RuntimeHelper.GetRobotInfo:input_type -> proto.Empty
+	24, // 28: proto.RuntimeHelper.AppRequest:input_type -> proto.AppRequestRequest
+	25, // 29: proto.RuntimeHelper.AppRequestV2:input_type -> proto.AppRequestV2Request
+	27, // 30: proto.RuntimeHelper.AppPublish:input_type -> proto.AppPublishRequest
+	28, // 31: proto.RuntimeHelper.DownloadFile:input_type -> proto.DownloadFileRequest
+	29, // 32: proto.RuntimeHelper.AppDownload:input_type -> proto.AppDownloadRequest
+	31, // 33: proto.RuntimeHelper.AppUpload:input_type -> proto.AppUploadRequest
+	33, // 34: proto.RuntimeHelper.GatewayRequest:input_type -> proto.GatewayRequestRequest
+	9,  // 35: proto.Node.Init:output_type -> proto.Empty
+	3,  // 36: proto.Node.OnCreate:output_type -> proto.OnCreateResponse
+	5,  // 37: proto.Node.OnMessage:output_type -> proto.OnMessageResponse
+	7,  // 38: proto.Node.OnClose:output_type -> proto.OnCloseResponse
+	8,  // 39: proto.Node.GetCapabilities:output_type -> proto.PGetCapabilitiesResponse
+	9,  // 40: proto.RuntimeHelper.Close:output_type -> proto.Empty
+	9,  // 41: proto.RuntimeHelper.Debug:output_type -> proto.Empty
+	9,  // 42: proto.RuntimeHelper.EmitFlowEvent:output_type -> proto.Empty
+	9,  // 43: proto.RuntimeHelper.EmitInput:output_type -> proto.Empty
+	9,  // 44: proto.RuntimeHelper.EmitOutput:output_type -> proto.Empty
+	9,  // 45: proto.RuntimeHelper.EmitError:output_type -> proto.Empty
+	16, // 46: proto.RuntimeHelper.GetVaultItem:output_type -> proto.GetVaultItemResponse
+	18, // 47: proto.RuntimeHelper.SetVaultItem:output_type -> proto.SetVaultItemResponse
+	21, // 48: proto.RuntimeHelper.GetVariable:output_type -> proto.GetVariableResponse
+	9,  // 49: proto.RuntimeHelper.SetVariable:output_type -> proto.Empty
+	23, // 50: proto.RuntimeHelper.GetRobotInfo:output_type -> proto.GetRobotInfoResponse
+	26, // 51: proto.RuntimeHelper.AppRequest:output_type -> proto.AppRequestResponse
+	26, // 52: proto.RuntimeHelper.AppRequestV2:output_type -> proto.AppRequestResponse
+	9,  // 53: proto.RuntimeHelper.AppPublish:output_type -> proto.Empty
+	9,  // 54: proto.RuntimeHelper.DownloadFile:output_type -> proto.Empty
+	30, // 55: proto.RuntimeHelper.AppDownload:output_type -> proto.AppDownloadResponse
+	32, // 56: proto.RuntimeHelper.AppUpload:output_type -> proto.AppUploadResponse
+	34, // 57: proto.RuntimeHelper.GatewayRequest:output_type -> proto.GatewayRequestResponse
+	35, // [35:58] is the sub-list for method output_type
+	12, // [12:35] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
 	12, // [12:12] is the sub-list for extension extendee
 	0,  // [0:12] is the sub-list for field type_name
@@ -2323,7 +2381,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Empty); i {
+			switch v := v.(*PGetCapabilitiesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2335,7 +2393,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DebugRequest); i {
+			switch v := v.(*Empty); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2347,7 +2405,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EmitFlowEventRequest); i {
+			switch v := v.(*DebugRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2359,7 +2417,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EmitInputRequest); i {
+			switch v := v.(*EmitFlowEventRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2371,7 +2429,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EmitOutputRequest); i {
+			switch v := v.(*EmitInputRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2383,7 +2441,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EmitErrorRequest); i {
+			switch v := v.(*EmitOutputRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2395,7 +2453,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetVaultItemRequest); i {
+			switch v := v.(*EmitErrorRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2407,7 +2465,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetVaultItemResponse); i {
+			switch v := v.(*GetVaultItemRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2419,7 +2477,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SetVaultItemRequest); i {
+			switch v := v.(*GetVaultItemResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2431,7 +2489,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SetVaultItemResponse); i {
+			switch v := v.(*SetVaultItemRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2443,7 +2501,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Variable); i {
+			switch v := v.(*SetVaultItemResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2455,7 +2513,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetVariableRequest); i {
+			switch v := v.(*Variable); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2467,7 +2525,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetVariableResponse); i {
+			switch v := v.(*GetVariableRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2479,7 +2537,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SetVariableRequest); i {
+			switch v := v.(*GetVariableResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2491,7 +2549,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetRobotInfoResponse); i {
+			switch v := v.(*SetVariableRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2503,7 +2561,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppRequestRequest); i {
+			switch v := v.(*GetRobotInfoResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2515,7 +2573,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppRequestV2Request); i {
+			switch v := v.(*AppRequestRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2527,7 +2585,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppRequestResponse); i {
+			switch v := v.(*AppRequestV2Request); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2539,7 +2597,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppPublishRequest); i {
+			switch v := v.(*AppRequestResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2551,7 +2609,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DownloadFileRequest); i {
+			switch v := v.(*AppPublishRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2563,7 +2621,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppDownloadRequest); i {
+			switch v := v.(*DownloadFileRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2575,7 +2633,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppDownloadResponse); i {
+			switch v := v.(*AppDownloadRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2587,7 +2645,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppUploadRequest); i {
+			switch v := v.(*AppDownloadResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2599,7 +2657,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppUploadResponse); i {
+			switch v := v.(*AppUploadRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2611,7 +2669,7 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GatewayRequestRequest); i {
+			switch v := v.(*AppUploadResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2623,6 +2681,18 @@ func file_plugin_proto_init() {
 			}
 		}
 		file_plugin_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GatewayRequestRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_plugin_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GatewayRequestResponse); i {
 			case 0:
 				return &v.state
@@ -2641,7 +2711,7 @@ func file_plugin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_plugin_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   36,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
