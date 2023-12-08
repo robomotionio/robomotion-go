@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/robomotionio/robomotion-go/message"
+	"github.com/tidwall/gjson"
 )
 
 type variable struct {
@@ -228,8 +229,8 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		if val == nil {
 			return t, nil
 		}
-	}
 
+	}
 	kind := reflect.Invalid
 	typ := reflect.TypeOf(t)
 	if typ != nil {
@@ -260,29 +261,51 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 
 		case reflect.String:
 			return v.getString(val)
-
 		default:
+
 			d, err := json.Marshal(val)
 			if err != nil {
 				return t, err
 			}
 
+			gRes := gjson.ParseBytes(d)
+			if IsLMO(gRes) {
+				var lmo = LargeMessageObject{}
+				json.Unmarshal(d, &lmo)
+				res, _ := DeserializeLMO(lmo.ID)
+				t = res.Data.(T)
+				return t, nil
+
+			}
 			err = json.Unmarshal(d, &t)
 			if err != nil {
 				return t, err
 			}
 
-			return t, nil
 		}
 	}
-
 	if client == nil {
 		return t, fmt.Errorf("Runtime was not initialized")
 	}
-
-	val, err := client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string), Payload: ctx.GetRaw()})
+	payload, err := ctx.GetRaw()
 	if err != nil {
 		return t, err
+	}
+	val, err = client.GetVariable(&variable{Scope: v.Scope, Name: v.Name.(string), Payload: payload})
+	if err != nil {
+		return t, err
+	}
+
+	valBytes, _ := json.Marshal(val)
+	gRes := gjson.ParseBytes(valBytes)
+	if IsLMO(gRes) {
+		var lmo = &LargeMessageObject{}
+		json.Unmarshal(valBytes, lmo)
+
+		lmo, _ = DeserializeLMO(lmo.ID)
+		t = lmo.Data.(T)
+		return t, nil
+
 	}
 
 	t, ok := val.(T)
@@ -292,17 +315,24 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			reflect.TypeOf(val).String(),
 		)
 	}
-
 	return t, nil
 }
 
 func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
-
 	if v.Scope == "Message" {
 		if v.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
+		if IsLMOCapable() {
+			serializedValue, err := SerializeLMO(value)
+			if err != nil {
+				return err
+			}
+			if serializedValue != nil {
+				return ctx.Set(v.Name.(string), serializedValue)
+			}
 
+		}
 		return ctx.Set(v.Name.(string), value)
 	}
 
@@ -310,5 +340,15 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
+	if IsLMOCapable() {
+		lmo, err := SerializeLMO(value)
+		if err != nil {
+			return err
+		}
+		if lmo != nil {
+			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, lmo)
+		}
+
+	}
 	return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
 }

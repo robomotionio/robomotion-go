@@ -105,7 +105,7 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 	}
 
 	if !msgCtx.IsEmpty() {
-		resp.OutMessage = msgCtx.GetRaw()
+		resp.OutMessage, err = msgCtx.GetRaw()
 	}
 
 	time.Sleep(time.Duration(node.DelayAfter*1000) * time.Millisecond)
@@ -130,6 +130,10 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 		}
 	}()
 	return &proto.OnCloseResponse{}, err
+}
+
+func (m *GRPCServer) GetCapabilities(ctx context.Context, req *proto.Empty) (*proto.PGetCapabilitiesResponse, error) {
+	return &proto.PGetCapabilitiesResponse{Capabilities: Capabilites()}, nil
 }
 
 // GRPCClient is an implementation of KV that talks over RPC.

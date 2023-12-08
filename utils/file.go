@@ -44,3 +44,18 @@ func TempDir() string {
 	}
 	return dir
 }
+
+func GetTempPath() string {
+	switch runtime.GOOS {
+	case "windows":
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home + "\\AppData\\Local\\Robomotion\\temp"
+	case "linux", "darwin":
+		return UserHomeDir() + "/.config/robomotion/temp"
+	}
+
+	return ""
+}
