@@ -133,7 +133,7 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 }
 
 func (m *GRPCServer) GetCapabilities(ctx context.Context, req *proto.Empty) (*proto.PGetCapabilitiesResponse, error) {
-	return &proto.PGetCapabilitiesResponse{Capabilities: Capabilites()}, nil
+	return &proto.PGetCapabilitiesResponse{Capabilities: uint64(packageCapabilities)}, nil
 }
 
 // GRPCClient is an implementation of KV that talks over RPC.
