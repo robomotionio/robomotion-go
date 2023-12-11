@@ -346,7 +346,17 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 			return err
 		}
 		if lmo != nil {
-			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, lmo)
+
+			//The reason of Marshal & Unmarshal  id field of the LMO is capitalized which is ID,
+			//but robot expects "id"
+			m := make(map[string]interface{})
+			_lmo, err := json.Marshal(lmo)
+			if err != nil {
+				return err
+			}
+			json.Unmarshal(_lmo, &m)
+
+			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, m)
 		}
 
 	}
