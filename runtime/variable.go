@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/robomotionio/robomotion-go/message"
-	"github.com/tidwall/gjson"
 )
 
 type variable struct {
@@ -225,12 +224,22 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 	}
 
 	if v.Scope == "Message" {
+
 		val = ctx.Get(v.Name.(string))
 		if val == nil {
 			return t, nil
 		}
 
+		if IsLMO(val) {
+			lmo, err := DeserializeLMOfromMap(val.(map[string]interface{}))
+			if err != nil {
+				return t, err
+			}
+			return lmo.Data.(T), nil
+		}
+
 	}
+
 	kind := reflect.Invalid
 	typ := reflect.TypeOf(t)
 	if typ != nil {
@@ -268,15 +277,6 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 				return t, err
 			}
 
-			gRes := gjson.ParseBytes(d)
-			if IsLMO(gRes) {
-				var lmo = LargeMessageObject{}
-				json.Unmarshal(d, &lmo)
-				res, _ := DeserializeLMO(lmo.ID)
-				t = res.Data.(T)
-				return t, nil
-
-			}
 			err = json.Unmarshal(d, &t)
 			if err != nil {
 				return t, err
@@ -296,16 +296,12 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		return t, err
 	}
 
-	valBytes, _ := json.Marshal(val)
-	gRes := gjson.ParseBytes(valBytes)
-	if IsLMO(gRes) {
-		var lmo = &LargeMessageObject{}
-		json.Unmarshal(valBytes, lmo)
-
-		lmo, _ = DeserializeLMO(lmo.ID)
-		t = lmo.Data.(T)
-		return t, nil
-
+	if IsLMO(val) {
+		lmo, err := DeserializeLMOfromMap(val.(map[string]interface{}))
+		if err != nil {
+			return t, err
+		}
+		return lmo.Data.(T), nil
 	}
 
 	t, ok := val.(T)
@@ -319,6 +315,7 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 }
 
 func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
+
 	if v.Scope == "Message" {
 		if v.Name == "" {
 			return fmt.Errorf("Empty message object")
@@ -346,17 +343,7 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 			return err
 		}
 		if lmo != nil {
-
-			//The reason of Marshal & Unmarshal  id field of the LMO is capitalized which is ID,
-			//but robot expects "id"
-			m := make(map[string]interface{})
-			_lmo, err := json.Marshal(lmo)
-			if err != nil {
-				return err
-			}
-			json.Unmarshal(_lmo, &m)
-
-			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, m)
+			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, lmo)
 		}
 
 	}
