@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/base32"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 
@@ -113,12 +113,7 @@ func SerializeLMO(value interface{}) (*LargeMessageObject, error) {
 // DeserializeLMO reads a file identified by the given ID and unmarshals its content
 // back into a LargeMessageObject.
 func DeserializeLMO(id string) (*LargeMessageObject, error) {
-	robotID := ""
-	var ok bool
-	if robotID, ok = robotInfo["id"].(string); !ok {
-		return nil, nil
-	}
-
+	robotID, _ := GetRobotID()
 	tempPath := utils.GetTempPath()
 	dir := path.Join(tempPath, "robots", robotID)
 	filePath := path.Join(dir, id+".lmo")
@@ -141,6 +136,14 @@ func DeserializeLMO(id string) (*LargeMessageObject, error) {
 	}
 
 	return lmo, nil
+}
+
+func DeserializeLMOfromMap(m map[string]interface{}) (*LargeMessageObject, error) {
+	if id, ok := m["id"].(string); ok {
+		return DeserializeLMO(id)
+	}
+
+	return nil, fmt.Errorf("failed to deserialize lmo")
 }
 
 // PackMessageBytes checks if the input message needs packing based on
@@ -244,23 +247,32 @@ func UnpackMessage(inMsg []byte, msg map[string]interface{}) error {
 // IsLMO checks if the provided gjson.Result represents a Large Message Object (LMO).
 // It first determines if the system has the capability to handle LMOs and then verifies if the value
 // is of JSON type with the correct "magic" number identifier specific to LMOs.
-func IsLMO(value gjson.Result) bool {
-	if !IsLMOCapable() || value.Type != gjson.JSON {
+func IsLMO(value any) bool {
+
+	if !IsLMOCapable() {
 		return false
 	}
 
-	return int64(gjson.Get(value.Raw, "magic").Float()) == LMO_MAGIC
+	if mapVal, ok := value.(map[string]interface{}); ok {
+		if magicVal, ok := mapVal["magic"].(float64); ok {
+			return int64(magicVal) == LMO_MAGIC
+		}
+	}
+
+	if gjsonVal, ok := value.(gjson.Result); ok {
+		if gjsonVal.Type == gjson.JSON {
+			return int64(gjson.Get(gjsonVal.Raw, "magic").Float()) == LMO_MAGIC
+		}
+	}
+
+	return false
 }
 
 func DeleteLMObyID(id string) {
-	robotID := ""
-	var ok bool
-	if robotID, ok = robotInfo["id"].(string); !ok {
-		log.Println("id not found")
-		return
-	}
+	robotID, _ := GetRobotID()
 	tempPath := utils.GetTempPath()
 
-	dir := path.Join(tempPath, "robots", robotID, id)
-	os.Remove(dir)
+	dir := path.Join(tempPath, "robots", robotID)
+	filePath := path.Join(dir, id+".lmo")
+	os.Remove(filePath)
 }
