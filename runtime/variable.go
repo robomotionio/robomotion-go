@@ -259,9 +259,7 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		case reflect.Bool:
 			return v.getBool(val)
 
-		case reflect.String:
-			return v.getString(val)
-		default:
+		default: //For string, array and map
 
 			d, err := json.Marshal(val)
 			if err != nil {
@@ -329,7 +327,11 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 				return err
 			}
 			if serializedValue != nil {
-				return ctx.Set(v.Name.(string), serializedValue)
+				m, err := serializedValue.ToMap()
+				if err != nil {
+					return err
+				}
+				return ctx.Set(v.Name.(string), m)
 			}
 
 		}
@@ -349,12 +351,10 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 
 			//The reason of Marshal & Unmarshal  id field of the LMO is capitalized which is ID,
 			//but robot expects "id"
-			m := make(map[string]interface{})
-			_lmo, err := json.Marshal(lmo)
+			m, err := lmo.ToMap()
 			if err != nil {
 				return err
 			}
-			json.Unmarshal(_lmo, &m)
 
 			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, m)
 		}

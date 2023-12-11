@@ -42,6 +42,16 @@ type LargeMessageObject struct {
 	Data    interface{} `json:"data"`
 }
 
+func (lmo *LargeMessageObject) ToMap() (map[string]interface{}, error) {
+	m := make(map[string]interface{})
+	_lmo, err := json.Marshal(lmo)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal(_lmo, &m)
+	return m, nil
+}
+
 // Value extracts the underlying data from a LargeMessageObject after unmarshalling it.
 func (lmo *LargeMessageObject) Value() interface{} {
 	return lmo.Data
