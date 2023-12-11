@@ -225,12 +225,22 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 	}
 
 	if v.Scope == "Message" {
+
 		val = ctx.Get(v.Name.(string))
 		if val == nil {
 			return t, nil
 		}
 
+		if IsLMO(val) {
+			lmo, err := DeserializeLMOfromMap(val.(map[string]interface{}))
+			if err != nil {
+				return t, err
+			}
+			return lmo.Data.(T), nil
+		}
+
 	}
+
 	kind := reflect.Invalid
 	typ := reflect.TypeOf(t)
 	if typ != nil {
@@ -268,15 +278,6 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 				return t, err
 			}
 
-			gRes := gjson.ParseBytes(d)
-			if IsLMO(gRes) {
-				var lmo = LargeMessageObject{}
-				json.Unmarshal(d, &lmo)
-				res, _ := DeserializeLMO(lmo.ID)
-				t = res.Data.(T)
-				return t, nil
-
-			}
 			err = json.Unmarshal(d, &t)
 			if err != nil {
 				return t, err
