@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 
@@ -114,12 +113,7 @@ func SerializeLMO(value interface{}) (*LargeMessageObject, error) {
 // DeserializeLMO reads a file identified by the given ID and unmarshals its content
 // back into a LargeMessageObject.
 func DeserializeLMO(id string) (*LargeMessageObject, error) {
-	robotID := ""
-	var ok bool
-	if robotID, ok = robotInfo["id"].(string); !ok {
-		return nil, nil
-	}
-
+	robotID, _ := GetRobotID()
 	tempPath := utils.GetTempPath()
 	dir := path.Join(tempPath, "robots", robotID)
 	filePath := path.Join(dir, id+".lmo")
@@ -275,14 +269,10 @@ func IsLMO(value any) bool {
 }
 
 func DeleteLMObyID(id string) {
-	robotID := ""
-	var ok bool
-	if robotID, ok = robotInfo["id"].(string); !ok {
-		log.Println("id not found")
-		return
-	}
+	robotID, _ := GetRobotID()
 	tempPath := utils.GetTempPath()
 
-	dir := path.Join(tempPath, "robots", robotID, id)
-	os.Remove(dir)
+	dir := path.Join(tempPath, "robots", robotID)
+	filePath := path.Join(dir, id+".lmo")
+	os.Remove(filePath)
 }
