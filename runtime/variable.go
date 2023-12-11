@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/robomotionio/robomotion-go/message"
-	"github.com/tidwall/gjson"
 )
 
 type variable struct {
@@ -297,16 +296,12 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		return t, err
 	}
 
-	valBytes, _ := json.Marshal(val)
-	gRes := gjson.ParseBytes(valBytes)
-	if IsLMO(gRes) {
-		var lmo = &LargeMessageObject{}
-		json.Unmarshal(valBytes, lmo)
-
-		lmo, _ = DeserializeLMO(lmo.ID)
-		t = lmo.Data.(T)
-		return t, nil
-
+	if IsLMO(val) {
+		lmo, err := DeserializeLMOfromMap(val.(map[string]interface{}))
+		if err != nil {
+			return t, err
+		}
+		return lmo.Data.(T), nil
 	}
 
 	t, ok := val.(T)
