@@ -42,3 +42,17 @@ func GetRobotVersion() (string, error) {
 
 	return v, nil
 }
+
+func GetRobotID() (string, error) {
+	info, err := GetRobotInfo()
+	if err != nil {
+		return "", nil
+	}
+
+	v, ok := info["id"].(string)
+	if !ok {
+		return "", fmt.Errorf("robot id not found")
+	}
+
+	return v, nil
+}

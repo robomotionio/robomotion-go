@@ -80,16 +80,8 @@ func SerializeLMO(value interface{}) (*LargeMessageObject, error) {
 		Size:    int64(len(data)),
 		Data:    value,
 	}
-	robotInfo, err := GetRobotInfo()
-	if err != nil {
-		//HANDLE ERROR
-	}
-	robotID := ""
-	var ok bool
-	if robotID, ok = robotInfo["id"].(string); !ok {
-		return nil, nil
-	}
 
+	robotID, _ := GetRobotID()
 	tempPath := utils.GetTempPath()
 	dir := path.Join(tempPath, "robots", robotID)
 	err = os.MkdirAll(dir, 0755)
