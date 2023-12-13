@@ -86,7 +86,7 @@ func (msg *message) GetRaw(options ...Option) (json.RawMessage, error) {
 }
 
 func (msg *message) SetRaw(data json.RawMessage, options ...Option) (err error) {
-	msg.data, err = SetRaw(data)
+	msg.data, err = SetRaw(data, options...)
 	return err
 }
 
