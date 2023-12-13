@@ -14,12 +14,6 @@ func init() {
 func getRaw(raw json.RawMessage) (json.RawMessage, error) {
 	if IsLMOCapable() {
 		return raw, nil
-
-		var err error
-		raw, err = UnpackMessageBytes(raw)
-		if err != nil {
-			return nil, err
-		}
 	}
 	return raw, nil
 }
