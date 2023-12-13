@@ -8,9 +8,12 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+type GetOption func(json.RawMessage) (json.RawMessage, error)
+type SetOption func(json.RawMessage) (json.RawMessage, error)
+
 var (
-	GetRaw func(json.RawMessage) (json.RawMessage, error)
-	SetRaw func(json.RawMessage) (json.RawMessage, error)
+	GetRaw func(json.RawMessage, ...GetOption) (json.RawMessage, error)
+	SetRaw func(json.RawMessage, ...SetOption) (json.RawMessage, error)
 )
 
 type Context interface {
@@ -21,8 +24,8 @@ type Context interface {
 	GetBool(path string) bool
 	GetInt(path string) int64
 	GetFloat(path string) float64
-	GetRaw() (json.RawMessage, error)
-	SetRaw(data json.RawMessage) error
+	GetRaw(options ...GetOption) (json.RawMessage, error)
+	SetRaw(data json.RawMessage, options ...SetOption) error
 	IsEmpty() bool
 }
 
@@ -79,12 +82,12 @@ func (msg *message) GetFloat(path string) float64 {
 	return msg.get(path).Float()
 }
 
-func (msg *message) GetRaw() (json.RawMessage, error) {
-	return GetRaw(msg.data)
+func (msg *message) GetRaw(options ...GetOption) (json.RawMessage, error) {
+	return GetRaw(msg.data, options...)
 }
 
-func (msg *message) SetRaw(data json.RawMessage) (err error) {
-	msg.data, err = SetRaw(data)
+func (msg *message) SetRaw(data json.RawMessage, options ...SetOption) (err error) {
+	msg.data, err = SetRaw(data, options...)
 	return err
 }
 
