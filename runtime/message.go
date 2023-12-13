@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/robomotionio/robomotion-go/message"
 )
@@ -13,7 +12,7 @@ func init() {
 }
 
 // DeserializeLMO for all data
-func WithUnpack() message.Option {
+func WithUnpack() message.GetOption {
 	return func(raw json.RawMessage) (json.RawMessage, error) {
 		if IsLMOCapable() {
 			var err error
@@ -27,7 +26,7 @@ func WithUnpack() message.Option {
 }
 
 // SerializeLMO for all data
-func WithPack() message.Option {
+func WithPack() message.SetOption {
 	return func(raw json.RawMessage) (json.RawMessage, error) {
 		if IsLMOCapable() {
 			var err error
@@ -41,27 +40,24 @@ func WithPack() message.Option {
 	}
 }
 
-func getRaw(raw json.RawMessage, options ...message.Option) (json.RawMessage, error) {
+func getRaw(raw json.RawMessage, options ...message.GetOption) (json.RawMessage, error) {
+	var err error
 	for _, opt := range options {
-		_raw, err := opt(raw)
+		raw, err = opt(raw)
 		if err != nil {
-			log.Printf("Option could not be applied %+v \n", err)
-			continue
+			return nil, err
 		}
-		raw = _raw
 	}
 	return raw, nil
 }
 
-func setRaw(raw json.RawMessage, options ...message.Option) (json.RawMessage, error) {
-
+func setRaw(raw json.RawMessage, options ...message.SetOption) (json.RawMessage, error) {
+	var err error
 	for _, opt := range options {
-		_raw, err := opt(raw)
+		raw, err = opt(raw)
 		if err != nil {
-			log.Printf("Option could not be applied %+v \n", err)
-			continue
+			return nil, err
 		}
-		raw = _raw
 	}
 	return raw, nil
 }
