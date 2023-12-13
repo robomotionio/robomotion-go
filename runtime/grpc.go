@@ -105,7 +105,7 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 	}
 
 	if !msgCtx.IsEmpty() {
-		resp.OutMessage, err = msgCtx.GetRaw()
+		resp.OutMessage, _ = msgCtx.GetRaw()
 	}
 
 	time.Sleep(time.Duration(node.DelayAfter*1000) * time.Millisecond)
