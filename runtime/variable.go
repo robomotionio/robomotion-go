@@ -281,7 +281,7 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			if err != nil {
 				return t, err
 			}
-
+			return t, nil
 		}
 	}
 	if client == nil {
