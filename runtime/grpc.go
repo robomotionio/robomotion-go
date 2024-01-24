@@ -428,3 +428,15 @@ func (m *GRPCRuntimeHelperClient) GetRobotInfo() (map[string]interface{}, error)
 
 	return parseStruct(resp.Robot).(map[string]interface{}), nil
 }
+
+func (m *GRPCRuntimeHelperClient) ProxyRequest(req *proto.HttpRequest) (*proto.HttpResponse, error) {
+
+	resp, err := m.client.ProxyRequest(context.Background(), req)
+
+	if err != nil {
+		hclog.Default().Info("runtime.ProxyRequest", "err", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
