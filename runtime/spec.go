@@ -22,6 +22,7 @@ type NodeSpec struct {
 	Inputs     int        `json:"inputs"`
 	Outputs    int        `json:"outputs"`
 	Properties []Property `json:"properties"`
+	Ports      []Port     `json:"customPorts,omitempty"`
 }
 
 type Property struct {
@@ -95,6 +96,46 @@ func generateSpecFile(pluginName, version string) {
 		}
 		if hasDocSpec {
 			spec.Spec = &docSpec
+		}
+
+		// Look for custom port fields (fields of type Port)
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+
+			// Check if field is of type Port
+			if field.Type == reflect.TypeOf(Port{}) {
+				// Get the field name (for debugging, can be removed if not needed)
+				// portName := field.Name
+
+				// Parse the tag string for the Port field
+				tag := field.Tag
+
+				// Create a new Port instance
+				port := Port{
+					// Set a default ID based on the field name
+					// Designer can use this to identify the port
+					Direction: tag.Get("direction"),
+					Position:  tag.Get("position"),
+					Name:      tag.Get("name"),
+					Icon:      tag.Get("icon"),
+					Color:     tag.Get("color"),
+				}
+
+				// Parse allowed_connections (comma-separated string)
+				allowedConns := tag.Get("allowedConnections")
+				if allowedConns != "" {
+					port.AllowedConnections = strings.Split(allowedConns, ",")
+				}
+
+				// Parse max_connections if present
+				maxConns := tag.Get("maxConnections")
+				if maxConns != "" {
+					port.MaxConnections, _ = strconv.Atoi(maxConns)
+				}
+
+				// Add the port to the node spec
+				spec.Ports = append(spec.Ports, port)
+			}
 		}
 
 		inProperty := Property{FormData: make(map[string]interface{}), UISchema: make(map[string]interface{})}
