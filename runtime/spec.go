@@ -13,16 +13,16 @@ import (
 )
 
 type NodeSpec struct {
-	ID         string     `json:"id"`
-	Icon       string     `json:"icon"`
-	Name       string     `json:"name"`
-	Color      string     `json:"color"`
-	Editor     *string    `json:"editor"`
-	Spec       *string    `json:"spec"`
-	Inputs     int        `json:"inputs"`
-	Outputs    int        `json:"outputs"`
-	Properties []Property `json:"properties"`
-	Ports      []Port     `json:"customPorts,omitempty"`
+	ID          string      `json:"id"`
+	Icon        string      `json:"icon"`
+	Name        string      `json:"name"`
+	Color       string      `json:"color"`
+	Editor      *string     `json:"editor"`
+	Spec        *string     `json:"spec"`
+	Inputs      int         `json:"inputs"`
+	Outputs     int         `json:"outputs"`
+	Properties  []Property  `json:"properties"`
+	CustomPorts interface{} `json:"ports,omitempty"`
 }
 
 type Property struct {
@@ -102,39 +102,43 @@ func generateSpecFile(pluginName, version string) {
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
 
-			// Check if field is of type Port
-			if field.Type == reflect.TypeOf(Port{}) {
-				// Get the field name (for debugging, can be removed if not needed)
-				// portName := field.Name
-
+			// Check if field is of type Port ([]string)
+			if field.Type == reflect.TypeOf(Port(nil)) {
 				// Parse the tag string for the Port field
 				tag := field.Tag
 
-				// Create a new Port instance
-				port := Port{
-					// Set a default ID based on the field name
-					// Designer can use this to identify the port
-					Direction: tag.Get("direction"),
-					Position:  tag.Get("position"),
-					Name:      tag.Get("name"),
-					Icon:      tag.Get("icon"),
-					Color:     tag.Get("color"),
+				// The port configuration is extracted from the struct tags
+				portSpec := map[string]interface{}{
+					"direction": tag.Get("direction"), // "input" or "output"
+					"position":  tag.Get("position"),  // "left", "right", "top", "bottom"
+					"name":      tag.Get("name"),      // Display name in the Designer
+					"icon":      tag.Get("icon"),      // Icon to display
+					"color":     tag.Get("color"),     // Color for the port
 				}
 
-				// Parse allowed_connections (comma-separated string)
+				// Parse allowedConnections (comma-separated string)
 				allowedConns := tag.Get("allowedConnections")
 				if allowedConns != "" {
-					port.AllowedConnections = strings.Split(allowedConns, ",")
+					portSpec["allowedConnections"] = strings.Split(allowedConns, ",")
 				}
 
-				// Parse max_connections if present
+				// Parse maxConnections if present
 				maxConns := tag.Get("maxConnections")
 				if maxConns != "" {
-					port.MaxConnections, _ = strconv.Atoi(maxConns)
+					maxConnVal, err := strconv.Atoi(maxConns)
+					if err == nil {
+						portSpec["maxConnections"] = maxConnVal
+					}
 				}
 
-				// Add the port to the node spec
-				spec.Ports = append(spec.Ports, port)
+				// If this is the first port, initialize the CustomPorts as an array
+				if spec.CustomPorts == nil {
+					spec.CustomPorts = []interface{}{}
+				}
+
+				// Add the port spec to the node's CustomPorts array
+				portArray := spec.CustomPorts.([]interface{})
+				spec.CustomPorts = append(portArray, portSpec)
 			}
 		}
 
