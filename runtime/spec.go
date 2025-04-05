@@ -22,7 +22,7 @@ type NodeSpec struct {
 	Inputs      int         `json:"inputs"`
 	Outputs     int         `json:"outputs"`
 	Properties  []Property  `json:"properties"`
-	CustomPorts interface{} `json:"ports,omitempty"`
+	CustomPorts interface{} `json:"customPorts,omitempty"`
 }
 
 type Property struct {
@@ -116,19 +116,10 @@ func generateSpecFile(pluginName, version string) {
 					"color":     tag.Get("color"),     // Color for the port
 				}
 
-				// Parse allowedConnections (comma-separated string)
-				allowedConns := tag.Get("allowedConnections")
-				if allowedConns != "" {
-					portSpec["allowedConnections"] = strings.Split(allowedConns, ",")
-				}
-
-				// Parse maxConnections if present
-				maxConns := tag.Get("maxConnections")
-				if maxConns != "" {
-					maxConnVal, err := strconv.Atoi(maxConns)
-					if err == nil {
-						portSpec["maxConnections"] = maxConnVal
-					}
+				// Parse filters (comma-separated string)
+				filters := tag.Get("filters")
+				if filters != "" {
+					portSpec["filters"] = strings.Split(filters, ",")
 				}
 
 				// If this is the first port, initialize the CustomPorts as an array
