@@ -21,6 +21,7 @@ type NodeSpec struct {
 	Spec        *string     `json:"spec"`
 	Inputs      int         `json:"inputs"`
 	Outputs     int         `json:"outputs"`
+	InFilter    *string     `json:"inFilter"`
 	Properties  []Property  `json:"properties"`
 	CustomPorts interface{} `json:"customPorts,omitempty"`
 }
@@ -77,6 +78,7 @@ func generateSpecFile(pluginName, version string) {
 		icon := Icons[nsMap["icon"]]
 		color := nsMap["color"]
 		editor := nsMap["editor"]
+		inFilter := nsMap["inFilter"]
 		inputs, hasInputs := nsMap["inputs"]
 		outputs, hasOutputs := nsMap["outputs"]
 		docSpec, hasDocSpec := nsMap["spec"]
@@ -96,6 +98,9 @@ func generateSpecFile(pluginName, version string) {
 		}
 		if hasDocSpec {
 			spec.Spec = &docSpec
+		}
+		if inFilter != "" {
+			spec.InFilter = &inFilter
 		}
 
 		// Look for custom port fields (fields of type Port)
