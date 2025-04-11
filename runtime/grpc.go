@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sync/atomic"
@@ -457,13 +458,25 @@ func (m *GRPCRuntimeHelperClient) GetPortConnections(guid string, port int) ([]N
 		return nil, err
 	}
 
-	// Convert proto.NodeInfo objects to runtime.NodeInfo objects
 	result := make([]NodeInfo, len(resp.Nodes))
 	for i, node := range resp.Nodes {
+		var config map[string]interface{}
+		json.Unmarshal(node.Config, &config)
+		decoded, err := base64.StdEncoding.DecodeString(config["config"].(string))
+		if err != nil {
+			hclog.Default().Info("runtime.GetPortConnections", "err", err)
+			continue
+		}
+		decoded, err = base64.StdEncoding.DecodeString(string(decoded))
+		if err != nil {
+			hclog.Default().Info("runtime.GetPortConnections", "err", err)
+			continue
+		}
+		json.Unmarshal(decoded, &config)
 		result[i] = NodeInfo{
 			Type:    node.Type,
 			Version: node.Version,
-			Config:  node.Config,
+			Config:  config,
 		}
 	}
 
