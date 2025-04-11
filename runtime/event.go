@@ -91,3 +91,19 @@ func ProxyRequest(req *proto.HttpRequest) (*proto.HttpResponse, error) {
 
 	return client.ProxyRequest(req)
 }
+
+func IsRunning() (bool, error) {
+	if client == nil {
+		return false, fmt.Errorf("Runtime was not initialized")
+	}
+
+	return client.IsRunning()
+}
+
+func GetPortConnections(guid string, port int) ([]NodeInfo, error) {
+	if client == nil {
+		return nil, fmt.Errorf("Runtime was not initialized")
+	}
+
+	return client.GetPortConnections(guid, port)
+}
