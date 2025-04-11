@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -268,7 +269,14 @@ func generateSpecFile(pluginName, version string) {
 			if isVar && scope == "Message" && !hasName {
 				n = lowerFieldName
 			}
-
+			if hasName {
+				if strings.HasPrefix(n, "b64:") {
+					decoded, err := base64.StdEncoding.DecodeString(n[4:])
+					if err == nil {
+						n = string(decoded)
+					}
+				}
+			}
 			if isVar && !hasScope {
 				scope = "Custom"
 				n = ""
