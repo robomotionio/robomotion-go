@@ -35,6 +35,8 @@ type RuntimeHelper interface {
 	AppUpload(string, string) (string, error)
 	GatewayRequest(string, string, string, map[string]string) (*proto.GatewayRequestResponse, error)
 	ProxyRequest(*proto.HttpRequest) (*proto.HttpResponse, error)
+	IsRunning() (bool, error)
+	GetPortConnections(string, int) ([]NodeInfo, error)
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.

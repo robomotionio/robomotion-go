@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,15 +14,17 @@ import (
 )
 
 type NodeSpec struct {
-	ID         string     `json:"id"`
-	Icon       string     `json:"icon"`
-	Name       string     `json:"name"`
-	Color      string     `json:"color"`
-	Editor     *string    `json:"editor"`
-	Spec       *string    `json:"spec"`
-	Inputs     int        `json:"inputs"`
-	Outputs    int        `json:"outputs"`
-	Properties []Property `json:"properties"`
+	ID          string      `json:"id"`
+	Icon        string      `json:"icon"`
+	Name        string      `json:"name"`
+	Color       string      `json:"color"`
+	Editor      *string     `json:"editor"`
+	Spec        *string     `json:"spec"`
+	Inputs      int         `json:"inputs"`
+	Outputs     int         `json:"outputs"`
+	InFilters   *string     `json:"inFilters,omitempty"`
+	Properties  []Property  `json:"properties"`
+	CustomPorts interface{} `json:"customPorts,omitempty"`
 }
 
 type Property struct {
@@ -76,6 +79,7 @@ func generateSpecFile(pluginName, version string) {
 		icon := Icons[nsMap["icon"]]
 		color := nsMap["color"]
 		editor := nsMap["editor"]
+		inFilters := nsMap["inFilters"]
 		inputs, hasInputs := nsMap["inputs"]
 		outputs, hasOutputs := nsMap["outputs"]
 		docSpec, hasDocSpec := nsMap["spec"]
@@ -95,6 +99,44 @@ func generateSpecFile(pluginName, version string) {
 		}
 		if hasDocSpec {
 			spec.Spec = &docSpec
+		}
+		if inFilters != "" {
+			spec.InFilters = &inFilters
+		}
+
+		// Look for custom port fields (fields of type Port)
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+
+			// Check if field is of type Port ([]string)
+			if field.Type == reflect.TypeOf(Port(nil)) {
+				// Parse the tag string for the Port field
+				tag := field.Tag
+
+				// The port configuration is extracted from the struct tags
+				portSpec := map[string]interface{}{
+					"direction": tag.Get("direction"), // "input" or "output"
+					"position":  tag.Get("position"),  // "left", "right", "top", "bottom"
+					"name":      tag.Get("name"),      // Display name in the Designer
+					"icon":      tag.Get("icon"),      // Icon to display
+					"color":     tag.Get("color"),     // Color for the port
+				}
+
+				// Parse filters (comma-separated string)
+				filters := tag.Get("filters")
+				if filters != "" {
+					portSpec["filters"] = strings.Split(filters, ",")
+				}
+
+				// If this is the first port, initialize the CustomPorts as an array
+				if spec.CustomPorts == nil {
+					spec.CustomPorts = []interface{}{}
+				}
+
+				// Add the port spec to the node's CustomPorts array
+				portArray := spec.CustomPorts.([]interface{})
+				spec.CustomPorts = append(portArray, portSpec)
+			}
 		}
 
 		inProperty := Property{FormData: make(map[string]interface{}), UISchema: make(map[string]interface{})}
@@ -227,7 +269,14 @@ func generateSpecFile(pluginName, version string) {
 			if isVar && scope == "Message" && !hasName {
 				n = lowerFieldName
 			}
-
+			if hasName {
+				if strings.HasPrefix(n, "b64:") {
+					decoded, err := base64.StdEncoding.DecodeString(n[4:])
+					if err == nil {
+						n = string(decoded)
+					}
+				}
+			}
 			if isVar && !hasScope {
 				scope = "Custom"
 				n = ""
