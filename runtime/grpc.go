@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sync/atomic"
@@ -439,4 +440,55 @@ func (m *GRPCRuntimeHelperClient) ProxyRequest(req *proto.HttpRequest) (*proto.H
 	}
 
 	return resp, nil
+}
+
+// GetConnectedNodes retrieves information about nodes connected to a specific port
+// This implementation gets the nodes locally rather than via gRPC since the proto
+// definitions aren't available in this package
+func (m *GRPCRuntimeHelperClient) GetPortConnections(guid string, port int) ([]NodeInfo, error) {
+
+	// Call the server's GetConnectedNodes method
+	resp, err := m.client.GetPortConnections(context.Background(), &proto.GetPortConnectionsRequest{
+		Guid: guid,
+		Port: int32(port),
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.GetPortConnections", "err", err)
+		return nil, err
+	}
+
+	result := make([]NodeInfo, len(resp.Nodes))
+	for i, node := range resp.Nodes {
+		var config map[string]interface{}
+		json.Unmarshal(node.Config, &config)
+		decoded, err := base64.StdEncoding.DecodeString(config["config"].(string))
+		if err != nil {
+			hclog.Default().Info("runtime.GetPortConnections", "err", err)
+			continue
+		}
+		decoded, err = base64.StdEncoding.DecodeString(string(decoded))
+		if err != nil {
+			hclog.Default().Info("runtime.GetPortConnections", "err", err)
+			continue
+		}
+		json.Unmarshal(decoded, &config)
+		result[i] = NodeInfo{
+			Type:    node.Type,
+			Version: node.Version,
+			Config:  config,
+		}
+	}
+
+	return result, nil
+}
+
+func (m *GRPCRuntimeHelperClient) IsRunning() (bool, error) {
+	resp, err := m.client.IsRunning(context.Background(), &proto.Empty{})
+	if err != nil {
+		hclog.Default().Info("runtime.IsRunning", "err", err)
+		return false, err
+	}
+
+	return resp.IsRunning, nil
 }
