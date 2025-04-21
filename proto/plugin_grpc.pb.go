@@ -322,7 +322,7 @@ type RuntimeHelperClient interface {
 	ProxyRequest(ctx context.Context, in *HttpRequest, opts ...grpc.CallOption) (*HttpResponse, error)
 	GetPortConnections(ctx context.Context, in *GetPortConnectionsRequest, opts ...grpc.CallOption) (*GetPortConnectionsResponse, error)
 	IsRunning(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsRunningResponse, error)
-	GetInstanceAccess(ctx context.Context, in *GetInstanceAccessRequest, opts ...grpc.CallOption) (*GetInstanceAccessResponse, error)
+	GetInstanceAccess(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetInstanceAccessResponse, error)
 }
 
 type runtimeHelperClient struct {
@@ -543,7 +543,7 @@ func (c *runtimeHelperClient) IsRunning(ctx context.Context, in *Empty, opts ...
 	return out, nil
 }
 
-func (c *runtimeHelperClient) GetInstanceAccess(ctx context.Context, in *GetInstanceAccessRequest, opts ...grpc.CallOption) (*GetInstanceAccessResponse, error) {
+func (c *runtimeHelperClient) GetInstanceAccess(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetInstanceAccessResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetInstanceAccessResponse)
 	err := c.cc.Invoke(ctx, RuntimeHelper_GetInstanceAccess_FullMethodName, in, out, cOpts...)
@@ -578,7 +578,7 @@ type RuntimeHelperServer interface {
 	ProxyRequest(context.Context, *HttpRequest) (*HttpResponse, error)
 	GetPortConnections(context.Context, *GetPortConnectionsRequest) (*GetPortConnectionsResponse, error)
 	IsRunning(context.Context, *Empty) (*IsRunningResponse, error)
-	GetInstanceAccess(context.Context, *GetInstanceAccessRequest) (*GetInstanceAccessResponse, error)
+	GetInstanceAccess(context.Context, *Empty) (*GetInstanceAccessResponse, error)
 	mustEmbedUnimplementedRuntimeHelperServer()
 }
 
@@ -652,7 +652,7 @@ func (UnimplementedRuntimeHelperServer) GetPortConnections(context.Context, *Get
 func (UnimplementedRuntimeHelperServer) IsRunning(context.Context, *Empty) (*IsRunningResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsRunning not implemented")
 }
-func (UnimplementedRuntimeHelperServer) GetInstanceAccess(context.Context, *GetInstanceAccessRequest) (*GetInstanceAccessResponse, error) {
+func (UnimplementedRuntimeHelperServer) GetInstanceAccess(context.Context, *Empty) (*GetInstanceAccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetInstanceAccess not implemented")
 }
 func (UnimplementedRuntimeHelperServer) mustEmbedUnimplementedRuntimeHelperServer() {}
@@ -1055,7 +1055,7 @@ func _RuntimeHelper_IsRunning_Handler(srv interface{}, ctx context.Context, dec 
 }
 
 func _RuntimeHelper_GetInstanceAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetInstanceAccessRequest)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1067,7 +1067,7 @@ func _RuntimeHelper_GetInstanceAccess_Handler(srv interface{}, ctx context.Conte
 		FullMethod: RuntimeHelper_GetInstanceAccess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeHelperServer).GetInstanceAccess(ctx, req.(*GetInstanceAccessRequest))
+		return srv.(RuntimeHelperServer).GetInstanceAccess(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
