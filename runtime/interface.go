@@ -37,6 +37,7 @@ type RuntimeHelper interface {
 	ProxyRequest(*proto.HttpRequest) (*proto.HttpResponse, error)
 	IsRunning() (bool, error)
 	GetPortConnections(string, int) ([]NodeInfo, error)
+	GetInstanceAccess() (*InstanceAccess, error)
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.

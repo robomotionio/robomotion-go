@@ -294,6 +294,7 @@ const (
 	RuntimeHelper_ProxyRequest_FullMethodName       = "/proto.RuntimeHelper/ProxyRequest"
 	RuntimeHelper_GetPortConnections_FullMethodName = "/proto.RuntimeHelper/GetPortConnections"
 	RuntimeHelper_IsRunning_FullMethodName          = "/proto.RuntimeHelper/IsRunning"
+	RuntimeHelper_GetInstanceAccess_FullMethodName  = "/proto.RuntimeHelper/GetInstanceAccess"
 )
 
 // RuntimeHelperClient is the client API for RuntimeHelper service.
@@ -321,6 +322,7 @@ type RuntimeHelperClient interface {
 	ProxyRequest(ctx context.Context, in *HttpRequest, opts ...grpc.CallOption) (*HttpResponse, error)
 	GetPortConnections(ctx context.Context, in *GetPortConnectionsRequest, opts ...grpc.CallOption) (*GetPortConnectionsResponse, error)
 	IsRunning(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsRunningResponse, error)
+	GetInstanceAccess(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetInstanceAccessResponse, error)
 }
 
 type runtimeHelperClient struct {
@@ -541,6 +543,16 @@ func (c *runtimeHelperClient) IsRunning(ctx context.Context, in *Empty, opts ...
 	return out, nil
 }
 
+func (c *runtimeHelperClient) GetInstanceAccess(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetInstanceAccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetInstanceAccessResponse)
+	err := c.cc.Invoke(ctx, RuntimeHelper_GetInstanceAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RuntimeHelperServer is the server API for RuntimeHelper service.
 // All implementations must embed UnimplementedRuntimeHelperServer
 // for forward compatibility.
@@ -566,6 +578,7 @@ type RuntimeHelperServer interface {
 	ProxyRequest(context.Context, *HttpRequest) (*HttpResponse, error)
 	GetPortConnections(context.Context, *GetPortConnectionsRequest) (*GetPortConnectionsResponse, error)
 	IsRunning(context.Context, *Empty) (*IsRunningResponse, error)
+	GetInstanceAccess(context.Context, *Empty) (*GetInstanceAccessResponse, error)
 	mustEmbedUnimplementedRuntimeHelperServer()
 }
 
@@ -638,6 +651,9 @@ func (UnimplementedRuntimeHelperServer) GetPortConnections(context.Context, *Get
 }
 func (UnimplementedRuntimeHelperServer) IsRunning(context.Context, *Empty) (*IsRunningResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsRunning not implemented")
+}
+func (UnimplementedRuntimeHelperServer) GetInstanceAccess(context.Context, *Empty) (*GetInstanceAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInstanceAccess not implemented")
 }
 func (UnimplementedRuntimeHelperServer) mustEmbedUnimplementedRuntimeHelperServer() {}
 func (UnimplementedRuntimeHelperServer) testEmbeddedByValue()                       {}
@@ -1038,6 +1054,24 @@ func _RuntimeHelper_IsRunning_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RuntimeHelper_GetInstanceAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuntimeHelperServer).GetInstanceAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuntimeHelper_GetInstanceAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuntimeHelperServer).GetInstanceAccess(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RuntimeHelper_ServiceDesc is the grpc.ServiceDesc for RuntimeHelper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1128,6 +1162,10 @@ var RuntimeHelper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsRunning",
 			Handler:    _RuntimeHelper_IsRunning_Handler,
+		},
+		{
+			MethodName: "GetInstanceAccess",
+			Handler:    _RuntimeHelper_GetInstanceAccess_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

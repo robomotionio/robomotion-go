@@ -2125,6 +2125,67 @@ func (x *GetPortConnectionsResponse) GetNodes() []*NodeInfo {
 	return nil
 }
 
+// Response message for GetInstanceAccess RPC
+type GetInstanceAccessResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AmqEndpoint   string                 `protobuf:"bytes,1,opt,name=amq_endpoint,json=amqEndpoint,proto3" json:"amq_endpoint,omitempty"` // e.g. wss://amq.robomotion.io
+	ApiEndpoint   string                 `protobuf:"bytes,2,opt,name=api_endpoint,json=apiEndpoint,proto3" json:"api_endpoint,omitempty"` // e.g. https://api.robomotion.io
+	AccessToken   string                 `protobuf:"bytes,3,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"` // bearer token (JWT, UUID, etc.)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetInstanceAccessResponse) Reset() {
+	*x = GetInstanceAccessResponse{}
+	mi := &file_plugin_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetInstanceAccessResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInstanceAccessResponse) ProtoMessage() {}
+
+func (x *GetInstanceAccessResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_plugin_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInstanceAccessResponse.ProtoReflect.Descriptor instead.
+func (*GetInstanceAccessResponse) Descriptor() ([]byte, []int) {
+	return file_plugin_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *GetInstanceAccessResponse) GetAmqEndpoint() string {
+	if x != nil {
+		return x.AmqEndpoint
+	}
+	return ""
+}
+
+func (x *GetInstanceAccessResponse) GetApiEndpoint() string {
+	if x != nil {
+		return x.ApiEndpoint
+	}
+	return ""
+}
+
+func (x *GetInstanceAccessResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
 var File_plugin_proto protoreflect.FileDescriptor
 
 const file_plugin_proto_rawDesc = "" +
@@ -2265,13 +2326,17 @@ const file_plugin_proto_rawDesc = "" +
 	"\x04guid\x18\x01 \x01(\tR\x04guid\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\"C\n" +
 	"\x1aGetPortConnectionsResponse\x12%\n" +
-	"\x05nodes\x18\x01 \x03(\v2\x0f.proto.NodeInfoR\x05nodes2\xa9\x02\n" +
+	"\x05nodes\x18\x01 \x03(\v2\x0f.proto.NodeInfoR\x05nodes\"\x84\x01\n" +
+	"\x19GetInstanceAccessResponse\x12!\n" +
+	"\famq_endpoint\x18\x01 \x01(\tR\vamqEndpoint\x12!\n" +
+	"\fapi_endpoint\x18\x02 \x01(\tR\vapiEndpoint\x12!\n" +
+	"\faccess_token\x18\x03 \x01(\tR\vaccessToken2\xa9\x02\n" +
 	"\x04Node\x12(\n" +
 	"\x04Init\x12\x12.proto.InitRequest\x1a\f.proto.Empty\x12;\n" +
 	"\bOnCreate\x12\x16.proto.OnCreateRequest\x1a\x17.proto.OnCreateResponse\x12>\n" +
 	"\tOnMessage\x12\x17.proto.OnMessageRequest\x1a\x18.proto.OnMessageResponse\x128\n" +
 	"\aOnClose\x12\x15.proto.OnCloseRequest\x1a\x16.proto.OnCloseResponse\x12@\n" +
-	"\x0fGetCapabilities\x12\f.proto.Empty\x1a\x1f.proto.PGetCapabilitiesResponse2\x9d\n" +
+	"\x0fGetCapabilities\x12\f.proto.Empty\x1a\x1f.proto.PGetCapabilitiesResponse2\xe2\n" +
 	"\n" +
 	"\rRuntimeHelper\x12#\n" +
 	"\x05Close\x12\f.proto.Empty\x1a\f.proto.Empty\x12*\n" +
@@ -2297,7 +2362,8 @@ const file_plugin_proto_rawDesc = "" +
 	"\x0eGatewayRequest\x12\x1c.proto.GatewayRequestRequest\x1a\x1d.proto.GatewayRequestResponse\x127\n" +
 	"\fProxyRequest\x12\x12.proto.HttpRequest\x1a\x13.proto.HttpResponse\x12Y\n" +
 	"\x12GetPortConnections\x12 .proto.GetPortConnectionsRequest\x1a!.proto.GetPortConnectionsResponse\x123\n" +
-	"\tIsRunning\x12\f.proto.Empty\x1a\x18.proto.IsRunningResponseB$Z\"robomotion/robomotion-runner/protob\x06proto3"
+	"\tIsRunning\x12\f.proto.Empty\x1a\x18.proto.IsRunningResponse\x12C\n" +
+	"\x11GetInstanceAccess\x12\f.proto.Empty\x1a .proto.GetInstanceAccessResponseB$Z\"robomotion/robomotion-runner/protob\x06proto3"
 
 var (
 	file_plugin_proto_rawDescOnce sync.Once
@@ -2311,7 +2377,7 @@ func file_plugin_proto_rawDescGZIP() []byte {
 	return file_plugin_proto_rawDescData
 }
 
-var file_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
 var file_plugin_proto_goTypes = []any{
 	(*Error)(nil),                      // 0: proto.Error
 	(*InitRequest)(nil),                // 1: proto.InitRequest
@@ -2354,27 +2420,28 @@ var file_plugin_proto_goTypes = []any{
 	(*NodeInfo)(nil),                   // 38: proto.NodeInfo
 	(*GetPortConnectionsRequest)(nil),  // 39: proto.GetPortConnectionsRequest
 	(*GetPortConnectionsResponse)(nil), // 40: proto.GetPortConnectionsResponse
-	nil,                                // 41: proto.GatewayRequestRequest.HeadersEntry
-	nil,                                // 42: proto.GatewayRequestResponse.HeadersEntry
-	nil,                                // 43: proto.HttpRequest.HeadersEntry
-	nil,                                // 44: proto.HttpResponse.HeadersEntry
-	(*_struct.Struct)(nil),             // 45: google.protobuf.Struct
+	(*GetInstanceAccessResponse)(nil),  // 41: proto.GetInstanceAccessResponse
+	nil,                                // 42: proto.GatewayRequestRequest.HeadersEntry
+	nil,                                // 43: proto.GatewayRequestResponse.HeadersEntry
+	nil,                                // 44: proto.HttpRequest.HeadersEntry
+	nil,                                // 45: proto.HttpResponse.HeadersEntry
+	(*_struct.Struct)(nil),             // 46: google.protobuf.Struct
 }
 var file_plugin_proto_depIdxs = []int32{
 	0,  // 0: proto.OnCreateResponse.error:type_name -> proto.Error
 	0,  // 1: proto.OnMessageResponse.error:type_name -> proto.Error
 	0,  // 2: proto.OnCloseResponse.error:type_name -> proto.Error
-	45, // 3: proto.GetVaultItemResponse.item:type_name -> google.protobuf.Struct
-	45, // 4: proto.SetVaultItemResponse.item:type_name -> google.protobuf.Struct
+	46, // 3: proto.GetVaultItemResponse.item:type_name -> google.protobuf.Struct
+	46, // 4: proto.SetVaultItemResponse.item:type_name -> google.protobuf.Struct
 	20, // 5: proto.GetVariableRequest.variable:type_name -> proto.Variable
-	45, // 6: proto.GetVariableResponse.value:type_name -> google.protobuf.Struct
+	46, // 6: proto.GetVariableResponse.value:type_name -> google.protobuf.Struct
 	20, // 7: proto.SetVariableRequest.variable:type_name -> proto.Variable
-	45, // 8: proto.SetVariableRequest.value:type_name -> google.protobuf.Struct
-	45, // 9: proto.GetRobotInfoResponse.robot:type_name -> google.protobuf.Struct
-	41, // 10: proto.GatewayRequestRequest.headers:type_name -> proto.GatewayRequestRequest.HeadersEntry
-	42, // 11: proto.GatewayRequestResponse.headers:type_name -> proto.GatewayRequestResponse.HeadersEntry
-	43, // 12: proto.HttpRequest.headers:type_name -> proto.HttpRequest.HeadersEntry
-	44, // 13: proto.HttpResponse.headers:type_name -> proto.HttpResponse.HeadersEntry
+	46, // 8: proto.SetVariableRequest.value:type_name -> google.protobuf.Struct
+	46, // 9: proto.GetRobotInfoResponse.robot:type_name -> google.protobuf.Struct
+	42, // 10: proto.GatewayRequestRequest.headers:type_name -> proto.GatewayRequestRequest.HeadersEntry
+	43, // 11: proto.GatewayRequestResponse.headers:type_name -> proto.GatewayRequestResponse.HeadersEntry
+	44, // 12: proto.HttpRequest.headers:type_name -> proto.HttpRequest.HeadersEntry
+	45, // 13: proto.HttpResponse.headers:type_name -> proto.HttpResponse.HeadersEntry
 	38, // 14: proto.GetPortConnectionsResponse.nodes:type_name -> proto.NodeInfo
 	1,  // 15: proto.Node.Init:input_type -> proto.InitRequest
 	2,  // 16: proto.Node.OnCreate:input_type -> proto.OnCreateRequest
@@ -2402,34 +2469,36 @@ var file_plugin_proto_depIdxs = []int32{
 	36, // 38: proto.RuntimeHelper.ProxyRequest:input_type -> proto.HttpRequest
 	39, // 39: proto.RuntimeHelper.GetPortConnections:input_type -> proto.GetPortConnectionsRequest
 	9,  // 40: proto.RuntimeHelper.IsRunning:input_type -> proto.Empty
-	9,  // 41: proto.Node.Init:output_type -> proto.Empty
-	3,  // 42: proto.Node.OnCreate:output_type -> proto.OnCreateResponse
-	5,  // 43: proto.Node.OnMessage:output_type -> proto.OnMessageResponse
-	7,  // 44: proto.Node.OnClose:output_type -> proto.OnCloseResponse
-	8,  // 45: proto.Node.GetCapabilities:output_type -> proto.PGetCapabilitiesResponse
-	9,  // 46: proto.RuntimeHelper.Close:output_type -> proto.Empty
-	9,  // 47: proto.RuntimeHelper.Debug:output_type -> proto.Empty
-	9,  // 48: proto.RuntimeHelper.EmitFlowEvent:output_type -> proto.Empty
-	9,  // 49: proto.RuntimeHelper.EmitInput:output_type -> proto.Empty
-	9,  // 50: proto.RuntimeHelper.EmitOutput:output_type -> proto.Empty
-	9,  // 51: proto.RuntimeHelper.EmitError:output_type -> proto.Empty
-	17, // 52: proto.RuntimeHelper.GetVaultItem:output_type -> proto.GetVaultItemResponse
-	19, // 53: proto.RuntimeHelper.SetVaultItem:output_type -> proto.SetVaultItemResponse
-	22, // 54: proto.RuntimeHelper.GetVariable:output_type -> proto.GetVariableResponse
-	9,  // 55: proto.RuntimeHelper.SetVariable:output_type -> proto.Empty
-	24, // 56: proto.RuntimeHelper.GetRobotInfo:output_type -> proto.GetRobotInfoResponse
-	27, // 57: proto.RuntimeHelper.AppRequest:output_type -> proto.AppRequestResponse
-	27, // 58: proto.RuntimeHelper.AppRequestV2:output_type -> proto.AppRequestResponse
-	9,  // 59: proto.RuntimeHelper.AppPublish:output_type -> proto.Empty
-	9,  // 60: proto.RuntimeHelper.DownloadFile:output_type -> proto.Empty
-	31, // 61: proto.RuntimeHelper.AppDownload:output_type -> proto.AppDownloadResponse
-	33, // 62: proto.RuntimeHelper.AppUpload:output_type -> proto.AppUploadResponse
-	35, // 63: proto.RuntimeHelper.GatewayRequest:output_type -> proto.GatewayRequestResponse
-	37, // 64: proto.RuntimeHelper.ProxyRequest:output_type -> proto.HttpResponse
-	40, // 65: proto.RuntimeHelper.GetPortConnections:output_type -> proto.GetPortConnectionsResponse
-	10, // 66: proto.RuntimeHelper.IsRunning:output_type -> proto.IsRunningResponse
-	41, // [41:67] is the sub-list for method output_type
-	15, // [15:41] is the sub-list for method input_type
+	9,  // 41: proto.RuntimeHelper.GetInstanceAccess:input_type -> proto.Empty
+	9,  // 42: proto.Node.Init:output_type -> proto.Empty
+	3,  // 43: proto.Node.OnCreate:output_type -> proto.OnCreateResponse
+	5,  // 44: proto.Node.OnMessage:output_type -> proto.OnMessageResponse
+	7,  // 45: proto.Node.OnClose:output_type -> proto.OnCloseResponse
+	8,  // 46: proto.Node.GetCapabilities:output_type -> proto.PGetCapabilitiesResponse
+	9,  // 47: proto.RuntimeHelper.Close:output_type -> proto.Empty
+	9,  // 48: proto.RuntimeHelper.Debug:output_type -> proto.Empty
+	9,  // 49: proto.RuntimeHelper.EmitFlowEvent:output_type -> proto.Empty
+	9,  // 50: proto.RuntimeHelper.EmitInput:output_type -> proto.Empty
+	9,  // 51: proto.RuntimeHelper.EmitOutput:output_type -> proto.Empty
+	9,  // 52: proto.RuntimeHelper.EmitError:output_type -> proto.Empty
+	17, // 53: proto.RuntimeHelper.GetVaultItem:output_type -> proto.GetVaultItemResponse
+	19, // 54: proto.RuntimeHelper.SetVaultItem:output_type -> proto.SetVaultItemResponse
+	22, // 55: proto.RuntimeHelper.GetVariable:output_type -> proto.GetVariableResponse
+	9,  // 56: proto.RuntimeHelper.SetVariable:output_type -> proto.Empty
+	24, // 57: proto.RuntimeHelper.GetRobotInfo:output_type -> proto.GetRobotInfoResponse
+	27, // 58: proto.RuntimeHelper.AppRequest:output_type -> proto.AppRequestResponse
+	27, // 59: proto.RuntimeHelper.AppRequestV2:output_type -> proto.AppRequestResponse
+	9,  // 60: proto.RuntimeHelper.AppPublish:output_type -> proto.Empty
+	9,  // 61: proto.RuntimeHelper.DownloadFile:output_type -> proto.Empty
+	31, // 62: proto.RuntimeHelper.AppDownload:output_type -> proto.AppDownloadResponse
+	33, // 63: proto.RuntimeHelper.AppUpload:output_type -> proto.AppUploadResponse
+	35, // 64: proto.RuntimeHelper.GatewayRequest:output_type -> proto.GatewayRequestResponse
+	37, // 65: proto.RuntimeHelper.ProxyRequest:output_type -> proto.HttpResponse
+	40, // 66: proto.RuntimeHelper.GetPortConnections:output_type -> proto.GetPortConnectionsResponse
+	10, // 67: proto.RuntimeHelper.IsRunning:output_type -> proto.IsRunningResponse
+	41, // 68: proto.RuntimeHelper.GetInstanceAccess:output_type -> proto.GetInstanceAccessResponse
+	42, // [42:69] is the sub-list for method output_type
+	15, // [15:42] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
 	15, // [15:15] is the sub-list for extension extendee
 	0,  // [0:15] is the sub-list for field type_name
@@ -2446,7 +2515,7 @@ func file_plugin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_plugin_proto_rawDesc), len(file_plugin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   45,
+			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

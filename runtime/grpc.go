@@ -442,6 +442,20 @@ func (m *GRPCRuntimeHelperClient) ProxyRequest(req *proto.HttpRequest) (*proto.H
 	return resp, nil
 }
 
+func (m *GRPCRuntimeHelperClient) GetInstanceAccess() (*InstanceAccess, error) {
+	resp, err := m.client.GetInstanceAccess(context.Background(), &proto.Empty{})
+	if err != nil {
+		hclog.Default().Info("runtime.GetInstanceAccess", "err", err)
+		return nil, err
+	}
+
+	return &InstanceAccess{
+		AmqEndpoint: resp.AmqEndpoint,
+		ApiEndpoint: resp.ApiEndpoint,
+		AccessToken: resp.AccessToken,
+	}, nil
+}
+
 // GetConnectedNodes retrieves information about nodes connected to a specific port
 // This implementation gets the nodes locally rather than via gRPC since the proto
 // definitions aren't available in this package
