@@ -174,6 +174,31 @@ Below is a **non-exhaustive** but practically complete list of keys you can use 
 
 All three wrappers expose `.Get(ctx)` (for `In`/`Opt`) and `.Set(ctx,val)` (`Out`).
 
+### 5.3 Enumerations (`enum` / `enumNames`)
+
+Use **`enum`** to define the allowed values of a field and **`enumNames`** to provide human-readable labels.  
+A common use-case is to show a dropdown in the Designer where the developer picks one of the options.
+
+```go
+type Divider struct {
+    runtime.Node `spec:"id=Example.Divider,name=Divider"`
+
+    InBorder string `spec:"title=Border,option,value=solid,enum=solid|dashed|dotted,enumNames=Solid|Dashed|Dotted,description=Border style"`
+}
+```
+
+Things to remember:
+
+1. The SDK splits on the pipe symbol (`|`) – **no spaces** inside the list.  
+2. The **position** of each item in `enumNames` must match the one in `enum`.
+3. Because `InBorder` is a **plain string field marked as `option`**, you can use it directly inside your node **without** calling `.Get(ctx)`:
+   
+   ```go
+   log.Println("chosen border:", n.InBorder)
+   ```
+4. Only variable wrappers (`InVariable`, `OptVariable`, `OutVariable`) require `.Get(ctx)` / `.Set(ctx)` accessors.
+5. Enums work on most primitive types too – for integers just list the numbers: `enum=0|1|2`.
+
 ---
 
 ## 6. Node Lifecycle
