@@ -659,7 +659,283 @@ Robomotion Cloud customers usually let the CI pipeline push artefacts directly t
 
 ---
 
-## 14. Troubleshooting Checklist
+## 14. Development Troubleshooting & Workflow
+
+### 14.1 Package Caching Issues
+
+**Problem**: After updating and building your package, the code seems to be running an old version despite successful build.
+
+**Root Cause**: Robomotion robots cache downloaded packages locally. If you don't increment the version in `config.json`, the same package version is created, and robots won't re-download it.
+
+**Package Cache Locations**:
+- **Linux/macOS**: `~/.config/robomotion/packages/bin/Robomotion/{PACKAGE_NAME}/{PACKAGE_VERSION}`
+- **Windows**: `%LOCALAPPDATA%/Robomotion/packages/bin/Robomotion/{PACKAGE_NAME}/{PACKAGE_VERSION}`
+
+**Solutions**:
+
+#### Option 1: Clear Package Cache (Quick Fix)
+```bash
+# Linux/macOS - Remove specific package version
+rm -rf ~/.config/robomotion/packages/bin/Robomotion/YourPackage/1.0.0
+
+# Windows - Remove specific package version  
+rmdir /s "%LOCALAPPDATA%\Robomotion\packages\bin\Robomotion\YourPackage\1.0.0"
+
+# Or clear entire package cache
+rm -rf ~/.config/robomotion/packages/bin/Robomotion/YourPackage
+```
+
+#### Option 2: Use Attach Mode (Recommended for Development)
+This is the **most effective development approach** for **logic changes only**:
+
+```bash
+# 1. Build your package
+go build -o dist/my-package
+
+# 2. Make sure you have a connected robot and no flows are running
+# 3. Run with attach flag
+./dist/my-package -a
+```
+
+**Attach Mode Benefits**:
+- Connects directly to running robot via gRPC
+- Bypasses package cache entirely
+- Real-time `log.Printf()` output visible in stdout
+- No need to increment versions during development
+- Robot prefers attached plugin over cached versions
+
+**⚠️ Critical Limitation: Attach Mode Only Works for Logic Changes**
+
+Attach mode **DOES NOT** work if you've made any of these changes:
+- **Added new nodes** to your package
+- **Modified node properties** (struct fields with `spec` tags)
+- **Updated existing node properties** (title, type, description, etc.)
+- **Added/removed/changed** `InVariable`, `OutVariable`, `OptVariable`, or `Credential` fields
+
+**Why This Limitation Exists**:
+1. Flow Designer downloads `.pspec` files from repository for drag-and-drop functionality
+2. Node properties are displayed based on cached `.pspec` file content
+3. Attach mode only affects runtime execution, not the Designer's metadata
+
+**Attach Mode Requirements**:
+- Must have a connected robot
+- Stop any running flows that use your package
+- Ensure no other instance of your package is running
+- **Only use for business logic changes** (no node structure changes)
+
+### 14.2 Node/Property Updates: Full Repository Workflow
+
+When you've made **structural changes** to your nodes (new nodes, property changes), you must follow the complete workflow:
+
+```bash
+# 1. Update your code with new nodes or properties
+# 2. Build package with roboctl (generates new .pspec)
+roboctl package build
+
+# 3. Update repository index (includes new .pspec files)  
+roboctl repo index
+
+# 4. Restart repository server (serves updated index and .pspec)
+roboctl repo serve
+
+# 5. Clear package cache to force re-download
+rm -rf ~/.config/robomotion/packages/bin/Robomotion/YourPackage
+
+# 6. Refresh Flow Designer (Ctrl+F5 or hard refresh)
+# This downloads the updated .pspec file
+
+# 7. Now you can use the updated nodes with new properties
+```
+
+**What Each Step Does**:
+- **roboctl package build**: Creates new `.tgz` and regenerates `.pspec` file
+- **roboctl repo index**: Updates `index.json` and extracts `.pspec` to repository root  
+- **roboctl repo serve**: Makes updated `.pspec` file available via HTTP
+- **Clear cache**: Forces robot to re-download package binaries
+- **Designer refresh**: Downloads updated `.pspec` for node metadata
+
+**When to Use Full Workflow vs Attach Mode**:
+
+| Change Type | Use Attach Mode `-a` | Use Full Workflow |
+|-------------|---------------------|-------------------|
+| Bug fixes in `OnMessage()` logic | ✅ Yes | ❌ No |
+| Algorithm improvements | ✅ Yes | ❌ No |
+| Error handling updates | ✅ Yes | ❌ No |  
+| `log.Printf()` additions | ✅ Yes | ❌ No |
+| External API call changes | ✅ Yes | ❌ No |
+| **New nodes added** | ❌ No | ✅ Required |
+| **Property title/description changes** | ❌ No | ✅ Required |
+| **New InVariable/OutVariable fields** | ❌ No | ✅ Required |
+| **Spec tag modifications** | ❌ No | ✅ Required |
+| **Node icon/color changes** | ❌ No | ✅ Required |
+
+### 14.3 Attach Mode Deep Dive
+
+**How Attach Mode Works**:
+1. Your binary starts a gRPC server on a random port
+2. Discovers local robot using network scanning (`debug/common.go`)
+3. Registers with robot's debug service
+4. Robot routes your package's node executions to the attached process
+
+**Typical Attach Workflow**:
+```bash
+# Terminal 1: Start attached plugin
+cd my-package
+go build -o dist/my-package
+./dist/my-package -a
+
+# Output: "Attached to localhost:12345"
+
+# Terminal 2: Monitor logs in real-time
+# Your log.Printf statements appear here during flow execution
+```
+
+**Debug Logging Example**:
+```go
+func (n *MyNode) OnMessage(ctx message.Context) error {
+    log.Printf("Processing message for node %s", n.GUID)
+    
+    input, err := n.InData.Get(ctx)
+    if err != nil {
+        log.Printf("Error getting input: %v", err)
+        return err
+    }
+    
+    log.Printf("Input value: %+v", input)
+    
+    // Your business logic here
+    result := processData(input)
+    
+    log.Printf("Processed result: %+v", result)
+    n.OutResult.Set(ctx, result)
+    
+    return nil
+}
+```
+
+### 14.4 Common Development Issues
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| **Stale Package Cache** | Code changes not reflected | Use attach mode or clear cache |
+| **Multiple Plugin Instances** | "plugin already attached" error | Stop previous instances, check processes |
+| **Robot Not Found** | "timeout: plugin listener is nil" | Ensure robot is connected and running |
+| **Flow Still Running** | Attach fails or inconsistent behavior | Stop all flows using your package |
+| **Port Conflicts** | gRPC connection errors | Check for conflicting processes on ports |
+| **Missing Logs** | No debug output visible | Use attach mode, ensure `log.Printf` statements exist |
+
+### 14.5 Development Workflow Decision Tree
+
+Use this decision tree to determine the correct development approach:
+
+```
+┌─────────────────────────────────┐
+│     Made changes to code?       │
+└─────────────┬───────────────────┘
+              │
+              ▼
+┌─────────────────────────────────┐
+│    Did you add/modify any:      │
+│  • New nodes                    │
+│  • Node properties (spec tags) │  
+│  • InVariable/OutVariable       │
+│  • Node titles/descriptions     │
+│  • Icons, colors, categories    │
+└─────────────┬───┬───────────────┘
+              │   │
+         YES  │   │ NO
+              ▼   ▼
+    ┌─────────────────┐    ┌──────────────────┐
+    │ Use FULL        │    │ Use ATTACH MODE  │
+    │ WORKFLOW        │    │ (Quick & Easy)   │
+    │                 │    │                  │
+    │ 1. roboctl      │    │ 1. go build      │
+    │    package      │    │ 2. ./binary -a   │
+    │    build        │    │ 3. Run flows     │
+    │ 2. roboctl repo │    │ 4. View logs     │
+    │    index        │    │                  │
+    │ 3. roboctl repo │    │ ✅ Real-time     │
+    │    serve        │    │    debugging     │
+    │ 4. Clear cache  │    │ ✅ log.Printf    │
+    │ 5. Refresh      │    │    output        │
+    │    Designer     │    │ ✅ Fast iteration│
+    └─────────────────┘    └──────────────────┘
+```
+
+**Quick Reference**:
+- **Logic changes only** → Use `-a` attach mode
+- **Any structural changes** → Use full workflow
+- **When in doubt** → Use full workflow (safer but slower)
+
+### 14.6 Debugging Best Practices
+
+**Development Workflow**:
+```bash
+# 1. Initial development setup
+roboctl package create --name "MyPackage" --namespace "Dev.MyPackage"
+cd mypackage
+
+# 2. Development cycle (repeat as needed)
+# - Make code changes
+# - Build: go build -o dist/mypackage
+# - Test: ./dist/mypackage -a
+# - Run flows in Designer
+# - View logs in terminal
+
+# 3. When ready for testing with real package system
+# - Update version in config.json
+# - Build: roboctl package build  
+# - Clear cache if needed
+# - Test with actual package deployment
+```
+
+**Logging Strategies**:
+```go
+// Use structured logging for complex debugging
+log.Printf("[%s] OnMessage started - GUID: %s", time.Now().Format("15:04:05"), n.GUID)
+log.Printf("[DEBUG] Input validation - value: %+v, type: %T", input, input)
+log.Printf("[ERROR] Failed to process: %v", err)
+log.Printf("[SUCCESS] Output generated - size: %d bytes", len(output))
+```
+
+**Error Handling for Debug**:
+```go
+func (n *MyNode) OnMessage(ctx message.Context) error {
+    defer func() {
+        if r := recover(); r != nil {
+            log.Printf("[PANIC] Node %s panic recovered: %v", n.GUID, r)
+        }
+    }()
+    
+    log.Printf("[START] %s processing message", n.Name)
+    
+    // Your logic here with detailed logging
+    
+    log.Printf("[END] %s completed successfully", n.Name)
+    return nil
+}
+```
+
+### 14.7 Network and Connection Issues
+
+**Robot Discovery Problems**:
+- Ensure robot and development machine are on same network
+- Check firewall settings allow gRPC traffic
+- Verify robot is in "Connected" status in Admin Console
+
+**Attach Timeout Issues**:
+- Default timeout is 30 seconds (`debug/attach.go`)
+- If robot is slow to respond, restart robot service
+- Check for network connectivity issues
+
+**Multiple Robot Environments**:
+- Attach connects to first discovered robot
+- Use specific network interfaces if multiple robots present
+- Consider using different development environments
+
+---
+
+## 15. Troubleshooting Checklist
 
 | Symptom | Explanation |
 |---------|-------------|
@@ -671,7 +947,7 @@ Robomotion Cloud customers usually let the CI pipeline push artefacts directly t
 
 ---
 
-## 15. Further Reading & Code Dive
+## 16. Further Reading & Code Dive
 
 * [`robomotion-go/runtime`](../runtime) – SDK implementation (worth skimming)
 * [`robomotion-chat-assistant/v1`](https://github.com/robomotionio/robomotion-chat-assistant) – extensive real-world nodes
