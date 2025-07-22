@@ -216,34 +216,11 @@ Delays can be added via `DelayBefore` and `DelayAfter` (milliseconds) – especi
 
 ---
 
-## 7. Accessing the Runtime Helper
-
-In `Init` the SDK injects an instance that implements `runtime.RuntimeHelper`:
-
-```go
-func (n *MyNode) Init(r runtime.RuntimeHelper) error {
-    n.Runtime = r // store if you need it later
-    return nil
-}
-```
-
-However, the **simpler way** is to call the global functions defined in `runtime/event.go`, `credential.go`, … because they proxy the helper automatically (they panic if the node is not running inside a robot).
-
-Example: Emit an output on port **2**
-
-```go
-if err := runtime.EmitOutput(n.GUID, data, 2); err != nil {
-    return err
-}
-```
-
----
-
-## 8. Working with Credentials & RPA Vault
+## 7. Working with Credentials & RPA Vault
 
 Robomotion includes a secure **RPA Vault** system for managing sensitive data like API tokens, passwords, database credentials, and certificates. Nodes can access vault items through the `runtime.Credential` type.
 
-### 8.1 Declaring a Credential Field
+### 7.1 Declaring a Credential Field
 
 ```go
 type MyAPINode struct {
@@ -254,7 +231,7 @@ type MyAPINode struct {
 }
 ```
 
-### 8.2 Accessing Vault Items
+### 7.2 Accessing Vault Items
 
 ```go
 func (n *MyAPINode) OnMessage(ctx message.Context) error {
@@ -281,7 +258,7 @@ func (n *MyAPINode) OnMessage(ctx message.Context) error {
 }
 ```
 
-### 8.3 Credential Types & Item Structure
+### 7.3 Credential Types & Item Structure
 
 The vault supports 8 different credential types. Each has a specific JSON structure:
 
@@ -296,7 +273,7 @@ The vault supports 8 different credential types. Each has a specific JSON struct
 | **AES Key** | 7 | `value` | Encryption/decryption |
 | **RSA Key Pair** | 8 | `publicKey`, `privateKey` | Cryptographic operations |
 
-### 8.4 Common Usage Patterns
+### 7.4 Common Usage Patterns
 
 **API Token (most common):**
 ```go
@@ -342,7 +319,7 @@ smtpUser := item["smtp"].(map[string]interface{})["username"].(string)
 smtpPass := item["smtp"].(map[string]interface{})["password"].(string)
 ```
 
-### 8.5 Error Handling
+### 7.5 Error Handling
 
 Always check for the existence of required keys:
 ```go
@@ -362,7 +339,7 @@ if !ok {
 }
 ```
 
-### 8.6 Vault Item Metadata
+### 7.6 Vault Item Metadata
 
 All vault items include metadata when retrieved:
 ```go
@@ -375,36 +352,7 @@ category := int(meta["category"].(float64))
 
 ---
 
-## 9. Large Message Objects (LMO) – sending >64 KB
-
-Robomotion runners optimise bandwidth. If you need to output a large payload (>64 KB) pack it first:
-
-```go
-packed, _ := runtime.PackMessageBytes(rawJSON)
-ctx.SetRaw(packed, runtime.WithPack())
-```
-Unpacking is symmetrical on the receiving node (`runtime.WithUnpack`). See `runtime/lmo.go` for internals.
-
----
-
-## 10. Custom Ports
-
-If the default left-side input / right-side output layout does not fit your UX you can declare **named ports**:
-
-```go
-type Uploader struct {
-    runtime.Node `spec:"id=Acme.Uploader,name=Uploader,icon=mdiUpload,color=#9b59b6,inputs=0,outputs=0"`
-
-    // Port is simply an alias for []string – it will **not** be visible in Go code
-    Files runtime.Port `direction="input"  position="left"  name="files"  icon="mdiFile"  filters="files"`
-    Done  runtime.Port `direction="output" position="right" name="done"  icon="mdiCheck" color="#2ecc71"`
-}
-```
-The code generator (`generateSpecFile()`) serialises those tags into `customPorts` so Designer knows where to draw the port.
-
----
-
-## 11. Registering & Starting
+## 8. Registering & Starting
 
 `main.go` is trivial – list every versioned node and let the runtime take control:
 
@@ -422,7 +370,7 @@ func main() {
 
 ---
 
-## 12. Build & Run locally
+## 9. Build & Run locally
 
 ```bash
 # Build the binary for your host OS
@@ -432,7 +380,7 @@ roboctl package build
 ./dist/my-package -a   # "attach" – streams logs & debugging to Designer
 ```
 
-### 12.1 Generate *pspec* only
+### 9.1 Generate *pspec* only
 Sometimes you just want to refresh the Designer specification (JSON) without rebuilding everything:
 
 ```bash
@@ -441,7 +389,7 @@ Sometimes you just want to refresh the Designer specification (JSON) without reb
 
 The file is created by `runtime.generateSpecFile()` and automatically picked up by roboctl when packaging.
 
-### 12.2 Cross-compiling & multi-arch builds
+### 9.2 Cross-compiling & multi-arch builds
 
 Need packages for Windows, macOS and different CPU architectures? `roboctl` wraps the `go build` commands declared in `config.json`, so you only have to pass the desired architecture:
 
@@ -458,7 +406,7 @@ Multiple `--arch` values can be passed or repeated to emit several binaries in a
 
 ---
 
-## 13. Debugging & Logs (attach / detach)
+## 10. Debugging & Logs (attach / detach)
 
 During local development you often want to see **stdout/stderr** and runtime events inside the Robomotion **Designer**. The SDK already includes helper functions in `debug/`:
 
@@ -495,7 +443,7 @@ Anything written to `stdout` or `stderr` will appear in the **Console** panel of
 
 ---
 
-## 14. Anatomy of the generated *.spec.json* file
+## 11. Anatomy of the generated *.spec.json* file
 
 The spec file (sometimes called *pspec*) is what the Designer consumes to render nodes, editors and ports.
 
@@ -510,7 +458,197 @@ Open it once and you’ll immediately see where your tag information ends up –
 
 ---
 
-## 15. Publish to a Repository
+## 12. Repository Management with `roboctl`
+
+The `roboctl` command-line tool provides comprehensive package and repository management capabilities. It handles building packages, creating repositories, and serving them for distribution.
+
+### 12.1 Package Building
+
+The primary command for building packages is `roboctl package build`:
+
+```bash
+# Build package from current directory
+roboctl package build
+
+# Build package from specific directory
+roboctl package build /path/to/package
+
+# Build for specific architecture
+roboctl package build --arch arm64
+
+# Build for specific OS/architecture combination
+roboctl package build --arch windows/amd64
+roboctl package build --arch darwin/arm64
+roboctl package build --arch linux/amd64
+
+# Use custom config file
+roboctl package build --file custom-config.json
+
+# Skip build process (package existing binaries)
+roboctl package build --no-build
+```
+
+**Build Process Overview:**
+1. Reads `config.json` for package metadata and build scripts
+2. Validates package version (must be valid SemVer)
+3. Executes platform-specific build scripts from `config.json`
+4. Generates `.pspec` specification file by running the binary with `-s` flag
+5. Compresses all files into a `.tgz` archive
+6. Names the output as `{namespace}-{version}-{os}-{arch}.tgz`
+
+### 12.2 Repository Index Management
+
+Create and maintain package repository indexes:
+
+```bash
+# Generate index.json from .tgz files in current directory
+roboctl repo index
+
+# Generate index from specific directory
+roboctl repo index /path/to/packages
+
+# Merge with existing index (preserve previous packages)
+roboctl repo index --merge
+
+# Generate index from subdirectory structure
+roboctl repo index ./packages --merge
+```
+
+**Index Generation Process:**
+- Scans directory for `.tgz` package files
+- Extracts `config.json` from each package
+- Creates `index.json` with package metadata
+- Generates `index.sha256sum` for integrity verification
+- Extracts and places `.pspec` files for Designer consumption
+- Sorts versions using semantic versioning
+
+**Index Structure:**
+```json
+{
+  "generated": "2024-07-22T10:30:00-0000",
+  "packages": {
+    "namespace\\.package": {
+      "name": "Package Name",
+      "namespace": "Namespace.Package", 
+      "version": "1.2.3",
+      "versions": ["1.2.3", "1.2.2", "1.2.1"],
+      "description": "Package description",
+      "author": {"name": "Author", "email": "author@example.com"},
+      "categories": ["Productivity"],
+      "platforms": ["linux", "windows", "darwin"],
+      "language": "Go",
+      "path": "subfolder/path"
+    }
+  }
+}
+```
+
+### 12.3 Repository Server
+
+Serve packages over HTTP with CORS support:
+
+```bash
+# Serve on default address (127.0.0.1:8080)
+roboctl repo serve
+
+# Serve on custom IP and port
+roboctl repo serve --ip 0.0.0.0 --port 3000
+
+# Serve on localhost with custom port
+roboctl repo serve --port 8888
+```
+
+The server serves static files from the current directory, enabling:
+- Package downloads (`*.tgz` files)
+- Index access (`index.json`, `index.sha256sum`)
+- Specification files (`*.pspec`)
+
+### 12.4 Integration with Robomotion Admin Console
+
+**Adding a Repository:**
+1. In Admin Console, navigate to **Repositories**
+2. Click **Add Repository** button
+3. Configure repository settings:
+   - **Name**: `Local Repo` (or your preferred name)
+   - **Description**: `Development local repo`
+   - **URL**: `http://127.0.0.1:8080` (or your server address)
+   - **Access Level**: `Everyone`
+
+**Repository Workflow:**
+```bash
+# 1. Build your packages
+cd /path/to/package1
+roboctl package build
+cd /path/to/package2 
+roboctl package build
+
+# 2. Organize packages in repository directory
+mkdir my-repo
+mv package1/*.tgz my-repo/
+mv package2/*.tgz my-repo/
+
+# 3. Generate repository index
+cd my-repo
+roboctl repo index
+
+# 4. Serve repository
+roboctl repo serve --ip 0.0.0.0 --port 8080
+```
+
+### 12.5 Advanced Repository Management
+
+**Multi-Platform Building:**
+```bash
+# Build for all supported platforms
+roboctl package build --arch linux/amd64
+roboctl package build --arch windows/amd64  
+roboctl package build --arch darwin/amd64
+roboctl package build --arch darwin/arm64
+```
+
+**Repository Organization:**
+```
+repository/
+├── index.json              # Generated package index
+├── index.sha256sum         # Integrity checksum
+├── package1-1.0.0-linux-amd64.tgz
+├── package1-1.0.0-windows-amd64.tgz
+├── package1-1.0.0-darwin-amd64.tgz
+├── package1-1.0.0.pspec    # Designer specification
+├── package2-2.1.0-linux-amd64.tgz
+└── package2-2.1.0.pspec
+```
+
+**Incremental Updates:**
+- Use `--merge` flag to preserve existing packages when adding new ones
+- Repository server automatically handles version ordering (newest first)
+- Empty `.tgz` files are automatically removed from index
+
+### 12.6 CI/CD Integration
+
+**Typical CI Pipeline:**
+```yaml
+# .github/workflows/build-packages.yml
+- name: Build Package
+  run: |
+    roboctl package build --arch linux/amd64
+    roboctl package build --arch windows/amd64
+    roboctl package build --arch darwin/amd64
+
+- name: Update Repository
+  run: |
+    cp *.tgz /repo/packages/
+    cd /repo/packages
+    roboctl repo index --merge
+
+- name: Deploy to S3
+  run: |
+    aws s3 sync /repo/packages s3://my-package-repo/
+```
+
+---
+
+## 13. Publish to a Repository
 
 1. Make sure `config.json` is committed & version bumped.
 2. Login (`roboctl login`).
@@ -521,7 +659,7 @@ Robomotion Cloud customers usually let the CI pipeline push artefacts directly t
 
 ---
 
-## 16. Troubleshooting Checklist
+## 14. Troubleshooting Checklist
 
 | Symptom | Explanation |
 |---------|-------------|
@@ -533,7 +671,7 @@ Robomotion Cloud customers usually let the CI pipeline push artefacts directly t
 
 ---
 
-## 17. Further Reading & Code Dive
+## 15. Further Reading & Code Dive
 
 * [`robomotion-go/runtime`](../runtime) – SDK implementation (worth skimming)
 * [`robomotion-chat-assistant/v1`](https://github.com/robomotionio/robomotion-chat-assistant) – extensive real-world nodes
