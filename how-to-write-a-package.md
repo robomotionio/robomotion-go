@@ -171,8 +171,9 @@ Below is a **non-exhaustive** but practically complete list of keys you can use 
 | **Mandatory input**  | `InVariable[T]`  | `InPrompt InVariable[string]` |
 | **Optional input**   | `OptVariable[T]` | `OptTimeout OptVariable[int]` |
 | **Output**           | `OutVariable[T]` | `OutEmbedding OutVariable[any]` |
+| **Credential**       | `Credential`     | `OptToken Credential` |
 
-All three wrappers expose `.Get(ctx)` (for `In`/`Opt`) and `.Set(ctx,val)` (`Out`).
+All variable wrappers expose `.Get(ctx)` (for `In`/`Opt`/`Credential`) and `.Set(ctx,val)` (`Out`/`Credential`).
 
 ### 5.3 Enumerations (`enum` / `enumNames`)
 
@@ -238,7 +239,143 @@ if err := runtime.EmitOutput(n.GUID, data, 2); err != nil {
 
 ---
 
-## 8. Large Message Objects (LMO) – sending >64 KB
+## 8. Working with Credentials & RPA Vault
+
+Robomotion includes a secure **RPA Vault** system for managing sensitive data like API tokens, passwords, database credentials, and certificates. Nodes can access vault items through the `runtime.Credential` type.
+
+### 8.1 Declaring a Credential Field
+
+```go
+type MyAPINode struct {
+    runtime.Node `spec:"id=Acme.MyAPI,name=My API"`
+    
+    // Credential field - allows user to select from vault
+    OptToken runtime.Credential `spec:"title=API Token,scope=Custom,category=4,messageScope,customScope"`
+}
+```
+
+### 8.2 Accessing Vault Items
+
+```go
+func (n *MyAPINode) OnMessage(ctx message.Context) error {
+    // Retrieve the vault item
+    item, err := n.OptToken.Get(ctx)
+    if err != nil {
+        return err
+    }
+    
+    // Extract the token value
+    token, ok := item["value"].(string)
+    if !ok {
+        return runtime.NewError("ErrInvalidArg", "No Token Value")
+    }
+    
+    // Use the token for API calls
+    client := &http.Client{}
+    req, _ := http.NewRequest("GET", "https://api.example.com/data", nil)
+    req.Header.Set("Authorization", "Bearer "+token)
+    resp, err := client.Do(req)
+    // ... handle response
+    
+    return nil
+}
+```
+
+### 8.3 Credential Types & Item Structure
+
+The vault supports 8 different credential types. Each has a specific JSON structure:
+
+| Type | Category | Common Keys | Usage |
+|------|----------|-------------|-------|
+| **Login** | 1 | `username`, `password` | HTTP auth, FTP, browser automation |
+| **Email** | 2 | `inbox.username`, `inbox.password`, `smtp.server`, `smtp.port` | Email operations |
+| **Credit Card** | 3 | `cardholder`, `cardnumber`, `cvv`, `expDate` | Payment processing |
+| **API Key/Token** | 4 | `value` | API authentication, Office 365 |
+| **Database** | 5 | `server`, `port`, `database`, `username`, `password` | Database connections |
+| **Document** | 6 | `filename`, `content` | OAuth tokens, certificates |
+| **AES Key** | 7 | `value` | Encryption/decryption |
+| **RSA Key Pair** | 8 | `publicKey`, `privateKey` | Cryptographic operations |
+
+### 8.4 Common Usage Patterns
+
+**API Token (most common):**
+```go
+item, err := n.OptToken.Get(ctx)
+if err != nil {
+    return err
+}
+token := item["value"].(string)
+```
+
+**Username/Password:**
+```go
+item, err := n.OptLogin.Get(ctx)
+if err != nil {
+    return err
+}
+username := item["username"].(string)
+password := item["password"].(string)
+```
+
+**Database Connection:**
+```go
+item, err := n.OptDatabase.Get(ctx)
+if err != nil {
+    return err
+}
+server := item["server"].(string)
+port := int(item["port"].(float64))
+database := item["database"].(string)
+username := item["username"].(string)
+password := item["password"].(string)
+```
+
+**Email Configuration:**
+```go
+item, err := n.OptEmail.Get(ctx)
+if err != nil {
+    return err
+}
+smtpServer := item["smtp"].(map[string]interface{})["server"].(string)
+smtpPort := int(item["smtp"].(map[string]interface{})["port"].(float64))
+smtpUser := item["smtp"].(map[string]interface{})["username"].(string)
+smtpPass := item["smtp"].(map[string]interface{})["password"].(string)
+```
+
+### 8.5 Error Handling
+
+Always check for the existence of required keys:
+```go
+item, err := n.OptToken.Get(ctx)
+if err != nil {
+    return err
+}
+
+value, exists := item["value"]
+if !exists {
+    return runtime.NewError("ErrInvalidArg", "Missing required field: value")
+}
+
+token, ok := value.(string)
+if !ok {
+    return runtime.NewError("ErrInvalidArg", "Invalid token format")
+}
+```
+
+### 8.6 Vault Item Metadata
+
+All vault items include metadata when retrieved:
+```go
+meta := item["meta"].(map[string]interface{})
+vaultId := meta["vaultId"].(string)
+itemId := meta["itemId"].(string)
+name := meta["name"].(string)
+category := int(meta["category"].(float64))
+```
+
+---
+
+## 9. Large Message Objects (LMO) – sending >64 KB
 
 Robomotion runners optimise bandwidth. If you need to output a large payload (>64 KB) pack it first:
 
@@ -250,7 +387,7 @@ Unpacking is symmetrical on the receiving node (`runtime.WithUnpack`). See `runt
 
 ---
 
-## 9. Custom Ports
+## 10. Custom Ports
 
 If the default left-side input / right-side output layout does not fit your UX you can declare **named ports**:
 
@@ -267,7 +404,7 @@ The code generator (`generateSpecFile()`) serialises those tags into `customPort
 
 ---
 
-## 10. Registering & Starting
+## 11. Registering & Starting
 
 `main.go` is trivial – list every versioned node and let the runtime take control:
 
@@ -285,7 +422,7 @@ func main() {
 
 ---
 
-## 11. Build & Run locally
+## 12. Build & Run locally
 
 ```bash
 # Build the binary for your host OS
@@ -295,7 +432,7 @@ roboctl package build
 ./dist/my-package -a   # "attach" – streams logs & debugging to Designer
 ```
 
-### 11.1 Generate *pspec* only
+### 12.1 Generate *pspec* only
 Sometimes you just want to refresh the Designer specification (JSON) without rebuilding everything:
 
 ```bash
@@ -304,7 +441,7 @@ Sometimes you just want to refresh the Designer specification (JSON) without reb
 
 The file is created by `runtime.generateSpecFile()` and automatically picked up by roboctl when packaging.
 
-### 11.2 Cross-compiling & multi-arch builds
+### 12.2 Cross-compiling & multi-arch builds
 
 Need packages for Windows, macOS and different CPU architectures? `roboctl` wraps the `go build` commands declared in `config.json`, so you only have to pass the desired architecture:
 
@@ -321,7 +458,7 @@ Multiple `--arch` values can be passed or repeated to emit several binaries in a
 
 ---
 
-## 15. Debugging & Logs (attach / detach)
+## 13. Debugging & Logs (attach / detach)
 
 During local development you often want to see **stdout/stderr** and runtime events inside the Robomotion **Designer**. The SDK already includes helper functions in `debug/`:
 
@@ -358,7 +495,7 @@ Anything written to `stdout` or `stderr` will appear in the **Console** panel of
 
 ---
 
-## 16. Anatomy of the generated *.spec.json* file
+## 14. Anatomy of the generated *.spec.json* file
 
 The spec file (sometimes called *pspec*) is what the Designer consumes to render nodes, editors and ports.
 
@@ -373,7 +510,7 @@ Open it once and you’ll immediately see where your tag information ends up –
 
 ---
 
-## 12. Publish to a Repository
+## 15. Publish to a Repository
 
 1. Make sure `config.json` is committed & version bumped.
 2. Login (`roboctl login`).
@@ -384,7 +521,7 @@ Robomotion Cloud customers usually let the CI pipeline push artefacts directly t
 
 ---
 
-## 13. Troubleshooting Checklist
+## 16. Troubleshooting Checklist
 
 | Symptom | Explanation |
 |---------|-------------|
@@ -396,7 +533,7 @@ Robomotion Cloud customers usually let the CI pipeline push artefacts directly t
 
 ---
 
-## 14. Further Reading & Code Dive
+## 17. Further Reading & Code Dive
 
 * [`robomotion-go/runtime`](../runtime) – SDK implementation (worth skimming)
 * [`robomotion-chat-assistant/v1`](https://github.com/robomotionio/robomotion-chat-assistant) – extensive real-world nodes
