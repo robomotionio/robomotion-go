@@ -350,6 +350,195 @@ name := meta["name"].(string)
 category := int(meta["category"].(float64))
 ```
 
+### 7.7 Practical Advice: Shared Credential Management
+
+When building packages with many nodes that all require the same credentials, manually selecting the vault and vault item for each node in the Flow Designer becomes cumbersome. Instead, you can implement a shared credential store pattern within your package.
+
+**Implementation Pattern:**
+
+Create a `common.go` file in your `v1/` directory to hold a shared credential map:
+
+```go
+// v1/common.go
+package v1
+
+import (
+    "sync"
+    "github.com/google/uuid"
+)
+
+// Global credential store protected by mutex
+var (
+    credentialStore = make(map[string]interface{})
+    credentialMutex = sync.RWMutex{}
+)
+
+// Alternative: Use sync.Map for better concurrent performance
+// var credentialStore = sync.Map{}
+
+func setCredential(clientID string, credential interface{}) {
+    credentialMutex.Lock()
+    defer credentialMutex.Unlock()
+    credentialStore[clientID] = credential
+}
+
+func getCredential(clientID string) (interface{}, bool) {
+    credentialMutex.RLock()
+    defer credentialMutex.RUnlock()
+    cred, exists := credentialStore[clientID]
+    return cred, exists
+}
+
+func removeCredential(clientID string) {
+    credentialMutex.Lock()
+    defer credentialMutex.Unlock()
+    delete(credentialStore, clientID)
+}
+```
+
+**Connect Node Implementation:**
+
+```go
+// v1/connect.go
+type ConnectNode struct {
+    runtime.Node `spec:"id=MyPackage.Connect,name=Connect,icon=mdiConnection,color=#2ecc71"`
+    
+    // User selects credential from vault
+    OptToken runtime.Credential `spec:"title=API Credential,scope=Custom,customScope"`
+    
+    // Output the client ID for other nodes
+    OutClientID runtime.OutVariable[string] `spec:"title=Client ID,type=string,scope=Message"`
+}
+
+func (n *ConnectNode) OnMessage(ctx message.Context) error {
+    // Get credential from vault
+    item, err := n.OptToken.Get(ctx)
+    if err != nil {
+        return err
+    }
+    
+    // Generate unique client ID
+    clientID := uuid.New().String()
+    
+    // Store credential in shared map
+    setCredential(clientID, item)
+    
+    // Output client ID for downstream nodes
+    n.OutClientID.Set(ctx, clientID)
+    
+    return nil
+}
+```
+
+**Disconnect Node Implementation:**
+
+```go
+// v1/disconnect.go
+type DisconnectNode struct {
+    runtime.Node `spec:"id=MyPackage.Disconnect,name=Disconnect,icon=mdiConnectionOff,color=#e74c3c"`
+    
+    // Input client ID to disconnect
+    InClientID runtime.InVariable[string] `spec:"title=Client ID,type=string,scope=Message"`
+}
+
+func (n *DisconnectNode) OnMessage(ctx message.Context) error {
+    clientID, err := n.InClientID.Get(ctx)
+    if err != nil {
+        return err
+    }
+    
+    // Remove credential from shared store
+    removeCredential(clientID)
+    
+    return nil
+}
+```
+
+**Usage in Other Nodes:**
+
+```go
+// v1/api_call.go
+type APICallNode struct {
+    runtime.Node `spec:"id=MyPackage.APICall,name=API Call,icon=mdiApi,color=#3498db"`
+    
+    // Input client ID from Connect node
+    InClientID runtime.InVariable[string] `spec:"title=Client ID,type=string,scope=Message"`
+    InEndpoint runtime.InVariable[string] `spec:"title=Endpoint,type=string,scope=Message"`
+    
+    OutResponse runtime.OutVariable[string] `spec:"title=Response,type=string,scope=Message"`
+}
+
+func (n *APICallNode) OnMessage(ctx message.Context) error {
+    clientID, err := n.InClientID.Get(ctx)
+    if err != nil {
+        return err
+    }
+    
+    // Retrieve credential from shared store
+    credItem, exists := getCredential(clientID)
+    if !exists {
+        return runtime.NewError("ErrInvalidArg", "Client ID not found. Use Connect node first.")
+    }
+    
+    // Extract token from credential
+    item := credItem.(map[string]interface{})
+    token, ok := item["value"].(string)
+    if !ok {
+        return runtime.NewError("ErrInvalidArg", "Invalid credential format")
+    }
+    
+    // Use token for API call
+    endpoint, _ := n.InEndpoint.Get(ctx)
+    client := &http.Client{}
+    req, _ := http.NewRequest("GET", endpoint, nil)
+    req.Header.Set("Authorization", "Bearer "+token)
+    
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+    
+    // Process response...
+    n.OutResponse.Set(ctx, "API call successful")
+    
+    return nil
+}
+```
+
+**Flow Designer Usage:**
+
+1. **Connect Node**: User selects credential once, outputs `msg.client_id`
+2. **Multiple Operation Nodes**: All receive `msg.client_id` as input, retrieve credential from shared store
+3. **Disconnect Node**: Receives `msg.client_id`, cleans up credential from memory
+
+**Benefits:**
+- **Single Credential Selection**: Configure credentials once per flow
+- **Concurrent Safety**: Protected with mutex or sync.Map
+- **Memory Management**: Explicit cleanup via Disconnect node
+- **Reusable Pattern**: Works across all nodes in the same package
+- **Flow Clarity**: Clear connection lifecycle in Designer
+
+**Thread Safety Options:**
+```go
+// Option 1: Manual mutex (more control)
+var credentialStore = make(map[string]interface{})
+var credentialMutex = sync.RWMutex{}
+
+// Option 2: sync.Map (better for high concurrency)
+var credentialStore = sync.Map{}
+
+func setCredential(clientID string, credential interface{}) {
+    credentialStore.Store(clientID, credential)
+}
+
+func getCredential(clientID string) (interface{}, bool) {
+    return credentialStore.Load(clientID)
+}
+```
+
+This pattern is particularly valuable for packages like database connectors, API integrations, or any service requiring authentication across multiple operations.
+
 ---
 
 ## 8. Registering & Starting
