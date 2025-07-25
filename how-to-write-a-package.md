@@ -18,9 +18,24 @@ If you are holding this file you already have the [`robomotion-go`](https://gith
 | A text editor / IDE | – | Coding |
 
 > **Install `roboctl`**  
+> Download the latest release for your platform:
+> 
 > ```bash
-> go install github.com/robomotionio/roboctl@latest
-> export PATH=$PATH:$(go env GOPATH)/bin
+> # Linux (amd64)
+> curl -L https://packages.robomotion.io/releases/roboctl/roboctl-v1.8.0-linux-amd64.tar.gz | tar -xz
+> sudo mv roboctl /usr/local/bin/
+> 
+> # macOS (Intel)
+> curl -L https://packages.robomotion.io/releases/roboctl/roboctl-v1.8.0-darwin-amd64.tar.gz | tar -xz
+> sudo mv roboctl /usr/local/bin/
+> 
+> # macOS (Apple Silicon)
+> curl -L https://packages.robomotion.io/releases/roboctl/roboctl-v1.8.0-darwin-arm64.tar.gz | tar -xz
+> sudo mv roboctl /usr/local/bin/
+> 
+> # Windows (PowerShell)
+> Invoke-WebRequest -Uri "https://packages.robomotion.io/releases/roboctl/roboctl-v1.8.0-windows-amd64.tar.gz" -OutFile "roboctl.tar.gz"
+> # Extract and add to PATH
 > ```
 
 ---
