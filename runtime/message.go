@@ -3,12 +3,23 @@ package runtime
 import (
 	"encoding/json"
 
+	"github.com/robomotionio/robomotion-go/event"
 	"github.com/robomotionio/robomotion-go/message"
 )
 
 func init() {
 	message.GetRaw = getRaw
 	message.SetRaw = setRaw
+	
+	// Register EmitInput implementation with event package to avoid import cycles
+	event.SetEmitInputFunc(func(nodeID string, ctx message.Context) error {
+		// Convert context to bytes
+		data, err := ctx.GetRaw()
+		if err != nil {
+			return err
+		}
+		return EmitInput(nodeID, data)
+	})
 }
 
 // DeserializeLMO for all data

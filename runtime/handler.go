@@ -26,8 +26,12 @@ type MessageHandler interface {
 func AddNodeHandler(node Node, handler MessageHandler) {
 	hMux.Lock()
 	defer hMux.Unlock()
+	
+	// Automatically wrap handler with tool interceptor if needed
+	wrappedHandler := NewToolInterceptor(handler)
+	
 	handlers[node.GUID] = &NodeHandler{
-		Handler: handler,
+		Handler: wrappedHandler,
 		Node:    node,
 	}
 }
