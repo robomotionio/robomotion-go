@@ -25,6 +25,7 @@ type NodeSpec struct {
 	InFilters   *string     `json:"inFilters,omitempty"`
 	Properties  []Property  `json:"properties"`
 	CustomPorts interface{} `json:"customPorts,omitempty"`
+	Tool        interface{} `json:"tool,omitempty"`
 }
 
 type Property struct {
@@ -52,6 +53,7 @@ type SProperty struct {
 	CustomScope  *bool                   `json:"customScope,omitempty"`
 	MessageScope *bool                   `json:"messageScope,omitempty"`
 	MessageOnly  *bool                   `json:"messageOnly,omitempty"`
+	AIScope      *bool                   `json:"aiScope,omitempty"`
 	Multiple     *bool                   `json:"multiple,omitempty"`
 	VariableType string                  `json:"variableType,omitempty"`
 	Format       *string                 `json:"format,omitempty"`
@@ -102,6 +104,19 @@ func generateSpecFile(pluginName, version string) {
 		}
 		if inFilters != "" {
 			spec.InFilters = &inFilters
+		}
+
+		// Check if node has Tool field for AI tool support
+		if toolField, hasToolField := t.FieldByName("Tool"); hasToolField {
+			toolTag := toolField.Tag.Get("tool")
+			toolParts := parseSpec(toolTag)
+			
+			if toolName := toolParts["name"]; toolName != "" {
+				spec.Tool = map[string]string{
+					"name":        toolName,
+					"description": toolParts["description"],
+				}
+			}
 		}
 
 		// Look for custom port fields (fields of type Port)
@@ -241,6 +256,9 @@ func generateSpecFile(pluginName, version string) {
 			_, messageScope := fsMap["messageScope"]
 			_, messageOnly := fsMap["messageOnly"]
 			_, isHidden := fsMap["hidden"]
+			
+			// Parse AI scope from aiScope tag
+			_, aiScope := fsMap["aiScope"]
 
 			if csScope {
 				sProp.CsScope = &csScope
@@ -256,6 +274,9 @@ func generateSpecFile(pluginName, version string) {
 			}
 			if messageOnly {
 				sProp.MessageOnly = &messageOnly
+			}
+			if aiScope {
+				sProp.AIScope = &aiScope
 			}
 
 			_, isInput := fsMap["input"]

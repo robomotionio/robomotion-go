@@ -223,9 +223,23 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		val = v.Name
 	}
 
-	if v.Scope == "Message" {
-
+	if v.Scope == "Message" || v.Scope == "AI" {
+		// AI scope works like Message scope for retrieving values
+		// When AI tools call nodes, parameters are passed in the message context
 		val = ctx.Get(v.Name.(string))
+		
+		// For AI scope, if not found at top level, check __parameters__ object
+		if val == nil && v.Scope == "AI" {
+			// Check if this is a tool request
+			if msgType := ctx.Get("__message_type__"); msgType == "tool_request" {
+				if params := ctx.Get("__parameters__"); params != nil {
+					if paramsMap, ok := params.(map[string]interface{}); ok {
+						val = paramsMap[v.Name.(string)]
+					}
+				}
+			}
+		}
+		
 		if val == nil {
 			return t, nil
 		}
@@ -316,7 +330,8 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 
 func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 
-	if v.Scope == "Message" {
+	if v.Scope == "Message" || v.Scope == "AI" {
+		// AI scope works like Message scope for setting values
 		if v.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
