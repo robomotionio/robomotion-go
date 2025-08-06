@@ -88,7 +88,7 @@ func (ti *ToolInterceptor) collectOutputVariables(ctx message.Context) map[strin
 		// Check if this is an OutVariable field
 		if field.Type.Kind() == reflect.Struct {
 			typeName := field.Type.String()
-			if contains(typeName, "OutVariable") {
+			if strings.HasSuffix(typeName, "OutVariable") {
 				// Extract the variable name from spec tag
 				specTag := field.Tag.Get("spec")
 				if name := extractNameFromSpec(specTag); name != "" {
@@ -109,41 +109,11 @@ func (ti *ToolInterceptor) collectOutputVariables(ctx message.Context) map[strin
 	return outputData
 }
 
-// Helper function to check if string contains substring
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[len(s)-len(substr):] == substr
-}
-
 // extractNameFromSpec extracts the name parameter from spec tag
 func extractNameFromSpec(spec string) string {
-	// Simple parsing - look for name=value
-	parts := splitSpec(spec)
-	for key, value := range parts {
-		if key == "name" {
-			return value
-		}
-	}
-	return ""
-}
-
-// splitSpec parses spec tag into key-value pairs
-func splitSpec(spec string) map[string]string {
-	result := make(map[string]string)
-	if spec == "" {
-		return result
-	}
-	
-	// Split by comma and parse key=value pairs
-	pairs := strings.Split(spec, ",")
-	for _, pair := range pairs {
-		if idx := strings.Index(pair, "="); idx != -1 {
-			key := strings.TrimSpace(pair[:idx])
-			value := strings.TrimSpace(pair[idx+1:])
-			result[key] = value
-		}
-	}
-	
-	return result
+	// Use existing parseSpec function
+	parts := parseSpec(spec)
+	return parts["name"]
 }
 
 // hasToolResponseBeenSent checks if ToolResponse was already called

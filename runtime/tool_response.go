@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"github.com/robomotionio/robomotion-go/event"
 	"github.com/robomotionio/robomotion-go/message"
 )
 
@@ -53,7 +52,8 @@ func ToolResponse(ctx message.Context, status string, data map[string]interface{
 	
 	// Send response back to LLM Agent
 	if agentID, ok := agentNodeID.(string); ok && agentID != "" {
-		event.EmitInput(agentID, responseCtx)
+		data, _ := responseCtx.GetRaw()
+		EmitInput(agentID, data)
 	}
 	
 	// Prevent message flow to next node by clearing context
