@@ -1,10 +1,8 @@
-# Robomotion Go Packages – A Complete Guide
+# Robomotion Go Package Development Guide
 
-*Version: 2024-07-15*
+*Last updated: August 9, 2025*
 
-Welcome to the **Robomotion package development guide**.  
-This document walks you through **every single step** required to build a custom Robomotion package with Go – from `go mod init` to publishing a compressed artefact to the Robomotion repository.  
-If you are holding this file you already have the [`robomotion-go`](https://github.com/robomotionio/robomotion-go) SDK checked-out locally. We will use it extensively.
+Welcome to the **Robomotion package development guide** for Go developers. This guide covers building custom Robomotion packages using the [`robomotion-go`](https://github.com/robomotionio/robomotion-go) SDK.
 
 ---
 
@@ -18,9 +16,17 @@ If you are holding this file you already have the [`robomotion-go`](https://gith
 | A text editor / IDE | – | Coding |
 
 > **Install `roboctl`**  
+> Since roboctl is not open source, download the binary for your platform:
 > ```bash
-> go install github.com/robomotionio/roboctl@latest
-> export PATH=$PATH:$(go env GOPATH)/bin
+> # Download for your platform:
+> # macOS Intel: https://packages.robomotion.io/releases/roboctl/roboctl-v1.8.0-darwin-amd64.tar.gz
+> # macOS Apple Silicon: https://packages.robomotion.io/releases/roboctl/roboctl-v1.8.0-darwin-arm64.tar.gz  
+> # Linux: https://packages.robomotion.io/releases/roboctl/roboctl-v1.8.0-linux-amd64.tar.gz
+> # Windows: https://packages.robomotion.io/releases/roboctl/roboctl-v1.8.0-windows-amd64.tar.gz
+> 
+> # Extract and add to PATH
+> tar -xzf roboctl-v1.8.0-*.tar.gz
+> sudo mv roboctl /usr/local/bin/  # or add to your PATH
 > ```
 
 ---
@@ -119,21 +125,22 @@ type Hello struct {
     // Node declaration (visible in Designer)
     runtime.Node `spec:"id=Acme.Hello,name=Hello,icon=mdiHand,color=#3498db,inputs=1,outputs=1"`
 
-    // === OPTIONS =========================================================
-    InGreeting string `spec:"title=Greeting,value=Hello,option,description=Default greeting"`
-
-    // === INPUT  ==========================================================
-    InName runtime.InVariable[string] `spec:"title=Name,type=string,scope=Message,messageScope"`
+    // === INPUT ==========================================================
+    InName runtime.InVariable[string] `spec:"title=Name,type=string,scope=Message,messageScope,jsScope,customScope"`
 
     // === OUTPUT ==========================================================
     OutGreeting runtime.OutVariable[string] `spec:"title=Greeting,type=string,scope=Message,messageScope"`
+    
+    // === OPTIONS =========================================================
+    OptGreeting runtime.OptVariable[string] `spec:"title=Greeting,value=Hello,option,description=Default greeting"`
 }
 
 func (n *Hello) OnCreate() error                 { return nil }
 func (n *Hello) OnMessage(ctx message.Context) error {
     name, _ := n.InName.Get(ctx)
-    greeting := fmt.Sprintf("%s %s", n.InGreeting, name)
-    n.OutGreeting.Set(ctx, greeting)
+    greeting, _ := n.OptGreeting.Get(ctx)
+    result := fmt.Sprintf("%s %s", greeting, name)
+    n.OutGreeting.Set(ctx, result)
     return nil
 }
 func (n *Hello) OnClose() error                  { return nil }
@@ -148,7 +155,7 @@ Below is a **non-exhaustive** but practically complete list of keys you can use 
 | `id` | Node | `Acme.Hello` | **Unique** identifier that the runtime looks up. Prefer dotted notation `<Namespace>.<NodeName>` |
 | `name` | Node | `Hello` | Display name in Designer |
 | `icon` | Node | `mdiHand` | Material-Design-Icon identifier – resolved through `runtime/icons.go` |
-| `color` | Node | `#3498db` | Hex color shown behind the icon |
+| `color` | Node | `#3498db` | Hex color shown behind the icon. **IMPORTANT: All nodes in the same package MUST use the same color code for consistency** |
 | `inputs` / `outputs` | Node | `inputs=0` | Override default 1-in 1-out configuration |
 | `editor` | Node | `editor=tsx` | Custom code editor language if you have a code property |
 | `inFilters` | Node | `inFilters=files` | Hide node unless the incoming link carries the specified *filter* |
@@ -165,18 +172,253 @@ Below is a **non-exhaustive** but practically complete list of keys you can use 
 | `hidden` | Field | `hidden` | Field is invisible but still stored |
 | `category` | Field | `category=2` | Group fields under collapsible panels |
 
-### 5.2 Variables cheat-sheet
+### 5.2 Package Color Consistency Requirements
 
-| Use-case | Type | Example |
-|----------|------|---------|
-| **Mandatory input**  | `InVariable[T]`  | `InPrompt InVariable[string]` |
-| **Optional input**   | `OptVariable[T]` | `OptTimeout OptVariable[int]` |
-| **Output**           | `OutVariable[T]` | `OutEmbedding OutVariable[any]` |
-| **Credential**       | `Credential`     | `OptToken Credential` |
+**CRITICAL**: All nodes within the same package MUST use identical color codes to maintain visual consistency in the Flow Designer.
+
+**Implementation Rules:**
+- Choose ONE hex color code for your entire package (e.g., `#3498db`)
+- Apply this exact color code to ALL nodes in your package
+- Never mix different colors within a single package
+- The color should represent the service/platform your package integrates with
+
+**Example Implementation:**
+```go
+// ALL nodes in the package use the same color
+type ConnectNode struct {
+    runtime.Node `spec:"id=Slack.Connect,name=Connect,icon=mdiConnection,color=#4A154B"`
+}
+
+type SendMessageNode struct {
+    runtime.Node `spec:"id=Slack.SendMessage,name=Send Message,icon=mdiMessage,color=#4A154B"`
+}
+
+type GetChannelsNode struct {
+    runtime.Node `spec:"id=Slack.GetChannels,name=Get Channels,icon=mdiFormatListBulleted,color=#4A154B"`
+}
+```
+
+**Common Color Choices:**
+- **Slack**: `#4A154B` (Slack brand purple)
+- **Notion**: `#000000` (Notion brand black)
+- **GitHub**: `#333333` (GitHub dark gray)
+- **AWS**: `#FF9900` (AWS orange)
+- **Azure**: `#0078D4` (Microsoft blue)
+
+**Why This Matters:**
+- Creates professional, cohesive visual experience
+- Users can instantly identify which nodes belong to the same package
+- Maintains brand consistency with the integrated service
+- Reduces cognitive load when building flows
+
+### 5.3 Node Parameter Naming Rules
+
+**CRITICAL**: Follow these standardized naming conventions for all node parameters to ensure consistency across packages:
+
+#### Variable Naming Requirements
+
+1. **InVariable names always start with `In`** followed by PascalCase:
+   ```go
+   InPageTitle runtime.InVariable[string]
+   InDatabaseID runtime.InVariable[string]
+   InClientID runtime.InVariable[string]
+   ```
+
+2. **OutVariable names always start with `Out`** followed by PascalCase:
+   ```go
+   OutResult runtime.OutVariable[string]
+   OutPageID runtime.OutVariable[string]
+   OutDatabaseInfo runtime.OutVariable[map[string]interface{}]
+   ```
+
+3. **OptVariable names always start with `Opt`** followed by PascalCase:
+   ```go
+   OptTimeout runtime.OptVariable[int]
+   OptMaxResults runtime.OptVariable[int]
+   OptToken runtime.Credential
+   ```
+
+#### Message Scope Naming Convention
+
+4. **For variables with `scope=Message`, add `name=` with camelCase version** (removing In/Out/Opt prefix):
+   ```go
+   // Correct examples
+   InPageTitle runtime.InVariable[string] `spec:"title=Page Title,type=string,scope=Message,name=pageTitle,messageScope"`
+   InDatabaseID runtime.InVariable[string] `spec:"title=Database ID,type=string,scope=Message,name=databaseId,messageScope"`
+   OutResult runtime.OutVariable[string] `spec:"title=Result,type=string,scope=Message,name=result,messageScope"`
+   ```
+
+5. **All InVariable fields should include `jsScope,customScope`** for maximum flexibility:
+   ```go
+   InPageTitle runtime.InVariable[string] `spec:"title=Page Title,type=string,scope=Message,name=pageTitle,messageScope,jsScope,customScope"`
+   ```
+
+6. **OptVariable fields can have `customScope` and `jsScope`** for user configuration flexibility:
+   ```go
+   // Correct - OptVariable can have all scope types
+   OptTimeout runtime.OptVariable[int] `spec:"title=Timeout (seconds),type=int,value=30,scope=Message,name=timeout,messageScope,customScope,jsScope"`
+   OptMaxResults runtime.OptVariable[int] `spec:"title=Max Results,type=int,value=100,scope=Message,name=maxResults,messageScope,customScope"`
+   ```
+
+7. **OutVariable fields should ONLY have `messageScope`** - never include `customScope` or `jsScope`:
+   ```go
+   // Correct - OutVariable with only messageScope
+   OutResult runtime.OutVariable[string] `spec:"title=Result,type=string,scope=Message,name=result,messageScope"`
+   OutPageID runtime.OutVariable[string] `spec:"title=Page ID,type=string,scope=Message,name=pageId,messageScope"`
+   
+   // INCORRECT - OutVariable should not have customScope or jsScope
+   OutResult runtime.OutVariable[string] `spec:"title=Result,customScope,jsScope"` // ❌ Wrong
+   ```
+
+#### Type Usage Rules
+
+8. **Never use raw types - always wrap in Variable types**:
+   ```go
+   // CORRECT - Always use Variable wrappers
+   InPageTitle runtime.InVariable[string] `spec:"..."`
+   OutResult runtime.OutVariable[string] `spec:"..."`
+   OptTimeout runtime.OptVariable[int] `spec:"..."`
+   
+   // INCORRECT - Never use raw types
+   PageTitle string `spec:"..."` // ❌ Wrong
+   Result string `spec:"..."` // ❌ Wrong
+   ```
+
+9. **Use `interface{}` for JSON input/output types**:
+   ```go
+   // CORRECT - Use interface{} for JSON data
+   InRequestBody runtime.InVariable[interface{}] `spec:"title=Request Body,type=object,scope=Message,name=requestBody,messageScope,jsScope,customScope"`
+   OutDatabaseInfo runtime.OutVariable[interface{}] `spec:"title=Database Info,type=object,scope=Message,name=databaseInfo,messageScope"`
+   OptMetadata runtime.OptVariable[interface{}] `spec:"title=Metadata,type=object,scope=Message,name=metadata,messageScope"`
+   
+   // INCORRECT - Don't use specific struct types for JSON
+   InRequestBody runtime.InVariable[map[string]string] `spec:"..."` // ❌ Too restrictive
+   OutDatabaseInfo runtime.OutVariable[DatabaseStruct] `spec:"..."` // ❌ Too specific
+   ```
+
+#### Custom Scope Usage Guidelines
+
+10. **Use `scope=Custom,name=Default Value` for user-friendly input fields** where manual entry is more convenient than setting message variables:
+   ```go
+   // Good candidates for Custom scope - easy to type manually with default values
+   InPageTitle runtime.InVariable[string] `spec:"title=Page Title,type=string,scope=Custom,name=My New Page,customScope,messageScope"`
+   InDescription runtime.InVariable[string] `spec:"title=Description,type=string,scope=Custom,name=This is a sample description,customScope,messageScope"`
+   InSearchQuery runtime.InVariable[string] `spec:"title=Search Query,type=string,scope=Custom,name=golang tutorial,customScope,messageScope"`
+   
+   // Poor candidates for Custom scope - usually programmatically generated
+   InClientID runtime.InVariable[string] `spec:"title=Client ID,type=string,scope=Message,name=clientId,messageScope,jsScope"`
+   InSessionToken runtime.InVariable[string] `spec:"title=Session Token,type=string,scope=Message,name=sessionToken,messageScope,jsScope"`
+   ```
+
+#### Complete Example Implementation
+
+```go
+type CreatePageNode struct {
+    runtime.Node `spec:"id=Notion.CreatePage,name=Create Page,icon=mdiNotebook,color=#000000"`
+    
+    // Connection ID - typically from Connect node (Message scope only)
+    InClientID runtime.InVariable[string] `spec:"title=Client ID,type=string,scope=Message,name=clientId,messageScope,jsScope"`
+    
+    // User-friendly inputs - Custom scope for easy manual entry
+    InPageTitle runtime.InVariable[string] `spec:"title=Page Title,type=string,scope=Custom,name=My New Page,customScope,messageScope,jsScope"`
+    
+    // Optional parameters
+    OptTimeout runtime.OptVariable[int] `spec:"title=Timeout (seconds),type=int,value=30,scope=Message,name=timeout,messageScope,customScope"`
+    
+    // Outputs
+    OutPageID runtime.OutVariable[string] `spec:"title=Page ID,type=string,scope=Message,name=pageId,messageScope"`
+    OutPageURL runtime.OutVariable[string] `spec:"title=Page URL,type=string,scope=Message,name=pageUrl,messageScope"`
+}
+```
+
+### 5.4 Variables cheat-sheet
+
+| Use-case | Type | Example | Naming Pattern |
+|----------|------|---------|----------------|
+| **Mandatory input**  | `InVariable[T]`  | `InPageTitle InVariable[string]` | `In` + PascalCase |
+| **Optional input**   | `OptVariable[T]` | `OptTimeout OptVariable[int]` | `Opt` + PascalCase |
+| **Output**           | `OutVariable[T]` | `OutResult OutVariable[string]` | `Out` + PascalCase |
+| **Credential**       | `Credential`     | `OptToken Credential` | `Opt` + PascalCase |
 
 All variable wrappers expose `.Get(ctx)` (for `In`/`Opt`/`Credential`) and `.Set(ctx,val)` (`Out`/`Credential`).
 
-### 5.3 Enumerations (`enum` / `enumNames`)
+### 5.5 Robomotion Variable Type Rules
+
+**CRITICAL**: Follow these standardized variable type rules for all Robomotion package development:
+
+#### Variable Type Requirements
+
+1. **Enums**: Always use raw `string` type with `option` tag, never `InVariable[string]` or `OptVariable[string]`
+   ```go
+   // CORRECT - Raw string with option tag
+   OptBundle string `spec:"title=Bundle,value=messaging_non_clips,enum=clips_grid_picker|messaging_non_clips,enumNames=Efficient Clip Grid|Quick GIFs,option"`
+   
+   // INCORRECT - Never use Variable wrappers for enums
+   OptBundle InVariable[string] `spec:"..."` // ❌ Wrong
+   OptBundle OptVariable[string] `spec:"..."` // ❌ Wrong
+   ```
+
+2. **Required Inputs**: Use `InVariable[T]` type
+   ```go
+   InDatabaseId InVariable[string] `spec:"title=Database ID,type=string,scope=Message,name=databaseId,messageScope,jsScope,customScope"`
+   ```
+
+3. **Optional Inputs**: Use `OptVariable[T]` type with `option` tag
+   ```go
+   OptFilter OptVariable[interface{}] `spec:"title=Filter,type=object,option"`
+   OptTimeout OptVariable[int] `spec:"title=Timeout (seconds),type=int,value=30,option"`
+   ```
+
+4. **Outputs**: Use `OutVariable[T]` type
+   ```go
+   OutResult OutVariable[interface{}] `spec:"title=Result,type=object,scope=Message,name=result,messageScope"`
+   ```
+
+5. **JSON Data**: Always use `interface{}` for complex data structures, never `string`
+   ```go
+   // CORRECT - Use interface{} for JSON data
+   InRequestBody InVariable[interface{}] `spec:"title=Request Body,type=object"`
+   OutResponseData OutVariable[interface{}] `spec:"title=Response Data,type=object"`
+   OptMetadata OptVariable[interface{}] `spec:"title=Metadata,type=object,option"`
+   
+   // INCORRECT - Never use string for JSON
+   InRequestBody InVariable[string] `spec:"..."` // ❌ Wrong
+   ```
+
+#### Spec Tag Rules
+
+1. **Unicode Commas**: Use Unicode commas (，) in descriptions to avoid breaking spec tag parsing
+   ```go
+   `spec:"description=Connects to external API，retrieves data，and processes results"`
+   ```
+
+2. **Business-Focused Descriptions**: Write user-friendly descriptions for Flow Designer tooltips
+   ```go
+   `spec:"title=Database ID,description=Unique identifier for the Notion database"`
+   ```
+
+3. **Purpose-Driven**: Explain the purpose and expected input/output formats
+   ```go
+   `spec:"title=Filter Criteria,description=JSON object containing query filters for database search"`
+   ```
+
+#### Function Logic Rules
+
+1. **Enum Access**: Access enum fields directly (e.g., `n.InSearchType`), not via `.Get()` calls
+   ```go
+   // CORRECT - Direct access for enum fields
+   if n.InSearchType == "pages" {
+       // Process pages
+   }
+   
+   // INCORRECT - Never use .Get() for enums
+   searchType, _ := n.InSearchType.Get(ctx) // ❌ Wrong
+   ```
+
+2. **Variable Scope**: Maintain proper scope and naming for all variable types
+3. **JSON Handling**: Preserve `interface{}` types for complex data structures
+
+### 5.6 Enumerations (`enum` / `enumNames`)
 
 Use **`enum`** to define the allowed values of a field and **`enumNames`** to provide human-readable labels.  
 A common use-case is to show a dropdown in the Designer where the developer picks one of the options.
@@ -351,31 +593,16 @@ name := meta["name"].(string)
 category := int(meta["category"].(float64))
 ```
 
-### 7.7 Practical Advice: Shared Credential Management
+### 7.7 Shared Credential Pattern
 
-When building packages with many nodes that all require the same credentials, manually selecting the vault and vault item for each node in the Flow Designer becomes cumbersome. Instead, you can implement a shared credential store pattern within your package.
-
-**Implementation Pattern:**
-
-Create a `common.go` file in your `v1/` directory to hold a shared credential map:
+For packages with multiple nodes requiring the same credentials, implement a shared credential store:
 
 ```go
-// v1/common.go
-package v1
-
-import (
-    "sync"
-    "github.com/google/uuid"
-)
-
-// Global credential store protected by mutex
+// v1/common.go - Shared credential store
 var (
     credentialStore = make(map[string]interface{})
     credentialMutex = sync.RWMutex{}
 )
-
-// Alternative: Use sync.Map for better concurrent performance
-// var credentialStore = sync.Map{}
 
 func setCredential(clientID string, credential interface{}) {
     credentialMutex.Lock()
@@ -389,156 +616,14 @@ func getCredential(clientID string) (interface{}, bool) {
     cred, exists := credentialStore[clientID]
     return cred, exists
 }
-
-func removeCredential(clientID string) {
-    credentialMutex.Lock()
-    defer credentialMutex.Unlock()
-    delete(credentialStore, clientID)
-}
 ```
 
-**Connect Node Implementation:**
+**Usage Pattern:**
+1. **Connect Node** - Gets credential from vault, generates client ID, stores credential
+2. **Operation Nodes** - Use client ID to retrieve stored credential
+3. **Disconnect Node** - Clean up stored credential
 
-```go
-// v1/connect.go
-type ConnectNode struct {
-    runtime.Node `spec:"id=MyPackage.Connect,name=Connect,icon=mdiConnection,color=#2ecc71"`
-    
-    // User selects credential from vault
-    OptToken runtime.Credential `spec:"title=API Credential,scope=Custom,customScope"`
-    
-    // Output the client ID for other nodes
-    OutClientID runtime.OutVariable[string] `spec:"title=Client ID,type=string,scope=Message"`
-}
-
-func (n *ConnectNode) OnMessage(ctx message.Context) error {
-    // Get credential from vault
-    item, err := n.OptToken.Get(ctx)
-    if err != nil {
-        return err
-    }
-    
-    // Generate unique client ID
-    clientID := uuid.New().String()
-    
-    // Store credential in shared map
-    setCredential(clientID, item)
-    
-    // Output client ID for downstream nodes
-    n.OutClientID.Set(ctx, clientID)
-    
-    return nil
-}
-```
-
-**Disconnect Node Implementation:**
-
-```go
-// v1/disconnect.go
-type DisconnectNode struct {
-    runtime.Node `spec:"id=MyPackage.Disconnect,name=Disconnect,icon=mdiConnectionOff,color=#e74c3c"`
-    
-    // Input client ID to disconnect
-    InClientID runtime.InVariable[string] `spec:"title=Client ID,type=string,scope=Message"`
-}
-
-func (n *DisconnectNode) OnMessage(ctx message.Context) error {
-    clientID, err := n.InClientID.Get(ctx)
-    if err != nil {
-        return err
-    }
-    
-    // Remove credential from shared store
-    removeCredential(clientID)
-    
-    return nil
-}
-```
-
-**Usage in Other Nodes:**
-
-```go
-// v1/api_call.go
-type APICallNode struct {
-    runtime.Node `spec:"id=MyPackage.APICall,name=API Call,icon=mdiApi,color=#3498db"`
-    
-    // Input client ID from Connect node
-    InClientID runtime.InVariable[string] `spec:"title=Client ID,type=string,scope=Message"`
-    InEndpoint runtime.InVariable[string] `spec:"title=Endpoint,type=string,scope=Message"`
-    
-    OutResponse runtime.OutVariable[string] `spec:"title=Response,type=string,scope=Message"`
-}
-
-func (n *APICallNode) OnMessage(ctx message.Context) error {
-    clientID, err := n.InClientID.Get(ctx)
-    if err != nil {
-        return err
-    }
-    
-    // Retrieve credential from shared store
-    credItem, exists := getCredential(clientID)
-    if !exists {
-        return runtime.NewError("ErrInvalidArg", "Client ID not found. Use Connect node first.")
-    }
-    
-    // Extract token from credential
-    item := credItem.(map[string]interface{})
-    token, ok := item["value"].(string)
-    if !ok {
-        return runtime.NewError("ErrInvalidArg", "Invalid credential format")
-    }
-    
-    // Use token for API call
-    endpoint, _ := n.InEndpoint.Get(ctx)
-    client := &http.Client{}
-    req, _ := http.NewRequest("GET", endpoint, nil)
-    req.Header.Set("Authorization", "Bearer "+token)
-    
-    resp, err := client.Do(req)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    
-    // Process response...
-    n.OutResponse.Set(ctx, "API call successful")
-    
-    return nil
-}
-```
-
-**Flow Designer Usage:**
-
-1. **Connect Node**: User selects credential once, outputs `msg.client_id`
-2. **Multiple Operation Nodes**: All receive `msg.client_id` as input, retrieve credential from shared store
-3. **Disconnect Node**: Receives `msg.client_id`, cleans up credential from memory
-
-**Benefits:**
-- **Single Credential Selection**: Configure credentials once per flow
-- **Concurrent Safety**: Protected with mutex or sync.Map
-- **Memory Management**: Explicit cleanup via Disconnect node
-- **Reusable Pattern**: Works across all nodes in the same package
-- **Flow Clarity**: Clear connection lifecycle in Designer
-
-**Thread Safety Options:**
-```go
-// Option 1: Manual mutex (more control)
-var credentialStore = make(map[string]interface{})
-var credentialMutex = sync.RWMutex{}
-
-// Option 2: sync.Map (better for high concurrency)
-var credentialStore = sync.Map{}
-
-func setCredential(clientID string, credential interface{}) {
-    credentialStore.Store(clientID, credential)
-}
-
-func getCredential(clientID string) (interface{}, bool) {
-    return credentialStore.Load(clientID)
-}
-```
-
-This pattern is particularly valuable for packages like database connectors, API integrations, or any service requiring authentication across multiple operations.
+This avoids requiring users to select credentials for every node in a flow.
 
 ---
 
@@ -648,339 +733,85 @@ Open it once and you’ll immediately see where your tag information ends up –
 
 ---
 
-## 12. Repository Management with `roboctl`
+## 12. Repository Management
 
-The `roboctl` command-line tool provides comprehensive package and repository management capabilities. It handles building packages, creating repositories, and serving them for distribution.
-
-### 12.1 Package Building
-
-The primary command for building packages is `roboctl package build`:
+### 12.1 Building Packages
 
 ```bash
-# Build package from current directory
+# Build package
 roboctl package build
 
-# Build package from specific directory
-roboctl package build /path/to/package
-
-# Build for specific architecture
-roboctl package build --arch arm64
-
-# Build for specific OS/architecture combination
+# Build for specific platforms
 roboctl package build --arch windows/amd64
 roboctl package build --arch darwin/arm64
 roboctl package build --arch linux/amd64
-
-# Use custom config file
-roboctl package build --file custom-config.json
-
-# Skip build process (package existing binaries)
-roboctl package build --no-build
 ```
 
-**Build Process Overview:**
-1. Reads `config.json` for package metadata and build scripts
-2. Validates package version (must be valid SemVer)
-3. Executes platform-specific build scripts from `config.json`
-4. Generates `.pspec` specification file by running the binary with `-s` flag
-5. Compresses all files into a `.tgz` archive
-6. Names the output as `{namespace}-{version}-{os}-{arch}.tgz`
+### 12.2 Multi-Platform Building
 
-### 12.2 Repository Index Management
-
-Create and maintain package repository indexes:
+Build packages for different target platforms:
 
 ```bash
-# Generate index.json from .tgz files in current directory
-roboctl repo index
-
-# Generate index from specific directory
-roboctl repo index /path/to/packages
-
-# Merge with existing index (preserve previous packages)
-roboctl repo index --merge
-
-# Generate index from subdirectory structure
-roboctl repo index ./packages --merge
-```
-
-**Index Generation Process:**
-- Scans directory for `.tgz` package files
-- Extracts `config.json` from each package
-- Creates `index.json` with package metadata
-- Generates `index.sha256sum` for integrity verification
-- Extracts and places `.pspec` files for Designer consumption
-- Sorts versions using semantic versioning
-
-**Index Structure:**
-```json
-{
-  "generated": "2024-07-22T10:30:00-0000",
-  "packages": {
-    "namespace\\.package": {
-      "name": "Package Name",
-      "namespace": "Namespace.Package", 
-      "version": "1.2.3",
-      "versions": ["1.2.3", "1.2.2", "1.2.1"],
-      "description": "Package description",
-      "author": {"name": "Author", "email": "author@example.com"},
-      "categories": ["Productivity"],
-      "platforms": ["linux", "windows", "darwin"],
-      "language": "Go",
-      "path": "subfolder/path"
-    }
-  }
-}
-```
-
-### 12.3 Repository Server
-
-Serve packages over HTTP with CORS support:
-
-```bash
-# Serve on default address (127.0.0.1:8080)
-roboctl repo serve
-
-# Serve on custom IP and port
-roboctl repo serve --ip 0.0.0.0 --port 3000
-
-# Serve on localhost with custom port
-roboctl repo serve --port 8888
-```
-
-The server serves static files from the current directory, enabling:
-- Package downloads (`*.tgz` files)
-- Index access (`index.json`, `index.sha256sum`)
-- Specification files (`*.pspec`)
-
-### 12.4 Integration with Robomotion Admin Console
-
-**Adding a Repository:**
-1. In Admin Console, navigate to **Repositories**
-2. Click **Add Repository** button
-3. Configure repository settings:
-   - **Name**: `Local Repo` (or your preferred name)
-   - **Description**: `Development local repo`
-   - **URL**: `http://127.0.0.1:8080` (or your server address)
-   - **Access Level**: `Everyone`
-
-**Repository Workflow:**
-```bash
-# 1. Build your packages
-cd /path/to/package1
-roboctl package build
-cd /path/to/package2 
-roboctl package build
-
-# 2. Organize packages in repository directory
-mkdir my-repo
-mv package1/*.tgz my-repo/
-mv package2/*.tgz my-repo/
-
-# 3. Generate repository index
-cd my-repo
-roboctl repo index
-
-# 4. Serve repository
-roboctl repo serve --ip 0.0.0.0 --port 8080
-```
-
-### 12.5 Advanced Repository Management
-
-**Multi-Platform Building:**
-```bash
-# Build for all supported platforms
+# Build for specific platforms
 roboctl package build --arch linux/amd64
 roboctl package build --arch windows/amd64  
 roboctl package build --arch darwin/amd64
 roboctl package build --arch darwin/arm64
+
+# Build multiple platforms at once
+roboctl package build --arch linux/amd64 --arch windows/amd64 --arch darwin/amd64
 ```
 
-**Repository Organization:**
-```
-repository/
-├── index.json              # Generated package index
-├── index.sha256sum         # Integrity checksum
-├── package1-1.0.0-linux-amd64.tgz
-├── package1-1.0.0-windows-amd64.tgz
-├── package1-1.0.0-darwin-amd64.tgz
-├── package1-1.0.0.pspec    # Designer specification
-├── package2-2.1.0-linux-amd64.tgz
-└── package2-2.1.0.pspec
-```
+### 12.3 Repository Management
 
-**Incremental Updates:**
-- Use `--merge` flag to preserve existing packages when adding new ones
-- Repository server automatically handles version ordering (newest first)
-- Empty `.tgz` files are automatically removed from index
-
-### 12.6 CI/CD Integration
-
-**Typical CI Pipeline:**
-```yaml
-# .github/workflows/build-packages.yml
-- name: Build Package
-  run: |
-    roboctl package build --arch linux/amd64
-    roboctl package build --arch windows/amd64
-    roboctl package build --arch darwin/amd64
-
-- name: Update Repository
-  run: |
-    cp *.tgz /repo/packages/
-    cd /repo/packages
-    roboctl repo index --merge
-
-- name: Deploy to S3
-  run: |
-    aws s3 sync /repo/packages s3://my-package-repo/
-```
-
----
-
-## 13. Publish to a Repository
-
-1. Make sure `config.json` is committed & version bumped.
-2. Login (`roboctl login`).
-3. Run `roboctl package build --arch amd64` for every platform you want.
-4. Upload to your private or public repository (see `roboctl repo index` / `serve`).
-
-Robomotion Cloud customers usually let the CI pipeline push artefacts directly to an S3-compatible bucket served by `roboctl repo serve`.
-
----
-
-## 14. Development Troubleshooting & Workflow
-
-### 14.1 Package Caching Issues
-
-**Problem**: After updating and building your package, the code seems to be running an old version despite successful build.
-
-**Root Cause**: Robomotion robots cache downloaded packages locally. If you don't increment the version in `config.json`, the same package version is created, and robots won't re-download it.
-
-**Package Cache Locations**:
-- **Linux/macOS**: `~/.config/robomotion/packages/bin/Robomotion/{PACKAGE_NAME}/{PACKAGE_VERSION}`
-- **Windows**: `%LOCALAPPDATA%/Robomotion/packages/bin/Robomotion/{PACKAGE_NAME}/{PACKAGE_VERSION}`
-
-**Solutions**:
-
-#### Option 1: Clear Package Cache (Quick Fix)
-```bash
-# Linux/macOS - Remove specific package version
-rm -rf ~/.config/robomotion/packages/bin/Robomotion/YourPackage/1.0.0
-
-# Windows - Remove specific package version  
-rmdir /s "%LOCALAPPDATA%\Robomotion\packages\bin\Robomotion\YourPackage\1.0.0"
-
-# Or clear entire package cache
-rm -rf ~/.config/robomotion/packages/bin/Robomotion/YourPackage
-```
-
-#### Option 2: Use Attach Mode (Recommended for Development)
-This is the **most effective development approach** for **logic changes only**:
+Create and serve package repositories:
 
 ```bash
-# 1. Build your package
-go build -o dist/my-package
-
-# 2. Make sure you have a connected robot and no flows are running
-# 3. Run with attach flag
-./dist/my-package -a
-```
-
-**Attach Mode Benefits**:
-- Connects directly to running robot via gRPC
-- Bypasses package cache entirely
-- Real-time `log.Printf()` output visible in stdout
-- No need to increment versions during development
-- Robot prefers attached plugin over cached versions
-
-**⚠️ Critical Limitation: Attach Mode Only Works for Logic Changes**
-
-Attach mode **DOES NOT** work if you've made any of these changes:
-- **Added new nodes** to your package
-- **Modified node properties** (struct fields with `spec` tags)
-- **Updated existing node properties** (title, type, description, etc.)
-- **Added/removed/changed** `InVariable`, `OutVariable`, `OptVariable`, or `Credential` fields
-
-**Why This Limitation Exists**:
-1. Flow Designer downloads `.pspec` files from repository for drag-and-drop functionality
-2. Node properties are displayed based on cached `.pspec` file content
-3. Attach mode only affects runtime execution, not the Designer's metadata
-
-**Attach Mode Requirements**:
-- Must have a connected robot
-- Stop any running flows that use your package
-- Ensure no other instance of your package is running
-- **Only use for business logic changes** (no node structure changes)
-
-### 14.2 Node/Property Updates: Full Repository Workflow
-
-When you've made **structural changes** to your nodes (new nodes, property changes), you must follow the complete workflow:
-
-```bash
-# 1. Update your code with new nodes or properties
-# 2. Build package with roboctl (generates new .pspec)
-roboctl package build
-
-# 3. Update repository index (includes new .pspec files)  
+# Generate repository index from .tgz files
 roboctl repo index
 
-# 4. Restart repository server (serves updated index and .pspec)
-roboctl repo serve
+# Merge with existing index (preserve previous packages)
+roboctl repo index --merge
 
-# 5. Clear package cache to force re-download
-rm -rf ~/.config/robomotion/packages/bin/Robomotion/YourPackage
+# Serve repository locally for testing
+roboctl repo serve --port 8080
 
-# 6. Refresh Flow Designer (Ctrl+F5 or hard refresh)
-# This downloads the updated .pspec file
-
-# 7. Now you can use the updated nodes with new properties
+# Serve on custom IP and port
+roboctl repo serve --ip 0.0.0.0 --port 3000
 ```
 
-**What Each Step Does**:
-- **roboctl package build**: Creates new `.tgz` and regenerates `.pspec` file
-- **roboctl repo index**: Updates `index.json` and extracts `.pspec` to repository root  
-- **roboctl repo serve**: Makes updated `.pspec` file available via HTTP
-- **Clear cache**: Forces robot to re-download package binaries
-- **Designer refresh**: Downloads updated `.pspec` for node metadata
+**Repository Server Features:**
+- Serves package downloads (`*.tgz` files)
+- Provides index access (`index.json`, `index.sha256sum`)
+- Delivers specification files (`*.pspec`) for Flow Designer
+- CORS support for web-based access
 
-**When to Use Full Workflow vs Attach Mode**:
 
-| Change Type | Use Attach Mode `-a` | Use Full Workflow |
-|-------------|---------------------|-------------------|
-| Bug fixes in `OnMessage()` logic | ✅ Yes | ❌ No |
-| Algorithm improvements | ✅ Yes | ❌ No |
-| Error handling updates | ✅ Yes | ❌ No |  
-| `log.Printf()` additions | ✅ Yes | ❌ No |
-| External API call changes | ✅ Yes | ❌ No |
-| **New nodes added** | ❌ No | ✅ Required |
-| **Property title/description changes** | ❌ No | ✅ Required |
-| **New InVariable/OutVariable fields** | ❌ No | ✅ Required |
-| **Spec tag modifications** | ❌ No | ✅ Required |
-| **Node icon/color changes** | ❌ No | ✅ Required |
+---
 
-### 14.3 Attach Mode Deep Dive
+## 13. Publishing Packages
 
-**How Attach Mode Works**:
-1. Your binary starts a gRPC server on a random port
-2. Discovers local robot using network scanning (`debug/common.go`)
-3. Registers with robot's debug service
-4. Robot routes your package's node executions to the attached process
+1. Update version in `config.json`
+2. Build for target platforms: `roboctl package build --arch <platform>`
+3. Generate repository index: `roboctl repo index`
+4. Serve or deploy packages to your repository
 
-**Typical Attach Workflow**:
+---
+
+## 14. Development & Testing
+
+### 14.1 Development Tips
+
+**Attach Mode for Development**:
+Use attach mode for rapid testing of logic changes:
+
 ```bash
-# Terminal 1: Start attached plugin
-cd my-package
+# Build and run in attach mode for development
 go build -o dist/my-package
 ./dist/my-package -a
-
-# Output: "Attached to localhost:12345"
-
-# Terminal 2: Monitor logs in real-time
-# Your log.Printf statements appear here during flow execution
 ```
 
-**Debug Logging Example**:
+**Debugging with Logs**:
 ```go
 func (n *MyNode) OnMessage(ctx message.Context) error {
     log.Printf("Processing message for node %s", n.GUID)
@@ -991,30 +822,15 @@ func (n *MyNode) OnMessage(ctx message.Context) error {
         return err
     }
     
-    log.Printf("Input value: %+v", input)
-    
     // Your business logic here
-    result := processData(input)
-    
-    log.Printf("Processed result: %+v", result)
-    n.OutResult.Set(ctx, result)
-    
+    log.Printf("Processing complete")
     return nil
 }
 ```
 
-### 14.4 Common Development Issues
+**Note**: Attach mode only works for logic changes. For structural changes (new nodes, property changes), use the full build and deployment workflow.
 
-| Issue | Symptom | Solution |
-|-------|---------|----------|
-| **Stale Package Cache** | Code changes not reflected | Use attach mode or clear cache |
-| **Multiple Plugin Instances** | "plugin already attached" error | Stop previous instances, check processes |
-| **Robot Not Found** | "timeout: plugin listener is nil" | Ensure robot is connected and running |
-| **Flow Still Running** | Attach fails or inconsistent behavior | Stop all flows using your package |
-| **Port Conflicts** | gRPC connection errors | Check for conflicting processes on ports |
-| **Missing Logs** | No debug output visible | Use attach mode, ensure `log.Printf` statements exist |
-
-### 14.5 Development Workflow Decision Tree
+### 14.2 Development Workflow Decision Tree
 
 Use this decision tree to determine the correct development approach:
 
@@ -1052,122 +868,63 @@ Use this decision tree to determine the correct development approach:
     └─────────────────┘    └──────────────────┘
 ```
 
-**Quick Reference**:
+**Quick Reference:**
 - **Logic changes only** → Use `-a` attach mode
-- **Any structural changes** → Use full workflow
+- **Any structural changes** → Use full workflow with `roboctl repo serve`
 - **When in doubt** → Use full workflow (safer but slower)
 
-### 14.6 Debugging Best Practices
+---
 
-**Development Workflow**:
-```bash
-# 1. Initial development setup
-roboctl package create --name "MyPackage" --namespace "Dev.MyPackage"
-cd mypackage
+## 15. Common Issues & Troubleshooting
 
-# 2. Development cycle (repeat as needed)
-# - Make code changes
-# - Build: go build -o dist/mypackage
-# - Test: ./dist/mypackage -a
-# - Run flows in Designer
-# - View logs in terminal
+### 15.1 Build and Runtime Issues
 
-# 3. When ready for testing with real package system
-# - Update version in config.json
-# - Build: roboctl package build  
-# - Clear cache if needed
-# - Test with actual package deployment
-```
+| Symptom | Explanation | Solution |
+|---------|-------------|----------|
+| `timeout: plugin listener is nil` | Binary launched but never called `runtime.Start()` | Add `runtime.Start()` call in your `main.go` |
+| "node handler not found" | Node not registered or ID mismatch | Check node registration in `main.go` and verify node ID matches Designer |
+| "plugin already attached" error | Multiple plugin instances running | Stop previous instances, check running processes |
+| Empty pspec file | Missing struct tag on Node | Add `spec` struct tag to embedded `runtime.Node` |
+| Package not updating | Robot using cached version | Clear package cache or increment version in `config.json` |
 
-**Logging Strategies**:
-```go
-// Use structured logging for complex debugging
-log.Printf("[%s] OnMessage started - GUID: %s", time.Now().Format("15:04:05"), n.GUID)
-log.Printf("[DEBUG] Input validation - value: %+v, type: %T", input, input)
-log.Printf("[ERROR] Failed to process: %v", err)
-log.Printf("[SUCCESS] Output generated - size: %d bytes", len(output))
-```
+### 15.2 Variable and Scope Issues
 
-**Error Handling for Debug**:
-```go
-func (n *MyNode) OnMessage(ctx message.Context) error {
-    defer func() {
-        if r := recover(); r != nil {
-            log.Printf("[PANIC] Node %s panic recovered: %v", n.GUID, r)
-        }
-    }()
-    
-    log.Printf("[START] %s processing message", n.Name)
-    
-    // Your logic here with detailed logging
-    
-    log.Printf("[END] %s completed successfully", n.Name)
-    return nil
-}
-```
+| Symptom | Explanation | Solution |
+|---------|-------------|----------|
+| Variables always empty | Incorrect scope configuration | Check `scope` and `messageScope` flags in spec tags |
+| Input not appearing in Designer | Missing scope flags | Add `messageScope,jsScope,customScope` for InVariable |
+| Custom fields not working | Incorrect Custom scope setup | Use `scope=Custom,name=Field Label,customScope` |
+| Enum dropdown not showing | Missing enum configuration | Add `enum=val1\|val2,enumNames=Label1\|Label2,option` |
 
-### 14.7 Network and Connection Issues
+### 15.3 Flow Designer Issues
 
-**Robot Discovery Problems**:
-- Ensure robot and development machine are on same network
-- Check firewall settings allow gRPC traffic
-- Verify robot is in "Connected" status in Admin Console
+| Symptom | Explanation | Solution |
+|---------|-------------|----------|
+| Node not appearing in palette | Package not properly imported | Check repository index and package installation |
+| Port names missing | Missing port configuration | Add `direction` and `position` tags to Port fields |
+| Wrong node icon/color | Incorrect spec configuration | Verify `icon` and `color` in Node spec tag |
+| Properties not updating | Stale pspec file | Rebuild package and refresh Designer |
 
-**Attach Timeout Issues**:
-- Default timeout is 30 seconds (`debug/attach.go`)
-- If robot is slow to respond, restart robot service
-- Check for network connectivity issues
+### 15.4 Development Workflow Issues
 
-**Multiple Robot Environments**:
-- Attach connects to first discovered robot
-- Use specific network interfaces if multiple robots present
-- Consider using different development environments
+| Symptom | Explanation | Solution |
+|---------|-------------|----------|
+| Attach mode not working | Robot not found or flows running | Ensure robot connected, stop running flows |
+| Debug logs not showing | Not using attach mode | Run with `./binary -a` flag |
+| Changes not reflected | Using wrong development approach | Use attach mode for logic changes, full rebuild for structural changes |
 
 ---
 
-## 15. Troubleshooting Checklist
+## 16. Important Notes
 
-| Symptom | Explanation |
-|---------|-------------|
-| `timeout: plugin listener is nil` | You launched the binary but never called `runtime.Start()` |
-| "node handler not found" | Your node is not registered in `main.go` or the GUID differs from Designer UI |
-| Variables always empty | Check `scope` and `messageScope` flags in the spec tag |
-| Designer port names missing | Port field lacks `direction` / `position` tags |
-| Empty *pspec* file | You forgot to set the struct tag on the embedded `runtime.Node` |
-
----
-
-## 16. Further Reading & Code Dive
-
-* [`robomotion-go/runtime`](../runtime) – SDK implementation (worth skimming)
-* [`robomotion-chat-assistant/v1`](https://github.com/robomotionio/robomotion-chat-assistant) – extensive real-world nodes
-* Hashicorp *go-plugin* – the underlying IPC transport
-
-Happy automating! 💫
-
-## ⚠️  Commas inside `spec:` values
-
-The parser that converts the `spec:"…"` string into key/value pairs is extremely simple – it **splits on every comma** (`strings.Split(spec, ",")`, see `runtime/spec.go`).
+### Commas in Spec Tags
+Avoid regular commas in descriptions as they break parsing. Use Unicode comma `，` (U+FF0C) instead:
 
 ```go
-kvs := strings.Split(spec, ",") // ← no escaping supported
+// Wrong - breaks parsing
+runtime.Node `spec:"description=Hello, world"`
+
+// Correct - use Unicode comma
+runtime.Node `spec:"description=Hello，world"`
 ```
 
-That means if you write:
-
-```go
-runtime.Node `spec:"id=Acme.My,name=My,description=Hello, world"`
-```
-
-the text after the comma – ` world` – is treated as a **new** key without a value, breaking the entire spec.
-
-### Work-arounds
-
-1. **Replace the comma with another character** – Designers usually accept a plain semicolon (`;`) or an em-dash (`—`).
-2. **HTML-escape** it – `&#44;` is decoded by most browsers/UI frameworks so:
-   ```go
-   description=Hello&#44; world
-   ```
-3. **Custom parsing** – If you really need commas everywhere, consider extending `parseSpec()` to support escaped commas (`\,`) and submit a PR.
-
-> The guide therefore uses **semicolon** in examples where a comma would normally appear in prose.
