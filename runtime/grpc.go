@@ -403,6 +403,44 @@ func (m *GRPCRuntimeHelperClient) GatewayRequest(method, endpoint, body string, 
 	return resp, nil
 }
 
+// GatewayBinaryRequest handles binary data by encoding it as base64
+func (m *GRPCRuntimeHelperClient) GatewayBinaryRequest(method, endpoint string, body []byte, headers map[string]string) (*proto.GatewayRequestResponse, error) {
+	// Encode binary data as base64 for transport
+	var bodyStr string
+	if body != nil {
+		bodyStr = base64.StdEncoding.EncodeToString(body)
+	}
+
+	// Add header to indicate base64 binary content
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+	headers["X-Binary-Base64"] = "true"
+
+	resp, err := m.client.GatewayRequest(context.Background(), &proto.GatewayRequestRequest{
+		Method:   method,
+		Endpoint: endpoint,
+		Body:     bodyStr,
+		Headers:  headers,
+	})
+
+	if err != nil {
+		hclog.Default().Info("runtime.gatewaybinaryrequest", "err", err)
+		return nil, err
+	}
+
+	// Decode base64 response back to binary if it's marked as binary
+	if resp.Body != "" {
+		if decoded, err := base64.StdEncoding.DecodeString(resp.Body); err == nil {
+			// Successfully decoded - replace with decoded binary as string for compatibility
+			resp.Body = string(decoded)
+		}
+		// If decode fails, keep original (it might be text response)
+	}
+
+	return resp, nil
+}
+
 func checkConnState() {
 
 	for {

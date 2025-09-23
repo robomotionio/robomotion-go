@@ -34,6 +34,7 @@ type RuntimeHelper interface {
 	AppDownload(string, string, string) (string, error)
 	AppUpload(string, string) (string, error)
 	GatewayRequest(string, string, string, map[string]string) (*proto.GatewayRequestResponse, error)
+	GatewayBinaryRequest(string, string, []byte, map[string]string) (*proto.GatewayRequestResponse, error)
 	ProxyRequest(*proto.HttpRequest) (*proto.HttpResponse, error)
 	IsRunning() (bool, error)
 	GetPortConnections(string, int) ([]NodeInfo, error)

@@ -84,6 +84,14 @@ func GatewayRequest(method, endpoint, body string, headers map[string]string) (*
 	return client.GatewayRequest(method, endpoint, body, headers)
 }
 
+func GatewayBinaryRequest(method, endpoint string, body []byte, headers map[string]string) (*proto.GatewayRequestResponse, error) {
+	if client == nil {
+		return nil, fmt.Errorf("Runtime was not initialized")
+	}
+
+	return client.GatewayBinaryRequest(method, endpoint, body, headers)
+}
+
 func ProxyRequest(req *proto.HttpRequest) (*proto.HttpResponse, error) {
 	if client == nil {
 		return nil, fmt.Errorf("Runtime was not initialized")
