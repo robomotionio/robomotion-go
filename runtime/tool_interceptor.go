@@ -86,9 +86,11 @@ func (ti *ToolInterceptor) collectOutputVariables(ctx message.Context) map[strin
 		field := nodeType.Field(i)
 		
 		// Check if this is an OutVariable field
+		// Note: For generic types like OutVariable[string], the type name will be
+		// "runtime.OutVariable[string]" so we use Contains instead of HasSuffix
 		if field.Type.Kind() == reflect.Struct {
 			typeName := field.Type.String()
-			if strings.HasSuffix(typeName, "OutVariable") {
+			if strings.Contains(typeName, "OutVariable[") {
 				// Extract the variable name from spec tag
 				specTag := field.Tag.Get("spec")
 				if name := extractNameFromSpec(specTag); name != "" {
