@@ -1,6 +1,6 @@
 module github.com/robomotionio/robomotion-go
 
-go 1.21
+go 1.24.0
 
 require (
 	github.com/golang/protobuf v1.5.4
@@ -11,11 +11,13 @@ require (
 	github.com/magiconair/properties v1.8.7
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/robomotionio/go-plugin v1.2.7
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.17.0
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/net v0.22.0
+	golang.org/x/oauth2 v0.34.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.33.0
 )
