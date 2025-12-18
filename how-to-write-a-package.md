@@ -109,11 +109,14 @@ You **never** instantiate a node yourself – the runner does that through refle
 
 ## 5. Declaring a Node (the **`spec`** tag)
 
-Every Go struct that embeds `runtime.Node` and is registered in `main.go` becomes a *node* in Designer.  
+Every Go struct that embeds `runtime.Node` and is registered in `main.go` becomes a *node* in Designer.
 Metadata is provided via a **struct-tag** called `spec`.
+
+> **Important**: The node `id` must start with the `namespace` from your `config.json`. For example, if your `config.json` has `"namespace": "Acme"`, all your node IDs must start with `Acme.` (e.g., `Acme.Hello`, `Acme.World`).
 
 ```go
 // v1/hello.go
+// Assumes config.json has: "namespace": "Acme"
 package v1
 
 import (
@@ -122,7 +125,7 @@ import (
 )
 
 type Hello struct {
-    // Node declaration (visible in Designer)
+    // Node declaration - ID starts with "Acme." to match config.json namespace
     runtime.Node `spec:"id=Acme.Hello,name=Hello,icon=mdiHand,color=#3498db,inputs=1,outputs=1"`
 
     // === INPUT ==========================================================
@@ -152,7 +155,7 @@ Below is a **non-exhaustive** but practically complete list of keys you can use 
 
 | Key | Applies to | Example | Meaning |
 |-----|------------|---------|---------|
-| `id` | Node | `Acme.Hello` | **Unique** identifier that the runtime looks up. Prefer dotted notation `<Namespace>.<NodeName>` |
+| `id` | Node | `Acme.Hello` | **Unique** identifier that the runtime looks up. **MUST start with the namespace from config.json** |
 | `name` | Node | `Hello` | Display name in Designer |
 | `icon` | Node | `mdiHand` | Material-Design-Icon identifier – resolved through `runtime/icons.go` |
 | `color` | Node | `#3498db` | Hex color shown behind the icon. **IMPORTANT: All nodes in the same package MUST use the same color code for consistency** |
@@ -172,7 +175,83 @@ Below is a **non-exhaustive** but practically complete list of keys you can use 
 | `hidden` | Field | `hidden` | Field is invisible but still stored |
 | `category` | Field | `category=2` | Group fields under collapsible panels |
 
-### 5.2 Package Color Consistency Requirements
+### 5.2 Node ID Namespace Requirements
+
+**CRITICAL**: All node IDs **MUST** be prefixed with the `namespace` defined in your `config.json` file.
+
+The namespace in `config.json` is the authoritative prefix for all node IDs in your package. This ensures proper node discovery and prevents ID conflicts across packages.
+
+**Rules:**
+1. The node ID must start with the exact namespace from `config.json`
+2. After the namespace, add a dot (`.`) followed by the node name
+3. You can optionally add a category between the namespace and node name: `Namespace.Category.NodeName`
+
+**Example with `config.json`:**
+```json
+{
+  "namespace": "Robomotion.LanceDB",
+  "name": "LanceDB",
+  "version": "1.0.0"
+}
+```
+
+**Valid node IDs for this namespace:**
+```go
+// Direct node name after namespace
+type ConnectNode struct {
+    runtime.Node `spec:"id=Robomotion.LanceDB.Connect,name=Connect,icon=mdiConnection,color=#3498db"`
+}
+
+// With category
+type VectorSearchNode struct {
+    runtime.Node `spec:"id=Robomotion.LanceDB.Vector.Search,name=Vector Search,icon=mdiMagnify,color=#3498db"`
+}
+
+type VectorInsertNode struct {
+    runtime.Node `spec:"id=Robomotion.LanceDB.Vector.Insert,name=Vector Insert,icon=mdiPlusBox,color=#3498db"`
+}
+
+// More examples
+type QueryNode struct {
+    runtime.Node `spec:"id=Robomotion.LanceDB.Query,name=Query,icon=mdiDatabase,color=#3498db"`
+}
+
+type CreateTableNode struct {
+    runtime.Node `spec:"id=Robomotion.LanceDB.Table.Create,name=Create Table,icon=mdiTablePlus,color=#3498db"`
+}
+```
+
+**INVALID node IDs (will not work):**
+```go
+// Wrong - different namespace prefix
+type ConnectNode struct {
+    runtime.Node `spec:"id=LanceDB.Connect,..."`           // ❌ Missing "Robomotion." prefix
+}
+
+type ConnectNode struct {
+    runtime.Node `spec:"id=Acme.LanceDB.Connect,..."`      // ❌ Wrong namespace prefix
+}
+
+type ConnectNode struct {
+    runtime.Node `spec:"id=Connect,..."`                   // ❌ No namespace at all
+}
+
+// Correct
+type ConnectNode struct {
+    runtime.Node `spec:"id=Robomotion.LanceDB.Connect,..."` // ✅ Matches config.json namespace
+}
+```
+
+**More namespace examples:**
+
+| config.json namespace | Valid node IDs |
+|-----------------------|----------------|
+| `Acme.Weather` | `Acme.Weather.GetForecast`, `Acme.Weather.Current` |
+| `MyCompany.Slack` | `MyCompany.Slack.SendMessage`, `MyCompany.Slack.Channel.List` |
+| `OpenAI` | `OpenAI.ChatCompletion`, `OpenAI.Embedding.Create` |
+| `AWS.S3` | `AWS.S3.Upload`, `AWS.S3.Download`, `AWS.S3.Bucket.List` |
+
+### 5.3 Package Color Consistency Requirements
 
 **CRITICAL**: All nodes within the same package MUST use identical color codes to maintain visual consistency in the Flow Designer.
 
@@ -211,7 +290,7 @@ type GetChannelsNode struct {
 - Maintains brand consistency with the integrated service
 - Reduces cognitive load when building flows
 
-### 5.3 Node Parameter Naming Rules
+### 5.4 Node Parameter Naming Rules
 
 **CRITICAL**: Follow these standardized naming conventions for all node parameters to ensure consistency across packages:
 
@@ -331,7 +410,7 @@ type CreatePageNode struct {
 }
 ```
 
-### 5.4 Variables cheat-sheet
+### 5.5 Variables cheat-sheet
 
 | Use-case | Type | Example | Naming Pattern |
 |----------|------|---------|----------------|
@@ -342,7 +421,7 @@ type CreatePageNode struct {
 
 All variable wrappers expose `.Get(ctx)` (for `In`/`Opt`/`Credential`) and `.Set(ctx,val)` (`Out`/`Credential`).
 
-### 5.5 Robomotion Variable Type Rules
+### 5.6 Robomotion Variable Type Rules
 
 **CRITICAL**: Follow these standardized variable type rules for all Robomotion package development:
 
@@ -418,7 +497,7 @@ All variable wrappers expose `.Get(ctx)` (for `In`/`Opt`/`Credential`) and `.Set
 2. **Variable Scope**: Maintain proper scope and naming for all variable types
 3. **JSON Handling**: Preserve `interface{}` types for complex data structures
 
-### 5.6 Enumerations (`enum` / `enumNames`)
+### 5.7 Enumerations (`enum` / `enumNames`)
 
 Use **`enum`** to define the allowed values of a field and **`enumNames`** to provide human-readable labels.  
 A common use-case is to show a dropdown in the Designer where the developer picks one of the options.
@@ -886,6 +965,7 @@ Use this decision tree to determine the correct development approach:
 | "plugin already attached" error | Multiple plugin instances running | Stop previous instances, check running processes |
 | Empty pspec file | Missing struct tag on Node | Add `spec` struct tag to embedded `runtime.Node` |
 | Package not updating | Robot using cached version | Clear package cache or increment version in `config.json` |
+| Node not appearing in Designer | Node ID doesn't match namespace | Ensure node ID starts with namespace from `config.json` (e.g., if namespace is `Acme.Weather`, node ID must be `Acme.Weather.NodeName`) |
 
 ### 15.2 Variable and Scope Issues
 
