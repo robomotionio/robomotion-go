@@ -167,6 +167,44 @@ func (q *Quick) Context() *MockContext {
 	return q.harness.Context()
 }
 
+// GetOutput is an alias for Output for convenience.
+func (q *Quick) GetOutput(name string) interface{} {
+	return q.harness.GetOutput(name)
+}
+
+// SetCredential configures a Credential field to use a mock credential.
+// The fieldName is the name of the Credential field on the node struct.
+// The vaultID and itemID are used to look up the credential from the CredentialStore.
+//
+// Example:
+//
+//	// First set up credentials in TestMain:
+//	store := testing.NewCredentialStore()
+//	store.SetAPIKey("my_api_key", "secret123")
+//	testing.InitCredentials(store)
+//
+//	// Then in your test:
+//	q.SetCredential("OptApiKey", "my_api_key", "")
+func (q *Quick) SetCredential(fieldName, vaultID, itemID string) *Quick {
+	nodeVal := reflect.ValueOf(q.node).Elem()
+	field := nodeVal.FieldByName(fieldName)
+
+	if field.IsValid() && field.CanSet() {
+		// Get the VaultID field within the Credential struct
+		vaultField := field.FieldByName("VaultID")
+		if vaultField.IsValid() && vaultField.CanSet() {
+			vaultField.SetString(vaultID)
+		}
+		// Get the ItemID field within the Credential struct
+		itemField := field.FieldByName("ItemID")
+		if itemField.IsValid() && itemField.CanSet() {
+			itemField.SetString(itemID)
+		}
+	}
+
+	return q
+}
+
 // Reset clears the context for reuse.
 func (q *Quick) Reset() *Quick {
 	q.harness.Reset()
