@@ -68,11 +68,44 @@ func (q *Quick) autoConfigureVariables() {
 		}
 
 		if name == "" {
-			continue // Can't configure without a name
+			// For variables without a name (like OptVariable with empty name=),
+			// configure them with Custom scope and empty string value.
+			// This prevents panics when Get() is called on unconfigured variables.
+			configureVariableCustom(fieldVal.Addr().Interface(), "")
+			continue
 		}
 
 		// Configure the variable
 		configureVariable(fieldVal.Addr().Interface(), scope, name)
+	}
+}
+
+// configureVariableCustom sets a variable to Custom scope with a given value.
+func configureVariableCustom(variable interface{}, value interface{}) {
+	v := reflect.ValueOf(variable).Elem()
+
+	// Find the embedded Variable struct
+	var varField reflect.Value
+	if v.Kind() == reflect.Struct {
+		if f := v.FieldByName("Variable"); f.IsValid() {
+			varField = f
+		} else if f := v.FieldByName("InVariable"); f.IsValid() {
+			varField = f.FieldByName("Variable")
+		}
+	}
+
+	if !varField.IsValid() {
+		varField = v
+	}
+
+	// Set Scope to "Custom"
+	if scopeField := varField.FieldByName("Scope"); scopeField.IsValid() && scopeField.CanSet() {
+		scopeField.SetString("Custom")
+	}
+
+	// Set Name to the value (for Custom scope, Name holds the value)
+	if nameField := varField.FieldByName("Name"); nameField.IsValid() && nameField.CanSet() {
+		nameField.Set(reflect.ValueOf(value))
 	}
 }
 
