@@ -1329,6 +1329,38 @@ t.Run("upload and cleanup file", func(t *testing.T) {
 })
 ```
 
+**Tip**: When testing delete operations, verify deletion worked by trying to get the deleted resource and expecting an error:
+
+```go
+t.Run("delete and verify", func(t *testing.T) {
+    // ... upload file, get fileName ...
+
+    // Delete the file
+    deleteNode := &FileDelete{}
+    dq := rtesting.NewQuick(deleteNode)
+    dq.SetCredential("OptApiKey", "api_key", "api_key")
+    dq.SetCustom("InFileName", fileName)
+
+    err := dq.Run()
+    if err != nil {
+        t.Fatalf("Delete failed: %v", err)
+    }
+
+    // Verify deletion by expecting an error when getting
+    getNode := &FileGet{}
+    gq := rtesting.NewQuick(getNode)
+    gq.SetCredential("OptApiKey", "api_key", "api_key")
+    gq.SetCustom("InFileName", fileName)
+
+    err = gq.Run()
+    if err == nil {
+        t.Error("Expected error when getting deleted file")
+    } else {
+        t.Logf("Confirmed file deleted: %v", err)
+    }
+})
+```
+
 ### 12.4 Connection Cleanup
 
 Always cleanup connections in tests:
