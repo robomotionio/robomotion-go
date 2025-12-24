@@ -1,0 +1,244 @@
+package testing
+
+import (
+	"reflect"
+)
+
+// Quick provides a simplified interface for common testing patterns.
+// It automatically configures variables based on spec tags when possible.
+type Quick struct {
+	harness *Harness
+	node    interface{}
+}
+
+// NewQuick creates a Quick test helper that auto-configures node variables.
+// It parses spec tags from the node struct to configure variables automatically.
+//
+// Example:
+//
+//	q := testing.NewQuick(&object.AddProperty{}).
+//	    SetInput("obj", map[string]interface{}{"foo": "bar"}).
+//	    SetInput("val", "hello").
+//	    SetCustom("InKey", "mykey")
+//
+//	err := q.Run()
+//	result := q.Output("obj")
+func NewQuick(node MessageHandler) *Quick {
+	q := &Quick{
+		harness: NewHarness(node),
+		node:    node,
+	}
+	q.autoConfigureVariables()
+	return q
+}
+
+// autoConfigureVariables parses spec tags and configures variables automatically.
+func (q *Quick) autoConfigureVariables() {
+	nodeVal := reflect.ValueOf(q.node).Elem()
+	nodeType := nodeVal.Type()
+
+	for i := 0; i < nodeType.NumField(); i++ {
+		field := nodeType.Field(i)
+		fieldVal := nodeVal.Field(i)
+
+		// Skip non-exported or non-struct fields
+		if !fieldVal.CanAddr() || fieldVal.Kind() != reflect.Struct {
+			continue
+		}
+
+		// Check if this is a Variable type (InVariable, OutVariable, OptVariable)
+		if !isVariableType(field.Type) {
+			continue
+		}
+
+		// Parse spec tag
+		spec := field.Tag.Get("spec")
+		if spec == "" {
+			continue
+		}
+
+		specMap := parseSpec(spec)
+
+		// Get scope and name from spec
+		scope := specMap["scope"]
+		name := specMap["name"]
+
+		if scope == "" {
+			scope = "Message" // Default scope
+		}
+
+		if name == "" {
+			continue // Can't configure without a name
+		}
+
+		// Configure the variable
+		configureVariable(fieldVal.Addr().Interface(), scope, name)
+	}
+}
+
+// SetInput sets an input value in the message context.
+func (q *Quick) SetInput(name string, value interface{}) *Quick {
+	q.harness.WithInput(name, value)
+	return q
+}
+
+// SetInputs sets multiple input values.
+func (q *Quick) SetInputs(inputs map[string]interface{}) *Quick {
+	q.harness.WithInputs(inputs)
+	return q
+}
+
+// SetCustom sets a Custom scope value for a field by field name.
+// This is useful for configuring options that don't come from the message.
+//
+// Example:
+//
+//	q.SetCustom("InKey", "propertyName")
+func (q *Quick) SetCustom(fieldName string, value interface{}) *Quick {
+	nodeVal := reflect.ValueOf(q.node).Elem()
+	field := nodeVal.FieldByName(fieldName)
+
+	if field.IsValid() && field.CanAddr() {
+		q.harness.ConfigureCustomInput(field.Addr().Interface(), value)
+	}
+
+	return q
+}
+
+// ConfigureVariable allows manual configuration of a variable by field name.
+func (q *Quick) ConfigureVariable(fieldName, scope, name string) *Quick {
+	nodeVal := reflect.ValueOf(q.node).Elem()
+	field := nodeVal.FieldByName(fieldName)
+
+	if field.IsValid() && field.CanAddr() {
+		configureVariable(field.Addr().Interface(), scope, name)
+	}
+
+	return q
+}
+
+// Run executes the node's OnMessage method.
+func (q *Quick) Run() error {
+	return q.harness.Run()
+}
+
+// RunFull runs the complete lifecycle: OnCreate, OnMessage, OnClose.
+func (q *Quick) RunFull() error {
+	return q.harness.RunFull()
+}
+
+// Output retrieves an output value from the context.
+func (q *Quick) Output(name string) interface{} {
+	return q.harness.GetOutput(name)
+}
+
+// OutputString retrieves an output as a string.
+func (q *Quick) OutputString(name string) string {
+	return q.harness.GetOutputString(name)
+}
+
+// OutputInt retrieves an output as an int64.
+func (q *Quick) OutputInt(name string) int64 {
+	return q.harness.GetOutputInt(name)
+}
+
+// OutputFloat retrieves an output as a float64.
+func (q *Quick) OutputFloat(name string) float64 {
+	return q.harness.GetOutputFloat(name)
+}
+
+// OutputBool retrieves an output as a bool.
+func (q *Quick) OutputBool(name string) bool {
+	return q.harness.GetOutputBool(name)
+}
+
+// Outputs returns all output values.
+func (q *Quick) Outputs() map[string]interface{} {
+	return q.harness.GetAllOutputs()
+}
+
+// Harness returns the underlying Harness for advanced usage.
+func (q *Quick) Harness() *Harness {
+	return q.harness
+}
+
+// Context returns the underlying MockContext.
+func (q *Quick) Context() *MockContext {
+	return q.harness.Context()
+}
+
+// Reset clears the context for reuse.
+func (q *Quick) Reset() *Quick {
+	q.harness.Reset()
+	return q
+}
+
+// isVariableType checks if the type is an InVariable, OutVariable, or OptVariable.
+func isVariableType(t reflect.Type) bool {
+	name := t.Name()
+	return len(name) > 0 &&
+		(contains(name, "InVariable") ||
+			contains(name, "OutVariable") ||
+			contains(name, "OptVariable"))
+}
+
+// contains checks if s contains substr.
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && searchString(s, substr) >= 0
+}
+
+// searchString finds substr in s.
+func searchString(s, substr string) int {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
+	}
+	return -1
+}
+
+// parseSpec parses a spec tag into a map of key-value pairs.
+func parseSpec(spec string) map[string]string {
+	result := make(map[string]string)
+
+	i := 0
+	for i < len(spec) {
+		// Skip leading whitespace and commas
+		for i < len(spec) && (spec[i] == ' ' || spec[i] == ',') {
+			i++
+		}
+		if i >= len(spec) {
+			break
+		}
+
+		// Find key
+		keyStart := i
+		for i < len(spec) && spec[i] != '=' && spec[i] != ',' {
+			i++
+		}
+		key := spec[keyStart:i]
+
+		if i >= len(spec) || spec[i] == ',' {
+			// Key without value (flag)
+			result[key] = ""
+			continue
+		}
+
+		// Skip '='
+		i++
+		if i >= len(spec) {
+			result[key] = ""
+			break
+		}
+
+		// Find value
+		valueStart := i
+		for i < len(spec) && spec[i] != ',' {
+			i++
+		}
+		value := spec[valueStart:i]
+		result[key] = value
+	}
+
+	return result
+}
