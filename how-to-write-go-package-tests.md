@@ -1584,6 +1584,7 @@ go test -v ./v1/...
 |-------|-------|----------|
 | `No Token Value` | SetCredential with empty itemID | Use `q.SetCredential("OptApiKey", "api_key", "api_key")` — both IDs required |
 | `nil interface conversion` | OptVariable with empty name in spec | Update to robomotion-go v1.9.2+ |
+| `SetCustom` returns zero for int | Go `int` not handled by runtime | Update to robomotion-go v1.9.3+ (normalizes int→int64) |
 | Tests skipped | No credentials in .env | Create `.env` with required API keys |
 | API errors | Invalid credentials | Verify API key is valid and has required permissions |
 | Rate limit errors | Too many API calls | Add delays between tests or use `SKIP_SLOW_TESTS=1` |
