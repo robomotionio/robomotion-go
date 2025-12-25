@@ -110,12 +110,45 @@ func (h *Harness) ConfigureCustomInput(variable interface{}, value interface{}) 
 		scopeField.SetString("Custom")
 	}
 
+	// Normalize numeric types to match runtime expectations
+	// The runtime's getInt() expects int64/float64, not int
+	normalizedValue := normalizeNumericValue(value)
+
 	// Set Name to the actual value (for Custom scope, Name holds the value)
 	if nameField := varField.FieldByName("Name"); nameField.IsValid() && nameField.CanSet() {
-		nameField.Set(reflect.ValueOf(value))
+		nameField.Set(reflect.ValueOf(normalizedValue))
 	}
 
 	return h
+}
+
+// normalizeNumericValue converts Go numeric types to the types expected by runtime.
+// The runtime's getInt() handles int64 and float64, not int/int32/etc.
+func normalizeNumericValue(value interface{}) interface{} {
+	switch v := value.(type) {
+	case int:
+		return int64(v)
+	case int8:
+		return int64(v)
+	case int16:
+		return int64(v)
+	case int32:
+		return int64(v)
+	case uint:
+		return int64(v)
+	case uint8:
+		return int64(v)
+	case uint16:
+		return int64(v)
+	case uint32:
+		return int64(v)
+	case uint64:
+		return int64(v)
+	case float32:
+		return float64(v)
+	default:
+		return value
+	}
 }
 
 // Run executes the node's OnMessage method with the configured context.
