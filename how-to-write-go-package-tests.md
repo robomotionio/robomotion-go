@@ -1578,13 +1578,110 @@ go test -v ./v1/...
 
 ---
 
-## 14. Troubleshooting
+## 14. Testing Nodes with Array Fields
+
+Some nodes use array-type input variables like `[]runtime.InVariable[T]`. The Quick API's `SetCustom` method doesn't work with array fields, so you need to use the Harness API directly.
+
+### 14.1 The Problem
+
+```go
+// This node has an array of InVariable fields
+type Operation struct {
+    runtime.Node
+    InValues         []runtime.InVariable[bool]  // Array field
+    OptOperationType string
+    OutResult        runtime.OutVariable[bool]
+}
+```
+
+Using `SetCustom("InValues", ...)` will cause a panic because the harness can't configure array fields via reflection.
+
+### 14.2 The Solution
+
+Use the Harness API directly and configure each array element individually:
+
+```go
+func createOperationHarness(values []bool, operationType string) (*Operation, *rtesting.Harness) {
+    node := &Operation{
+        OptOperationType: operationType,
+        InValues:         make([]runtime.InVariable[bool], len(values)),
+    }
+
+    h := rtesting.NewHarness(node)
+
+    // Configure each InVariable in the array
+    for i, val := range values {
+        h.ConfigureCustomInput(&node.InValues[i], val)
+    }
+
+    // IMPORTANT: Configure output variables manually
+    // (Quick API auto-configures from spec tags, but Harness doesn't)
+    h.ConfigureOutVariable(&node.OutResult, "Message", "result")
+
+    return node, h
+}
+```
+
+### 14.3 Using the Helper in Tests
+
+```go
+func TestOperationAnd(t *testing.T) {
+    t.Run("true AND true", func(t *testing.T) {
+        _, h := createOperationHarness([]bool{true, true}, "and")
+
+        err := h.Run()
+        if err != nil {
+            t.Fatalf("Operation failed: %v", err)
+        }
+
+        result := h.GetOutput("result")
+        if result != true {
+            t.Errorf("Expected true, got %v", result)
+        }
+    })
+
+    t.Run("true AND false", func(t *testing.T) {
+        _, h := createOperationHarness([]bool{true, false}, "and")
+
+        err := h.Run()
+        if err != nil {
+            t.Fatalf("Operation failed: %v", err)
+        }
+
+        result := h.GetOutput("result")
+        if result != false {
+            t.Errorf("Expected false, got %v", result)
+        }
+    })
+}
+```
+
+### 14.4 Key Points
+
+1. **Pre-allocate the array**: Create the slice with the correct size before passing to `NewHarness`
+2. **Configure each element**: Use `ConfigureCustomInput` for each array element
+3. **Configure outputs manually**: When using `Harness` directly (not `Quick`), you must configure output variables with `ConfigureOutVariable`
+4. **Match the spec tag**: The scope and name in `ConfigureOutVariable` should match the node's spec tag
+
+### 14.5 Error: "Runtime was not initialized"
+
+If you see this error, it typically means:
+- Output variables aren't configured (use `ConfigureOutVariable`)
+- Variables have non-Message/Custom scope that requires the full runtime
+
+The testing harness only supports `Message` and `Custom` scopes. For other scopes (Global, Flow), you'll need the full runtime.
+
+---
+
+## 15. Troubleshooting
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | `No Token Value` | SetCredential with empty itemID | Use `q.SetCredential("OptApiKey", "api_key", "api_key")` — both IDs required |
 | `nil interface conversion` | OptVariable with empty name in spec | Update to robomotion-go v1.9.2+ |
 | `SetCustom` returns zero for int | Go `int` not handled by runtime | Update to robomotion-go v1.9.3+ (normalizes int→int64) |
+| `panic: reflect.Value.FieldByName on slice` | Using `SetCustom` on array field | Use Harness API with `ConfigureCustomInput` for each element (see Section 14) |
+| `Runtime was not initialized` | Output variable not configured when using Harness | Use `ConfigureOutVariable` for outputs (Quick API auto-configures, Harness doesn't) |
 | Tests skipped | No credentials in .env | Create `.env` with required API keys |
 | API errors | Invalid credentials | Verify API key is valid and has required permissions |
 | Rate limit errors | Too many API calls | Add delays between tests or use `SKIP_SLOW_TESTS=1` |
