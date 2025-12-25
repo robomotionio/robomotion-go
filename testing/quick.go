@@ -103,9 +103,13 @@ func configureVariableCustom(variable interface{}, value interface{}) {
 		scopeField.SetString("Custom")
 	}
 
+	// Normalize numeric types to match runtime expectations
+	// Uses normalizeNumericValue from harness.go
+	normalizedValue := normalizeNumericValue(value)
+
 	// Set Name to the value (for Custom scope, Name holds the value)
 	if nameField := varField.FieldByName("Name"); nameField.IsValid() && nameField.CanSet() {
-		nameField.Set(reflect.ValueOf(value))
+		nameField.Set(reflect.ValueOf(normalizedValue))
 	}
 }
 
