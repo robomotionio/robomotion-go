@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
+	"github.com/robomotionio/robomotion-go/runtime/icons"
 )
 
 type NodeSpec struct {
@@ -78,7 +79,7 @@ func generateSpecFile(pluginName, version string) {
 
 		id := nsMap["id"]
 		name := nsMap["name"]
-		icon := Icons[nsMap["icon"]]
+		icon := icons.Icons[nsMap["icon"]]
 		color := nsMap["color"]
 		editor := nsMap["editor"]
 		inFilters := nsMap["inFilters"]
