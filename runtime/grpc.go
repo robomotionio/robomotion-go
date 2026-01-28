@@ -43,7 +43,10 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 	}
 
 	go checkConnState()
-	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
+	e := &GRPCRuntimeHelperClient{
+		client:      proto.NewRuntimeHelperClient(conn),
+		chunkClient: proto.NewChunkRuntimeHelperClient(conn),
+	}
 
 	m.Impl.Init(e)
 	return &proto.Empty{}, err
@@ -91,6 +94,18 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 		return resp, err
 	}
 
+	// INBOUND: Fetch chunked fields from Deskbot's ChunkStore (via runner proxy)
+	if IsChunkedTransferCapable() && ContainsChunkedFields(data) {
+		chunkClient := getChunkClient()
+		if chunkClient != nil {
+			data, err = FetchChunkedFields(data, chunkClient)
+			if err != nil {
+				hclog.Default().Error("grpc.server.onmessage.fetch_chunks", "err", err)
+				return resp, err
+			}
+		}
+	}
+
 	node := GetNodeHandler(req.Guid)
 	if node == nil {
 		hclog.Default().Info("grpc.server.oncreate.node", "err", "no handler")
@@ -110,12 +125,36 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 		if e != nil {
 			return nil, fmt.Errorf("get raw message failed with error: %+v", err.Error())
 		}
+
+		// OUTBOUND: Push large response fields to Deskbot's ChunkStore (via runner proxy)
+		if IsChunkedTransferCapable() && len(msg) > ChunkThreshold {
+			chunkClient := getChunkClient()
+			if chunkClient != nil {
+				msg, err = StoreAndCreateRefs(msg, chunkClient)
+				if err != nil {
+					hclog.Default().Error("grpc.server.onmessage.store_chunks", "err", err)
+					return resp, err
+				}
+			}
+		}
+
 		resp.OutMessage = msg
 	}
 
 	time.Sleep(time.Duration(node.DelayAfter*1000) * time.Millisecond)
 
 	return resp, err
+}
+
+// getChunkClient returns the chunk client from the global client if available.
+func getChunkClient() proto.ChunkRuntimeHelperClient {
+	if client == nil {
+		return nil
+	}
+	if grpcClient, ok := client.(*GRPCRuntimeHelperClient); ok {
+		return grpcClient.GetChunkClient()
+	}
+	return nil
 }
 
 func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*proto.OnCloseResponse, error) {
@@ -142,7 +181,10 @@ func (m *GRPCServer) GetCapabilities(ctx context.Context, req *proto.Empty) (*pr
 }
 
 // GRPCClient is an implementation of KV that talks over RPC.
-type GRPCRuntimeHelperClient struct{ client proto.RuntimeHelperClient }
+type GRPCRuntimeHelperClient struct {
+	client      proto.RuntimeHelperClient
+	chunkClient proto.ChunkRuntimeHelperClient
+}
 
 func (m *GRPCRuntimeHelperClient) Close() error {
 
@@ -505,4 +547,55 @@ func (m *GRPCRuntimeHelperClient) IsRunning() (bool, error) {
 	}
 
 	return resp.IsRunning, nil
+}
+
+// GetChunk fetches a chunk of data from the ChunkStore via the runner proxy.
+func (m *GRPCRuntimeHelperClient) GetChunk(refID string, offset, length int64) ([]byte, int64, bool, error) {
+	resp, err := m.chunkClient.GetChunk(context.Background(), &proto.GetChunkRequest{
+		RefId:  refID,
+		Offset: offset,
+		Length: length,
+	})
+	if err != nil {
+		hclog.Default().Info("runtime.GetChunk", "err", err)
+		return nil, 0, false, err
+	}
+
+	return resp.Data, resp.TotalSize, resp.IsLast, nil
+}
+
+// StoreChunk stores a chunk of data in the ChunkStore via the runner proxy.
+func (m *GRPCRuntimeHelperClient) StoreChunk(refID string, data []byte, offset, totalSize int64, isLast bool) error {
+	_, err := m.chunkClient.StoreChunk(context.Background(), &proto.StoreChunkRequest{
+		RefId:     refID,
+		Data:      data,
+		Offset:    offset,
+		TotalSize: totalSize,
+		IsLast:    isLast,
+	})
+	if err != nil {
+		hclog.Default().Info("runtime.StoreChunk", "err", err)
+		return err
+	}
+
+	return nil
+}
+
+// DeleteChunk deletes chunked data from the ChunkStore via the runner proxy.
+func (m *GRPCRuntimeHelperClient) DeleteChunk(refID string) error {
+	_, err := m.chunkClient.DeleteChunk(context.Background(), &proto.DeleteChunkRequest{
+		RefId: refID,
+	})
+	if err != nil {
+		hclog.Default().Info("runtime.DeleteChunk", "err", err)
+		return err
+	}
+
+	return nil
+}
+
+// GetChunkClient returns the underlying chunk-enabled gRPC client.
+// This is used by the chunking utilities to perform chunk operations.
+func (m *GRPCRuntimeHelperClient) GetChunkClient() proto.ChunkRuntimeHelperClient {
+	return m.chunkClient
 }

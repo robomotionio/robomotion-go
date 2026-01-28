@@ -38,6 +38,11 @@ type RuntimeHelper interface {
 	IsRunning() (bool, error)
 	GetPortConnections(string, int) ([]NodeInfo, error)
 	GetInstanceAccess() (*InstanceAccess, error)
+
+	// Chunked transfer methods for large message support
+	GetChunk(refID string, offset, length int64) ([]byte, int64, bool, error)
+	StoreChunk(refID string, data []byte, offset, totalSize int64, isLast bool) error
+	DeleteChunk(refID string) error
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.

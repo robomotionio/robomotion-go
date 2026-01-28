@@ -95,3 +95,14 @@ func (t *testClient) IsRunning() (bool, error) { return true, nil }
 func (t *testClient) GetPortConnections(string, int) ([]NodeInfo, error) { return nil, nil }
 
 func (t *testClient) GetInstanceAccess() (*InstanceAccess, error) { return nil, nil }
+
+// Chunk transfer methods (no-op for testing)
+func (t *testClient) GetChunk(refID string, offset, length int64) ([]byte, int64, bool, error) {
+	return nil, 0, true, nil
+}
+
+func (t *testClient) StoreChunk(refID string, data []byte, offset, totalSize int64, isLast bool) error {
+	return nil
+}
+
+func (t *testClient) DeleteChunk(refID string) error { return nil }
