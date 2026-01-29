@@ -104,8 +104,11 @@ func ContainsChunkedFields(data []byte) bool {
 }
 
 // FetchChunkedFields resolves all chunked field references in a message by fetching
-// the actual data from the ChunkStore via gRPC. After successful fetch, it deletes
-// the chunks from the store.
+// the actual data from the ChunkStore via gRPC.
+// Note: The SDK does NOT delete chunks after fetching. Chunk lifecycle is managed
+// by Deskbot, which tracks consumer counts and handles deletion when all consumers
+// have processed the data. This enables fan-out scenarios where multiple nodes
+// receive the same chunked message.
 func FetchChunkedFields(data []byte, client proto.ChunkRuntimeHelperClient) ([]byte, error) {
 	result := gjson.ParseBytes(data)
 	if !result.IsObject() {
@@ -154,12 +157,9 @@ func FetchChunkedFields(data []byte, client proto.ChunkRuntimeHelperClient) ([]b
 			return false
 		}
 
-		// Delete the chunk from the store after successful fetch
-		_, err = client.DeleteChunk(ctx, &proto.DeleteChunkRequest{RefId: refID})
-		if err != nil {
-			// Log but don't fail - the chunk will expire via TTL
-			hclog.Default().Warn("chunk.delete", "refID", refID, "err", err)
-		}
+		// Note: We do NOT delete the chunk here. Chunk lifecycle is managed by
+		// Deskbot, which tracks consumer counts for fan-out scenarios and deletes
+		// chunks only when all consumers have processed them.
 
 		return true
 	})

@@ -175,9 +175,9 @@ func TestFetchChunkedFields(t *testing.T) {
 		t.Errorf("data array should have 3 elements, got %d", len(dataArray))
 	}
 
-	// Check that the chunk was deleted
-	if _, ok := client.chunks["test-ref-1"]; ok {
-		t.Error("chunk should be deleted after fetch")
+	// Chunk should NOT be deleted - Deskbot manages lifecycle for fan-out support
+	if _, ok := client.chunks["test-ref-1"]; !ok {
+		t.Error("chunk should NOT be deleted by SDK - Deskbot manages chunk lifecycle")
 	}
 }
 
@@ -418,5 +418,149 @@ func TestIsChunkedTransferCapable_NoRobotInfo(t *testing.T) {
 	result := IsChunkedTransferCapable()
 	if result {
 		t.Error("Should return false when robot info is not available")
+	}
+}
+
+// deleteTrackingMockClient tracks if DeleteChunk is ever called
+type deleteTrackingMockClient struct {
+	*mockChunkClient
+	deleteCalled bool
+}
+
+func (m *deleteTrackingMockClient) DeleteChunk(ctx context.Context, req *proto.DeleteChunkRequest, opts ...grpc.CallOption) (*proto.Empty, error) {
+	m.deleteCalled = true
+	return m.mockChunkClient.DeleteChunk(ctx, req, opts...)
+}
+
+// TestNoDeleteChunkCalled verifies SDK never calls DeleteChunk
+func TestNoDeleteChunkCalled(t *testing.T) {
+	client := &deleteTrackingMockClient{
+		mockChunkClient: newMockChunkClient(),
+		deleteCalled:    false,
+	}
+
+	largeData := `["item1", "item2", "item3"]`
+	client.chunks["test-ref"] = []byte(largeData)
+
+	msg := `{"data": {"__chunked__": true, "__chunk_ref__": "test-ref", "__total_size__": 25, "__field_path__": "data"}}`
+
+	_, err := FetchChunkedFields([]byte(msg), client)
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
+
+	if client.deleteCalled {
+		t.Error("DeleteChunk was called - SDK should NOT delete chunks!")
+	}
+}
+
+// TestFanOut_MultipleConsumers verifies chunks persist for all consumers
+func TestFanOut_MultipleConsumers(t *testing.T) {
+	client := newMockChunkClient()
+	originalData := `["item1", "item2", "item3"]`
+
+	refID := "fanout-test-ref"
+	client.chunks[refID] = []byte(originalData)
+
+	// Create message with chunked ref
+	msg := `{"data": {"__chunked__": true, "__chunk_ref__": "fanout-test-ref", "__total_size__": 25, "__field_path__": "data"}}`
+
+	// Consumer 1 fetches
+	result1, err := FetchChunkedFields([]byte(msg), client)
+	if err != nil {
+		t.Fatalf("Consumer 1 fetch failed: %v", err)
+	}
+
+	// Chunk should STILL exist for consumer 2 (no deletion!)
+	if _, ok := client.chunks[refID]; !ok {
+		t.Error("Chunk was deleted after first consumer - fan-out broken!")
+	}
+
+	// Consumer 2 fetches same chunk
+	result2, err := FetchChunkedFields([]byte(msg), client)
+	if err != nil {
+		t.Fatalf("Consumer 2 fetch failed: %v", err)
+	}
+
+	// Both should get identical data
+	var resultMap1, resultMap2 map[string]interface{}
+	json.Unmarshal(result1, &resultMap1)
+	json.Unmarshal(result2, &resultMap2)
+
+	data1, _ := json.Marshal(resultMap1["data"])
+	data2, _ := json.Marshal(resultMap2["data"])
+
+	if string(data1) != string(data2) {
+		t.Error("Consumer 1 and 2 got different data")
+	}
+}
+
+// TestFanOut_ThreeWaySplit verifies chunks work with 3+ consumers
+func TestFanOut_ThreeWaySplit(t *testing.T) {
+	client := newMockChunkClient()
+	originalData := `["large","array","data"]`
+
+	refID := "three-way-ref"
+	client.chunks[refID] = []byte(originalData)
+
+	msg := `{"items": {"__chunked__": true, "__chunk_ref__": "three-way-ref", "__total_size__": 23, "__field_path__": "items"}}`
+
+	// Simulate 3 consumers fetching in sequence
+	for i := 1; i <= 3; i++ {
+		_, err := FetchChunkedFields([]byte(msg), client)
+		if err != nil {
+			t.Fatalf("Consumer %d fetch failed: %v", i, err)
+		}
+
+		// Chunk must persist for remaining consumers
+		if _, ok := client.chunks[refID]; !ok {
+			t.Errorf("Chunk deleted after consumer %d, but consumers %d-%d still need it",
+				i, i+1, 3)
+		}
+	}
+}
+
+// TestFanOut_MultipleChunkedFields verifies fan-out with multiple large fields
+func TestFanOut_MultipleChunkedFields(t *testing.T) {
+	client := newMockChunkClient()
+
+	field1Data := `["field1","data"]`
+	field2Data := `["field2","data"]`
+
+	client.chunks["ref-field1"] = []byte(field1Data)
+	client.chunks["ref-field2"] = []byte(field2Data)
+
+	msg := `{
+		"field1": {"__chunked__": true, "__chunk_ref__": "ref-field1", "__total_size__": 17, "__field_path__": "field1"},
+		"field2": {"__chunked__": true, "__chunk_ref__": "ref-field2", "__total_size__": 17, "__field_path__": "field2"},
+		"small": "inline"
+	}`
+
+	// Consumer 1
+	_, err := FetchChunkedFields([]byte(msg), client)
+	if err != nil {
+		t.Fatalf("Consumer 1 failed: %v", err)
+	}
+
+	// Both chunks should still exist
+	if _, ok := client.chunks["ref-field1"]; !ok {
+		t.Error("ref-field1 deleted prematurely")
+	}
+	if _, ok := client.chunks["ref-field2"]; !ok {
+		t.Error("ref-field2 deleted prematurely")
+	}
+
+	// Consumer 2
+	_, err = FetchChunkedFields([]byte(msg), client)
+	if err != nil {
+		t.Fatalf("Consumer 2 failed: %v", err)
+	}
+
+	// Chunks should still exist after consumer 2 as well
+	if _, ok := client.chunks["ref-field1"]; !ok {
+		t.Error("ref-field1 deleted after consumer 2")
+	}
+	if _, ok := client.chunks["ref-field2"]; !ok {
+		t.Error("ref-field2 deleted after consumer 2")
 	}
 }
