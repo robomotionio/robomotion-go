@@ -351,16 +351,23 @@ type GetChannelsNode struct {
 
 #### Type Usage Rules
 
-8. **Never use raw types - always wrap in Variable types**:
+8. **Use Variable wrappers for inputs/outputs, raw types for enums and bool options**:
    ```go
-   // CORRECT - Always use Variable wrappers
+   // CORRECT - Variable wrappers for inputs, outputs, and non-bool options
    InPageTitle runtime.InVariable[string] `spec:"..."`
    OutResult runtime.OutVariable[string] `spec:"..."`
    OptTimeout runtime.OptVariable[int] `spec:"..."`
-   
-   // INCORRECT - Never use raw types
+
+   // CORRECT - Raw types for enums and bool options (accessed directly, no .Get())
+   OptLabelFilter string `spec:"title=Label,value=INBOX,enum=INBOX|SENT,option"`
+   OptIsHTML bool `spec:"title=HTML Content,value=false,option"`
+
+   // INCORRECT - Raw types for inputs/outputs
    PageTitle string `spec:"..."` // ❌ Wrong
    Result string `spec:"..."` // ❌ Wrong
+
+   // INCORRECT - Variable wrappers for enums or bool options
+   OptIsHTML runtime.OptVariable[bool] `spec:"..."` // ❌ Wrong
    ```
 
 9. **Use `interface{}` for JSON input/output types**:
@@ -412,14 +419,16 @@ type CreatePageNode struct {
 
 ### 5.5 Variables cheat-sheet
 
-| Use-case | Type | Example | Naming Pattern |
-|----------|------|---------|----------------|
-| **Mandatory input**  | `InVariable[T]`  | `InPageTitle InVariable[string]` | `In` + PascalCase |
-| **Optional input**   | `OptVariable[T]` | `OptTimeout OptVariable[int]` | `Opt` + PascalCase |
-| **Output**           | `OutVariable[T]` | `OutResult OutVariable[string]` | `Out` + PascalCase |
-| **Credential**       | `Credential`     | `OptToken Credential` | `Opt` + PascalCase |
+| Use-case | Type | Example | Access | Naming Pattern |
+|----------|------|---------|--------|----------------|
+| **Mandatory input**  | `InVariable[T]`  | `InPageTitle InVariable[string]` | `.Get(ctx)` | `In` + PascalCase |
+| **Optional input**   | `OptVariable[T]` | `OptTimeout OptVariable[int]` | `.Get(ctx)` | `Opt` + PascalCase |
+| **Output**           | `OutVariable[T]` | `OutResult OutVariable[string]` | `.Set(ctx,val)` | `Out` + PascalCase |
+| **Credential**       | `Credential`     | `OptToken Credential` | `.Get(ctx)` | `Opt` + PascalCase |
+| **Enum option**      | raw `string`     | `OptLabel string` | direct (`n.OptLabel`) | `Opt` + PascalCase |
+| **Bool option**      | raw `bool`       | `OptIsHTML bool` | direct (`n.OptIsHTML`) | `Opt` + PascalCase |
 
-All variable wrappers expose `.Get(ctx)` (for `In`/`Opt`/`Credential`) and `.Set(ctx,val)` (`Out`/`Credential`).
+Variable wrappers (`InVariable`, `OptVariable`, `OutVariable`) use `.Get(ctx)` / `.Set(ctx,val)`. Raw types (enums, bool options) are accessed directly on the struct — no `.Get()` call.
 
 ### 5.6 Robomotion Variable Type Rules
 
@@ -431,29 +440,43 @@ All variable wrappers expose `.Get(ctx)` (for `In`/`Opt`/`Credential`) and `.Set
    ```go
    // CORRECT - Raw string with option tag
    OptBundle string `spec:"title=Bundle,value=messaging_non_clips,enum=clips_grid_picker|messaging_non_clips,enumNames=Efficient Clip Grid|Quick GIFs,option"`
-   
+
    // INCORRECT - Never use Variable wrappers for enums
    OptBundle InVariable[string] `spec:"..."` // ❌ Wrong
    OptBundle OptVariable[string] `spec:"..."` // ❌ Wrong
    ```
 
-2. **Required Inputs**: Use `InVariable[T]` type
+2. **Bool options**: Always use raw `bool` type with `option` tag, never `OptVariable[bool]`
+   ```go
+   // CORRECT - Raw bool with option tag and default value
+   OptIsHTML bool `spec:"title=HTML Content,value=false,option,description=Send body as HTML content"`
+
+   // Usage: direct field access (no .Get() call)
+   if n.OptIsHTML {
+       // handle HTML
+   }
+
+   // INCORRECT - Never use OptVariable for bool options
+   OptIsHTML OptVariable[bool] `spec:"..."` // ❌ Wrong - causes name=false bug in spec tags
+   ```
+
+3. **Required Inputs**: Use `InVariable[T]` type
    ```go
    InDatabaseId InVariable[string] `spec:"title=Database ID,type=string,scope=Message,name=databaseId,messageScope,jsScope,customScope"`
    ```
 
-3. **Optional Inputs**: Use `OptVariable[T]` type with `option` tag
+4. **Optional Inputs**: Use `OptVariable[T]` type with `option` tag (except for enums and bools — see rules 1-2)
    ```go
    OptFilter OptVariable[interface{}] `spec:"title=Filter,type=object,option"`
    OptTimeout OptVariable[int] `spec:"title=Timeout (seconds),type=int,value=30,option"`
    ```
 
-4. **Outputs**: Use `OutVariable[T]` type
+5. **Outputs**: Use `OutVariable[T]` type
    ```go
    OutResult OutVariable[interface{}] `spec:"title=Result,type=object,scope=Message,name=result,messageScope"`
    ```
 
-5. **JSON Data**: Always use `interface{}` for complex data structures, never `string`
+6. **JSON Data**: Always use `interface{}` for complex data structures, never `string`
    ```go
    // CORRECT - Use interface{} for JSON data
    InRequestBody InVariable[interface{}] `spec:"title=Request Body,type=object"`
@@ -483,15 +506,21 @@ All variable wrappers expose `.Get(ctx)` (for `In`/`Opt`/`Credential`) and `.Set
 
 #### Function Logic Rules
 
-1. **Enum Access**: Access enum fields directly (e.g., `n.InSearchType`), not via `.Get()` calls
+1. **Enum and Bool Option Access**: Access enum and bool option fields directly (e.g., `n.OptLabelFilter`, `n.OptIsHTML`), not via `.Get()` calls
    ```go
    // CORRECT - Direct access for enum fields
-   if n.InSearchType == "pages" {
+   if n.OptSearchType == "pages" {
        // Process pages
    }
-   
-   // INCORRECT - Never use .Get() for enums
-   searchType, _ := n.InSearchType.Get(ctx) // ❌ Wrong
+
+   // CORRECT - Direct access for bool option fields
+   if n.OptIsHTML {
+       // Handle HTML content
+   }
+
+   // INCORRECT - Never use .Get() for enums or bool options
+   searchType, _ := n.OptSearchType.Get(ctx) // ❌ Wrong
+   isHTML, _ := n.OptIsHTML.Get(ctx)          // ❌ Wrong
    ```
 
 2. **Variable Scope**: Maintain proper scope and naming for all variable types
