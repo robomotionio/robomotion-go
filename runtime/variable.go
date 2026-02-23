@@ -219,6 +219,10 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		val interface{}
 	)
 
+	if v.Name == nil {
+		return t, nil
+	}
+
 	if v.Scope == "Custom" {
 		val = v.Name
 	}
