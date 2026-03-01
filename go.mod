@@ -3,6 +3,7 @@ module github.com/robomotionio/robomotion-go
 go 1.24.0
 
 require (
+	github.com/robomotionio/robomotion-msgstore v0.0.0
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-hclog v1.6.1
@@ -35,3 +36,5 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
 )
+
+replace github.com/robomotionio/robomotion-msgstore => /home/faik/go/src/msg-store-v2/robomotion-msgstore

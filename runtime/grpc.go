@@ -10,6 +10,7 @@ import (
 	st "github.com/golang/protobuf/ptypes/struct"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/robomotionio/go-plugin"
+	msgstore "github.com/robomotionio/robomotion-msgstore"
 	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -85,10 +86,35 @@ func (m *GRPCServer) OnCreate(ctx context.Context, req *proto.OnCreateRequest) (
 func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest) (*proto.OnMessageResponse, error) {
 
 	resp := &proto.OnMessageResponse{OutMessage: nil}
-	data, err := Decompress(req.InMessage)
-	if err != nil {
-		hclog.Default().Info("grpc.server.onmessage", "err", err)
-		return resp, err
+
+	var data []byte
+	var store *msgstore.Store
+	var refID string
+	var err error
+
+	if req.IsMsgRef {
+		// MsgRef mode: InMessage contains a MsgRef JSON
+		ref, parseErr := msgstore.ParseMsgRef(req.InMessage)
+		if parseErr != nil {
+			hclog.Default().Info("grpc.server.onmessage", "err", "failed to parse MsgRef", "detail", parseErr)
+			return resp, parseErr
+		}
+		store = msgstore.NewStore(ref.StorePath, 0)
+		resolved, getErr := store.Get(ref.ID)
+		if getErr != nil {
+			hclog.Default().Info("grpc.server.onmessage", "err", "failed to resolve MsgRef", "detail", getErr)
+			return resp, getErr
+		}
+		refID = ref.ID
+		data = resolved
+		defer store.Delete(refID)
+	} else {
+		// Legacy mode: InMessage contains compressed full data
+		data, err = Decompress(req.InMessage)
+		if err != nil {
+			hclog.Default().Info("grpc.server.onmessage", "err", err)
+			return resp, err
+		}
 	}
 
 	node := GetNodeHandler(req.Guid)
@@ -110,7 +136,26 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 		if e != nil {
 			return nil, fmt.Errorf("get raw message failed with error: %+v", err.Error())
 		}
-		resp.OutMessage = msg
+
+		// If we have a store, write output back as MsgRef
+		if store != nil {
+			outID := msgstore.NewMsgID()
+			if putErr := store.Put(outID, msg); putErr == nil {
+				outRef := &msgstore.MsgRef{
+					MsgStore:  true,
+					ID:        outID,
+					StorePath: store.BaseDir(),
+				}
+				refBytes, _ := json.Marshal(outRef)
+				resp.OutMessage = refBytes
+				resp.IsMsgRef = true
+			} else {
+				// Fallback: send raw output
+				resp.OutMessage = msg
+			}
+		} else {
+			resp.OutMessage = msg
+		}
 	}
 
 	time.Sleep(time.Duration(node.DelayAfter*1000) * time.Millisecond)

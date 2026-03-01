@@ -4,9 +4,13 @@ type Capability uint64
 
 const (
 	CapabilityLMO Capability = 1 << iota
+	CapabilityIgnoreVersionCheck
+	CapabilityTerminateOnStop
+	CapabilityUseS3
+	CapabilityMsgStore
 )
 
-var packageCapabilities Capability = CapabilityLMO
+var packageCapabilities Capability = CapabilityLMO | CapabilityMsgStore
 
 func IsLMOCapable() (isCapable bool) {
 
