@@ -11,31 +11,16 @@ func init() {
 	message.SetRaw = setRaw
 }
 
-// DeserializeLMO for all data
+// WithUnpack resolves all BlobRefs in the message payload.
 func WithUnpack() message.GetOption {
 	return func(raw json.RawMessage) (json.RawMessage, error) {
-		if IsLMOCapable() {
-			var err error
-			raw, err = UnpackMessageBytes(raw)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return raw, nil
+		return LMOResolveAll(raw)
 	}
 }
 
-// SerializeLMO for all data
+// WithPack is a no-op — the deskbot handles packing on the output side.
 func WithPack() message.SetOption {
 	return func(raw json.RawMessage) (json.RawMessage, error) {
-		if IsLMOCapable() {
-			var err error
-			raw, err = PackMessageBytes(raw)
-			if err != nil {
-				return nil, err
-			}
-		}
-
 		return raw, nil
 	}
 }

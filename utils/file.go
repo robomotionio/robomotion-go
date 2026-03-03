@@ -45,6 +45,19 @@ func TempDir() string {
 	return dir
 }
 
+func ConfigDir() string {
+	var (
+		home = UserHomeDir()
+		dir  = ""
+	)
+	if runtime.GOOS == "windows" {
+		dir = home + "\\AppData\\Local\\Robomotion"
+	} else {
+		dir = home + "/.config/robomotion"
+	}
+	return dir
+}
+
 func GetTempPath() string {
 	switch runtime.GOOS {
 	case "windows":

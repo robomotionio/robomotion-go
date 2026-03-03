@@ -44,9 +44,22 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 	}
 
 	go checkConnState()
+
+	if err := InitLMOReader(); err != nil {
+		hclog.Default().Info("grpc.server.init", "lmo_reader_err", err)
+	}
+
 	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
 
 	m.Impl.Init(e)
+
+	// Fetch robot capabilities for 2-way negotiation.
+	if info, infoErr := GetRobotInfo(); infoErr == nil {
+		if bits, ok := info["capabilityBits"].(float64); ok {
+			SetRobotCapabilities(uint64(bits))
+		}
+	}
+
 	return &proto.Empty{}, err
 }
 

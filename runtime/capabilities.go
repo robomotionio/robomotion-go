@@ -3,27 +3,48 @@ package runtime
 type Capability uint64
 
 const (
-	CapabilityLMO Capability = 1 << iota
-	CapabilityIgnoreVersionCheck
-	CapabilityTerminateOnStop
-	CapabilityUseS3
-	CapabilityMsgStore
+	_CapabilityLMOv1Reserved Capability = 1 << iota // bit 0: RESERVED — old file-based LMO, do not reuse
+	CapabilityIgnoreVersionCheck                     // bit 1
+	CapabilityTerminateOnStop                        // bit 2
+	CapabilityUseS3                                  // bit 3
+	CapabilityLMO                                    // bit 4: content-addressed blob store
 )
 
-var packageCapabilities Capability = CapabilityLMO | CapabilityMsgStore
+var (
+	robotCapabilities   uint64     = 0
+	packageCapabilities Capability = CapabilityLMO
+)
 
-func IsLMOCapable() (isCapable bool) {
+// GetCapabilities returns the intersection of robot and package capabilities.
+func GetCapabilities() uint64 {
+	return robotCapabilities & uint64(packageCapabilities)
+}
 
-	robotInfo, err := GetRobotInfo()
-	if err != nil {
-		return false
-	}
+// HasCapability returns true when both robot and package support the capability.
+func HasCapability(capability Capability) bool {
+	return (GetCapabilities() & uint64(capability)) > 0
+}
 
-	robotCapabilities, ok := robotInfo["capabilities"].(map[string]interface{})
-	if !ok {
-		return false
-	}
+func HasRobotCapability(capability Capability) bool {
+	return (robotCapabilities & uint64(capability)) > 0
+}
 
-	lmo, _ := robotCapabilities["lmo"].(bool)
-	return lmo
+func GetRobotCapabilities() uint64 {
+	return robotCapabilities
+}
+
+func SetRobotCapabilities(cap uint64) {
+	robotCapabilities = cap
+}
+
+func SetPackageCapabilities(cap uint64) {
+	packageCapabilities = Capability(cap)
+}
+
+func SetPackageCapability(cap Capability) {
+	packageCapabilities |= cap
+}
+
+func SetRobotCapability(cap Capability) {
+	robotCapabilities |= uint64(cap)
 }
