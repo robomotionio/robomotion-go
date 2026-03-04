@@ -60,13 +60,10 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 		if bits, ok := info["capabilities"].(float64); ok {
 			SetRobotCapabilities(uint64(bits))
 		}
-		// Construct LMO store path from robot ID + flow ID (same convention as deskbot).
-		if robotID, ok := info["id"].(string); ok && robotID != "" {
-			if flowID, ok := info["flow_id"].(string); ok && flowID != "" {
-				relPath := "robots/" + robotID + "/flows/" + flowID
-				if setErr := SetLMOStorePath(relPath); setErr != nil {
-					hclog.Default().Info("grpc.server.init.lmo", "err", setErr)
-				}
+		// Use the opaque store path provided by the robot.
+		if storePath, ok := info["lmo_store_path"].(string); ok && storePath != "" {
+			if setErr := SetLMOStorePath(storePath); setErr != nil {
+				hclog.Default().Info("grpc.server.init.lmo", "err", setErr)
 			}
 		}
 	}
