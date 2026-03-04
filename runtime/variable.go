@@ -254,7 +254,14 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			if err != nil {
 				return t, err
 			}
-			return resolved.(T), nil
+			d, err := json.Marshal(resolved)
+			if err != nil {
+				return t, err
+			}
+			if err := json.Unmarshal(d, &t); err != nil {
+				return t, err
+			}
+			return t, nil
 		}
 
 	}
@@ -320,7 +327,14 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		if err != nil {
 			return t, err
 		}
-		return resolved.(T), nil
+		d, err := json.Marshal(resolved)
+		if err != nil {
+			return t, err
+		}
+		if err := json.Unmarshal(d, &t); err != nil {
+			return t, err
+		}
+		return t, nil
 	}
 
 	t, ok := val.(T)

@@ -53,16 +53,20 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 
 	m.Impl.Init(e)
 
-	// Fetch robot capabilities for 2-way negotiation.
-	// capabilityBits arrives as float64 from protobuf Struct encoding (safe for bits 0–52).
+	// Fetch robot info for 2-way capability negotiation and LMO store path.
+	// Robot info already contains "capabilities" (uint64), "id", and "flow_id".
 	if info, infoErr := GetRobotInfo(); infoErr == nil {
-		if bits, ok := info["capabilityBits"].(float64); ok {
+		// capabilities arrives as float64 from protobuf Struct encoding (safe for bits 0–52).
+		if bits, ok := info["capabilities"].(float64); ok {
 			SetRobotCapabilities(uint64(bits))
 		}
-		// Set the LMO store path from robot info if provided.
-		if storePath, ok := info["lmoStorePath"].(string); ok && storePath != "" {
-			if setErr := SetLMOStorePath(storePath); setErr != nil {
-				hclog.Default().Info("grpc.server.init", "lmo_store_path_err", setErr)
+		// Construct LMO store path from robot ID + flow ID (same convention as deskbot).
+		if robotID, ok := info["id"].(string); ok && robotID != "" {
+			if flowID, ok := info["flow_id"].(string); ok && flowID != "" {
+				relPath := "robots/" + robotID + "/flows/" + flowID
+				if setErr := SetLMOStorePath(relPath); setErr != nil {
+					hclog.Default().Info("grpc.server.init", "lmo_store_path_err", setErr)
+				}
 			}
 		}
 	}
