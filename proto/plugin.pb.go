@@ -2202,19 +2202,15 @@ const file_plugin_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06config\x18\x02 \x01(\fR\x06config\"6\n" +
 	"\x10OnCreateResponse\x12\"\n" +
-	"\x05error\x18\x01 \x01(\v2\f.proto.ErrorR\x05error\"b\n" +
+	"\x05error\x18\x01 \x01(\v2\f.proto.ErrorR\x05error\"D\n" +
 	"\x10OnMessageRequest\x12\x12\n" +
 	"\x04guid\x18\x01 \x01(\tR\x04guid\x12\x1c\n" +
-	"\tinMessage\x18\x02 \x01(\fR\tinMessage\x12\x1c\n" +
-	"\n" +
-	"is_msg_ref\x18\x03 \x01(\bR\bisMsgRef\"u\n" +
+	"\tinMessage\x18\x02 \x01(\fR\tinMessage\"W\n" +
 	"\x11OnMessageResponse\x12\x1e\n" +
 	"\n" +
 	"outMessage\x18\x01 \x01(\fR\n" +
 	"outMessage\x12\"\n" +
-	"\x05error\x18\x02 \x01(\v2\f.proto.ErrorR\x05error\x12\x1c\n" +
-	"\n" +
-	"is_msg_ref\x18\x03 \x01(\bR\bisMsgRef\"$\n" +
+	"\x05error\x18\x02 \x01(\v2\f.proto.ErrorR\x05error\"$\n" +
 	"\x0eOnCloseRequest\x12\x12\n" +
 	"\x04guid\x18\x01 \x01(\tR\x04guid\"5\n" +
 	"\x0fOnCloseResponse\x12\"\n" +
@@ -2367,7 +2363,7 @@ const file_plugin_proto_rawDesc = "" +
 	"\fProxyRequest\x12\x12.proto.HttpRequest\x1a\x13.proto.HttpResponse\x12Y\n" +
 	"\x12GetPortConnections\x12 .proto.GetPortConnectionsRequest\x1a!.proto.GetPortConnectionsResponse\x123\n" +
 	"\tIsRunning\x12\f.proto.Empty\x1a\x18.proto.IsRunningResponse\x12C\n" +
-	"\x11GetInstanceAccess\x12\f.proto.Empty\x1a .proto.GetInstanceAccessResponseB$Z\"robomotion/robomotion-runner/protob\x06proto3"
+	"\x11GetInstanceAccess\x12\f.proto.Empty\x1a .proto.GetInstanceAccessResponseB-Z+github.com/robomotionio/robomotion-go/protob\x06proto3"
 
 var (
 	file_plugin_proto_rawDescOnce sync.Once

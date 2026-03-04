@@ -1,0 +1,249 @@
+syntax = "proto3";
+package proto;
+import "struct.proto";
+
+option go_package="github.com/robomotionio/robomotion-go/proto";
+
+service Node {
+    rpc Init(InitRequest) returns (Empty);
+    rpc OnCreate(OnCreateRequest) returns (OnCreateResponse);
+    rpc OnMessage(OnMessageRequest) returns (OnMessageResponse);
+    rpc OnClose(OnCloseRequest) returns (OnCloseResponse);
+    rpc GetCapabilities(Empty) returns(PGetCapabilitiesResponse);
+}
+
+message Error {
+    bool OK = 2;
+    string code = 3;
+    string message = 4;
+}
+
+message InitRequest {
+    uint32 event_server = 1;
+    uint32 port = 2;
+}
+
+message OnCreateRequest {
+    string name = 1;
+    bytes config = 2;
+}
+
+message OnCreateResponse {
+    Error error = 1;
+}
+
+message OnMessageRequest {
+    string guid = 1;
+    bytes inMessage = 2;
+}
+
+message OnMessageResponse {
+    bytes outMessage = 1;
+    Error error = 2;
+}
+
+message OnCloseRequest {
+    string guid = 1;
+}
+
+message OnCloseResponse {
+    Error error = 1;
+}
+
+message PGetCapabilitiesResponse {
+    uint64 capabilities = 1;
+}
+service RuntimeHelper {
+    rpc Close(Empty) returns (Empty);
+    rpc Debug(DebugRequest) returns (Empty);
+    rpc EmitFlowEvent(EmitFlowEventRequest) returns (Empty);
+    rpc EmitInput(EmitInputRequest) returns (Empty);
+    rpc EmitOutput(EmitOutputRequest) returns (Empty);
+    rpc EmitError(EmitErrorRequest) returns (Empty);
+    rpc GetVaultItem(GetVaultItemRequest) returns (GetVaultItemResponse);
+    rpc SetVaultItem(SetVaultItemRequest) returns (SetVaultItemResponse);
+    rpc GetVariable(GetVariableRequest) returns (GetVariableResponse);
+    rpc SetVariable(SetVariableRequest) returns (Empty);
+    rpc GetRobotInfo(Empty) returns (GetRobotInfoResponse);
+    rpc AppRequest(AppRequestRequest) returns (AppRequestResponse);
+    rpc AppRequestV2(AppRequestV2Request) returns (AppRequestResponse);
+    rpc AppPublish(AppPublishRequest) returns (Empty);
+    rpc DownloadFile(DownloadFileRequest) returns (Empty);
+    rpc AppDownload(AppDownloadRequest) returns (AppDownloadResponse);
+    rpc AppUpload(AppUploadRequest) returns (AppUploadResponse);
+    rpc GatewayRequest(GatewayRequestRequest) returns (GatewayRequestResponse);
+    rpc ProxyRequest(HttpRequest) returns (HttpResponse);
+    rpc GetPortConnections(GetPortConnectionsRequest) returns (GetPortConnectionsResponse);
+    rpc IsRunning(Empty) returns (IsRunningResponse);
+    rpc GetInstanceAccess(Empty) returns (GetInstanceAccessResponse);
+}
+
+message Empty {
+}
+
+message IsRunningResponse {
+    bool isRunning = 1;
+}
+
+message DebugRequest {
+    string guid = 1;
+    string name = 2;
+    bytes message = 3;
+}
+
+message EmitFlowEventRequest {
+    string guid = 1;
+    string name = 2;
+}
+
+message EmitInputRequest {
+    string guid = 1;
+    bytes input = 2;
+}
+
+message EmitOutputRequest {
+    string guid = 1;
+    bytes output = 2;
+    int32 port = 3;
+}
+
+message EmitErrorRequest {
+    string guid = 1;
+    string name = 2;
+    string message = 3;
+}
+
+message GetVaultItemRequest {
+    string vaultId = 1;
+    string ItemId = 2;
+}
+
+message GetVaultItemResponse {
+    google.protobuf.Struct item = 1;
+}
+
+message SetVaultItemRequest {
+    string vaultId = 1;
+    string ItemId = 2;
+    bytes Data = 3;
+}
+
+message SetVaultItemResponse {
+    google.protobuf.Struct item = 1;
+}
+
+message Variable {
+    string scope = 1;
+    string name = 2;
+    bytes payload = 3;
+}
+
+message GetVariableRequest {
+    Variable variable = 1;
+}
+
+message GetVariableResponse {
+    google.protobuf.Struct value = 1;
+}
+
+message SetVariableRequest {
+    Variable variable = 1;
+    google.protobuf.Struct value = 2;
+}
+
+message GetRobotInfoResponse {
+    google.protobuf.Struct robot = 1;
+}
+
+message AppRequestRequest {
+    bytes request = 1;
+    int32 timeout = 2;
+}
+
+message AppRequestV2Request {
+    bytes request = 1;
+}
+
+message AppRequestResponse {
+    bytes response = 1;
+}
+
+message AppPublishRequest {
+    bytes request = 1;
+}
+
+message DownloadFileRequest {
+    string url = 1;
+    string path = 2;
+}
+
+message AppDownloadRequest {
+    string directory = 1;
+    string file = 2;
+    string id = 3;
+}
+
+message AppDownloadResponse {
+    string path = 1;
+}
+
+message AppUploadRequest {
+    string id = 1;
+    string path = 2;
+}
+
+message AppUploadResponse {
+    string url = 1;
+}
+
+message GatewayRequestRequest {
+    string method = 1;
+    string endpoint = 2;
+    map<string, string> headers = 3;
+    string body = 4;
+}
+
+message GatewayRequestResponse {
+    int32 statusCode = 1;
+    map<string, string> headers = 2;
+    string body = 3;
+}
+
+message HttpRequest {
+  string method = 1;
+  string url = 2;
+  map<string, string> headers = 3;
+  bytes body = 4;
+}
+
+message HttpResponse {
+  int32 status_code = 1;
+  map<string, string> headers = 2;
+  bytes body = 3;
+}
+
+
+// Information about a connected node
+message NodeInfo {
+   string type = 1;    // Type of the node
+   string version = 2; // Version of the node
+   bytes config = 3;   // The node's configuration data (JSON bytes)
+}
+
+// Request message for GetPortConnections RPC
+message GetPortConnectionsRequest {
+    string guid = 1; // GUID of the node whose connections are requested
+    int32 port = 2; // Name of the port whose connections are requested
+}
+
+// Response message for GetOutputNodes and GetInputNodes RPCs
+message GetPortConnectionsResponse {
+    repeated NodeInfo nodes = 1; // List of connected nodes' information
+}
+
+// Response message for GetInstanceAccess RPC
+message GetInstanceAccessResponse {
+  string amq_endpoint = 1;   // e.g. wss://amq.robomotion.io
+  string api_endpoint = 2;   // e.g. https://api.robomotion.io
+  string access_token = 3;   // bearer token (JWT, UUID, etc.)
+}
