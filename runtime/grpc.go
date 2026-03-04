@@ -45,8 +45,8 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 
 	go checkConnState()
 
-	if err := InitLMOReader(); err != nil {
-		hclog.Default().Info("grpc.server.init", "lmo_reader_err", err)
+	if err := InitLMOStore(); err != nil {
+		hclog.Default().Info("grpc.server.init", "lmo_store_err", err)
 	}
 
 	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
@@ -54,9 +54,16 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 	m.Impl.Init(e)
 
 	// Fetch robot capabilities for 2-way negotiation.
+	// capabilityBits arrives as float64 from protobuf Struct encoding (safe for bits 0–52).
 	if info, infoErr := GetRobotInfo(); infoErr == nil {
 		if bits, ok := info["capabilityBits"].(float64); ok {
 			SetRobotCapabilities(uint64(bits))
+		}
+		// Set the LMO store path from robot info if provided.
+		if storePath, ok := info["lmoStorePath"].(string); ok && storePath != "" {
+			if setErr := SetLMOStorePath(storePath); setErr != nil {
+				hclog.Default().Info("grpc.server.init", "lmo_store_path_err", setErr)
+			}
 		}
 	}
 

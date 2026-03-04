@@ -18,10 +18,10 @@ func WithUnpack() message.GetOption {
 	}
 }
 
-// WithPack is a no-op — the deskbot handles packing on the output side.
+// WithPack extracts large fields from the message payload as blobs.
 func WithPack() message.SetOption {
 	return func(raw json.RawMessage) (json.RawMessage, error) {
-		return raw, nil
+		return LMOPack(raw)
 	}
 }
 

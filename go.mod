@@ -17,6 +17,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
+	github.com/zeebo/xxh3 v1.1.0
 	golang.org/x/net v0.22.0
 	golang.org/x/oauth2 v0.34.0
 	google.golang.org/grpc v1.64.0
@@ -33,7 +34,6 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
-	github.com/zeebo/xxh3 v1.1.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
