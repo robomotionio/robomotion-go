@@ -133,6 +133,10 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 			return nil, fmt.Errorf("get raw message failed with error: %+v", err.Error())
 		}
 
+		if packed, packErr := LMOPack(msg); packErr == nil {
+			msg = packed
+		}
+
 		resp.OutMessage = msg
 	}
 
@@ -152,6 +156,7 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 	atomic.AddInt32(&nc, -1)
 	defer func() {
 		if atomic.LoadInt32(&nc) == 0 {
+			CloseLMOStore()
 			defer func() {
 				done <- true
 			}()
