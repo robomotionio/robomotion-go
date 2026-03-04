@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/robomotionio/robomotion-go/message"
+	"github.com/robomotionio/robomotion-go/runtime/lmo"
 )
 
 type variable struct {
@@ -248,12 +249,19 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 			return t, nil
 		}
 
-		if IsLMO(val) {
-			lmo, err := DeserializeLMOfromMap(val.(map[string]interface{}))
+		if lmo.IsBlobRefMap(val) {
+			resolved, err := ResolveBlobRefValue(val.(map[string]interface{}))
 			if err != nil {
 				return t, err
 			}
-			return lmo.Data.(T), nil
+			d, err := json.Marshal(resolved)
+			if err != nil {
+				return t, err
+			}
+			if err := json.Unmarshal(d, &t); err != nil {
+				return t, err
+			}
+			return t, nil
 		}
 
 	}
@@ -314,12 +322,19 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 		return t, err
 	}
 
-	if IsLMO(val) {
-		lmo, err := DeserializeLMOfromMap(val.(map[string]interface{}))
+	if lmo.IsBlobRefMap(val) {
+		resolved, err := ResolveBlobRefValue(val.(map[string]interface{}))
 		if err != nil {
 			return t, err
 		}
-		return lmo.Data.(T), nil
+		d, err := json.Marshal(resolved)
+		if err != nil {
+			return t, err
+		}
+		if err := json.Unmarshal(d, &t); err != nil {
+			return t, err
+		}
+		return t, nil
 	}
 
 	t, ok := val.(T)
@@ -339,15 +354,12 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 		if v.Name == "" {
 			return fmt.Errorf("Empty message object")
 		}
-		if IsLMOCapable() {
-			serializedValue, err := SerializeLMO(value)
-			if err != nil {
+		if HasCapability(CapabilityLMO) {
+			if packed, ok, err := PackValue(value); err != nil {
 				return err
+			} else if ok {
+				return ctx.Set(v.Name.(string), packed)
 			}
-			if serializedValue != nil {
-				return ctx.Set(v.Name.(string), serializedValue)
-			}
-
 		}
 		return ctx.Set(v.Name.(string), value)
 	}
@@ -356,15 +368,12 @@ func (v *OutVariable[T]) Set(ctx message.Context, value T) error {
 		return fmt.Errorf("Runtime was not initialized")
 	}
 
-	if IsLMOCapable() {
-		lmo, err := SerializeLMO(value)
-		if err != nil {
+	if HasCapability(CapabilityLMO) {
+		if packed, ok, err := PackValue(value); err != nil {
 			return err
+		} else if ok {
+			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, packed)
 		}
-		if lmo != nil {
-			return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, lmo)
-		}
-
 	}
 	return client.SetVariable(&variable{Scope: v.Scope, Name: v.Name.(string)}, value)
 }
