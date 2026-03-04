@@ -234,7 +234,6 @@ type OnMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Guid          string                 `protobuf:"bytes,1,opt,name=guid,proto3" json:"guid,omitempty"`
 	InMessage     []byte                 `protobuf:"bytes,2,opt,name=inMessage,proto3" json:"inMessage,omitempty"`
-	IsMsgRef      bool                   `protobuf:"varint,3,opt,name=is_msg_ref,json=isMsgRef,proto3" json:"is_msg_ref,omitempty"` // NEW: inMessage contains MsgRef JSON, not full data
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -283,18 +282,10 @@ func (x *OnMessageRequest) GetInMessage() []byte {
 	return nil
 }
 
-func (x *OnMessageRequest) GetIsMsgRef() bool {
-	if x != nil {
-		return x.IsMsgRef
-	}
-	return false
-}
-
 type OnMessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OutMessage    []byte                 `protobuf:"bytes,1,opt,name=outMessage,proto3" json:"outMessage,omitempty"`
 	Error         *Error                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-	IsMsgRef      bool                   `protobuf:"varint,3,opt,name=is_msg_ref,json=isMsgRef,proto3" json:"is_msg_ref,omitempty"` // NEW: outMessage contains MsgRef JSON
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -341,13 +332,6 @@ func (x *OnMessageResponse) GetError() *Error {
 		return x.Error
 	}
 	return nil
-}
-
-func (x *OnMessageResponse) GetIsMsgRef() bool {
-	if x != nil {
-		return x.IsMsgRef
-	}
-	return false
 }
 
 type OnCloseRequest struct {

@@ -13,7 +13,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/robomotionio/go-plugin v1.2.7
-	github.com/robomotionio/robomotion-msgstore v0.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
@@ -38,5 +37,3 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
 )
-
-replace github.com/robomotionio/robomotion-msgstore => /home/faik/go/src/msg-store-v2/robomotion-msgstore
