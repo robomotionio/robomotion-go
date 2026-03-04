@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/tidwall/gjson"
@@ -469,7 +470,7 @@ func (s *Store) buildBlobRef(ref, raw string, value gjson.Result) BlobRef {
 		br.Type = "object"
 	case value.Type == gjson.String:
 		br.Type = "string"
-		br.Len = len(value.String())
+		br.Len = utf8.RuneCountInString(value.String())
 	case value.Type == gjson.Number:
 		br.Type = "number"
 	case value.Type == gjson.True || value.Type == gjson.False:
