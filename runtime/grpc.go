@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	conn   *grpc.ClientConn
-	client RuntimeHelper
+	conn      *grpc.ClientConn
+	client    RuntimeHelper
+	initReady chan struct{} // closed when GetRobotInfo goroutine completes
 )
 
 type GRPCServer struct {
@@ -43,13 +44,41 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 	}
 
 	go checkConnState()
+
+	if err := InitLMOStore(); err != nil {
+		hclog.Default().Info("grpc.server.init.lmo", "err", err)
+	}
+
 	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
 
 	m.Impl.Init(e)
+
+	// Fetch robot info for 2-way capability negotiation and LMO store path.
+	// Robot info already contains "capabilities" (uint64), "id", and "flow_id".
+	// NOTE: This runs in a goroutine to avoid deadlock — the robot host may not
+	// handle GetRobotInfo callbacks until Init returns.
+	initReady = make(chan struct{})
+	go func() {
+		defer close(initReady)
+		if info, infoErr := GetRobotInfo(); infoErr == nil {
+			// capabilities arrives as float64 from protobuf Struct encoding (safe for bits 0–52).
+			if bits, ok := info["capabilities"].(float64); ok {
+				SetRobotCapabilities(uint64(bits))
+			}
+			// Use the opaque store path provided by the robot.
+			if storePath, ok := info["lmo_store_path"].(string); ok && storePath != "" {
+				if setErr := SetLMOStorePath(storePath); setErr != nil {
+					hclog.Default().Info("grpc.server.init.lmo", "err", setErr)
+				}
+			}
+		}
+	}()
+
 	return &proto.Empty{}, err
 }
 
 func (m *GRPCServer) OnCreate(ctx context.Context, req *proto.OnCreateRequest) (*proto.OnCreateResponse, error) {
+	<-initReady
 
 	resp := &proto.OnCreateResponse{}
 
@@ -85,6 +114,7 @@ func (m *GRPCServer) OnCreate(ctx context.Context, req *proto.OnCreateRequest) (
 func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest) (*proto.OnMessageResponse, error) {
 
 	resp := &proto.OnMessageResponse{OutMessage: nil}
+
 	data, err := Decompress(req.InMessage)
 	if err != nil {
 		hclog.Default().Info("grpc.server.onmessage", "err", err)
@@ -108,8 +138,13 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 	if !msgCtx.IsEmpty() {
 		msg, e := msgCtx.GetRaw()
 		if e != nil {
-			return nil, fmt.Errorf("get raw message failed with error: %+v", err.Error())
+			return nil, fmt.Errorf("get raw message failed with error: %+v", e.Error())
 		}
+
+		if packed, packErr := LMOPack(msg); packErr == nil {
+			msg = packed
+		}
+
 		resp.OutMessage = msg
 	}
 
@@ -129,6 +164,7 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 	atomic.AddInt32(&nc, -1)
 	defer func() {
 		if atomic.LoadInt32(&nc) == 0 {
+			CloseLMOStore()
 			defer func() {
 				done <- true
 			}()
@@ -138,6 +174,7 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 }
 
 func (m *GRPCServer) GetCapabilities(ctx context.Context, req *proto.Empty) (*proto.PGetCapabilitiesResponse, error) {
+	<-initReady
 	return &proto.PGetCapabilitiesResponse{Capabilities: uint64(packageCapabilities)}, nil
 }
 

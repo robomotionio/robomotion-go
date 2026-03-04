@@ -29,7 +29,8 @@ robomotion-go is the official Go SDK for building Robomotion packages. It provid
 **Message System**
 - `message/context.go` - Message context for data flow between nodes
 - `runtime/message.go` - Message handling utilities
-- `runtime/lmo.go` - Large Message Object support for payloads >256KB
+- `runtime/lmo/store.go` - Content-addressed blob store (read + write) with zstd compression
+- `runtime/lmo_rt.go` - Global LMO store singleton with nil-safe wrappers
 
 **Debug Package (`debug/`)**
 - `attach.go/detach.go` - Development-time debugging support
@@ -180,12 +181,24 @@ func (n *MyNode) Init(r runtime.RuntimeHelper) error {
 }
 ```
 
-### Large Data Handling
+### Large Data Handling (LMO — Content-Addressed Blob Store)
+Both the deskbot and the plugin SDK replace large message fields (>= 4 KB) with
+BlobRef markers backed by zstd-compressed blobs on disk. The plugin SDK supports
+full read+write: it resolves BlobRefs on input and packs large values on output.
+
 ```go
-// For payloads >256KB, LMO is handled automatically
-// Manual packing if needed:
-packed, _ := runtime.PackMessageBytes(largeData)
-ctx.SetRaw(packed, runtime.WithPack())
+// BlobRefs are resolved automatically via WithUnpack() in message options.
+// For manual resolution of a specific field:
+result, _ := runtime.LMOResolve(data, "fieldName")
+
+// To resolve all BlobRefs in a payload:
+resolved, _ := runtime.LMOResolveAll(data)
+
+// To pack large values into blobs on output:
+packed, _ := runtime.LMOPack(payload)
+
+// Check if a value is a BlobRef:
+if lmo.IsBlobRefMap(val) { ... }
 ```
 
 ### Custom Ports
