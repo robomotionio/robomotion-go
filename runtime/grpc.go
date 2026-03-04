@@ -46,7 +46,7 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 	go checkConnState()
 
 	if err := InitLMOStore(); err != nil {
-		hclog.Default().Info("grpc.server.init", "lmo_store_err", err)
+		hclog.Default().Info("grpc.server.init.lmo", "err", err)
 	}
 
 	e := &GRPCRuntimeHelperClient{proto.NewRuntimeHelperClient(conn)}
@@ -65,7 +65,7 @@ func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.E
 			if flowID, ok := info["flow_id"].(string); ok && flowID != "" {
 				relPath := "robots/" + robotID + "/flows/" + flowID
 				if setErr := SetLMOStorePath(relPath); setErr != nil {
-					hclog.Default().Info("grpc.server.init", "lmo_store_path_err", setErr)
+					hclog.Default().Info("grpc.server.init.lmo", "err", setErr)
 				}
 			}
 		}
