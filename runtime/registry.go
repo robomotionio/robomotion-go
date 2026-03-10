@@ -52,6 +52,19 @@ func Start() {
 	var config gjson.Result
 	if len(os.Args) > 1 { // start with arg
 		arg := os.Args[1]
+
+		// Handle --session-close=<id> (prefix match since value is embedded)
+		if strings.HasPrefix(arg, "--session-close") {
+			if idx := strings.IndexByte(arg, '='); idx >= 0 {
+				CloseSession(arg[idx+1:])
+			} else if len(os.Args) > 2 {
+				CloseSession(os.Args[2])
+			} else {
+				log.Fatal("--session-close requires a session ID")
+			}
+			return
+		}
+
 		config = ReadConfigFile()
 
 		name := config.Get("name").String()
@@ -75,6 +88,19 @@ func Start() {
 
 		case "--help", "-h":
 			printCLIUsage()
+			return
+
+		case "--session-daemon":
+			// Internal: invoked by StartDaemonProcess after fork
+			if len(os.Args) < 3 {
+				log.Fatal("--session-daemon requires a session ID")
+			}
+			sessionID := os.Args[2]
+			daemonFlags, _ := parseFlags(os.Args[3:])
+			timeout := parseSessionTimeout(daemonFlags["session-timeout"])
+			vaultID := daemonFlags["vault-id"]
+			itemID := daemonFlags["item-id"]
+			RunSessionDaemon(sessionID, timeout, vaultID, itemID)
 			return
 
 		default:
