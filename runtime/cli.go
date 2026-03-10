@@ -300,8 +300,10 @@ func buildCommandMap() map[string]commandEntry {
 
 // parseFlags parses --key=value and --key value style arguments.
 // Keys are kept in kebab-case as provided.
+// Repeated flags (e.g. --item=a --item=b) are collected into a JSON array string.
 func parseFlags(args []string) (map[string]string, error) {
 	flags := make(map[string]string)
+	multi := make(map[string][]string) // tracks repeated flags
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
@@ -311,17 +313,37 @@ func parseFlags(args []string) (map[string]string, error) {
 
 		arg = arg[2:] // strip --
 
+		var key, value string
 		if idx := strings.IndexByte(arg, '='); idx >= 0 {
 			// --key=value
-			flags[arg[:idx]] = arg[idx+1:]
+			key = arg[:idx]
+			value = arg[idx+1:]
 		} else if i+1 < len(args) && !strings.HasPrefix(args[i+1], "--") {
 			// --key value
-			flags[arg] = args[i+1]
+			key = arg
+			value = args[i+1]
 			i++
 		} else {
 			// --flag (boolean true)
-			flags[arg] = "true"
+			key = arg
+			value = "true"
 		}
+
+		if _, exists := flags[key]; exists {
+			// Second or later occurrence — switch to multi-value tracking
+			if multi[key] == nil {
+				multi[key] = []string{flags[key]}
+			}
+			multi[key] = append(multi[key], value)
+		} else {
+			flags[key] = value
+		}
+	}
+
+	// Encode repeated flags as JSON arrays
+	for key, values := range multi {
+		encoded, _ := json.Marshal(values)
+		flags[key] = string(encoded)
 	}
 
 	return flags, nil
