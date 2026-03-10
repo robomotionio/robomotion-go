@@ -83,7 +83,12 @@ func Start() {
 			return
 
 		case "--list-commands":
-			listCommands()
+			// Check if a command name follows (--list-commands <cmd>)
+			if len(os.Args) > 2 && !strings.HasPrefix(os.Args[2], "-") {
+				listCommandDetail(os.Args[2])
+			} else {
+				listCommands()
+			}
 			return
 
 		case "--help", "-h":
@@ -104,12 +109,10 @@ func Start() {
 			return
 
 		default:
-			// Not a known flag — treat as CLI command
+			// Treat as CLI command
 			// e.g., robomotion-googledrive upload_file --file-path=x
-			if !strings.HasPrefix(arg, "-") {
-				RunCLI(os.Args[1:])
-				return
-			}
+			RunCLI(os.Args[1:])
+			return
 		}
 	}
 
