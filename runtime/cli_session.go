@@ -24,6 +24,7 @@ const (
 	defaultSessionTimeout = 30 * time.Minute
 	daemonPollInterval    = 100 * time.Millisecond
 	daemonPollMaxWait     = 3 * time.Second
+	maxSessionMsgSize     = 64 * 1024 * 1024 // 64 MB, matches debug/attach.go
 )
 
 // sessionMetadata is written to <session-id>.json alongside the socket/port file.
@@ -86,7 +87,11 @@ func RunSessionDaemon(sessionID string, timeout time.Duration, vaultID, itemID s
 	var timerMu sync.Mutex
 	timer := time.NewTimer(timeout)
 
+	sessionMode = true
+
 	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxSessionMsgSize),
+		grpc.MaxSendMsgSize(maxSessionMsgSize),
 		grpc.UnaryInterceptor(sessionTimeoutInterceptor(timer, timeout, &timerMu)),
 	)
 	proto.RegisterNodeServer(grpcServer, &GRPCServer{Impl: &Node{}})
@@ -120,7 +125,13 @@ func RunSessionDaemon(sessionID string, timeout time.Duration, vaultID, itemID s
 // RunSessionClient connects to an existing session daemon and sends a command.
 func RunSessionClient(sessionID, commandName string, flags map[string]string) {
 	addr := sessionDialAddr(sessionID)
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(maxSessionMsgSize),
+			grpc.MaxCallSendMsgSize(maxSessionMsgSize),
+		),
+	)
 	if err != nil {
 		cliError("session dial failed: %v", err)
 		return
@@ -239,7 +250,13 @@ func CloseSession(sessionID string) {
 	}
 
 	addr := sessionDialAddr(sessionID)
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(maxSessionMsgSize),
+			grpc.MaxCallSendMsgSize(maxSessionMsgSize),
+		),
+	)
 	if err != nil {
 		cliError("session dial failed: %v", err)
 		return

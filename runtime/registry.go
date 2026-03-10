@@ -22,10 +22,11 @@ type PluginNode struct {
 }
 
 var (
-	nc       int32
-	done     = make(chan bool, 1)
-	ns       = ""
-	attached = false
+	nc          int32
+	done        = make(chan bool, 1)
+	ns          = ""
+	attached    = false
+	sessionMode bool // true when running as session daemon
 	serveCfg = &plugin.ServeConfig{
 		HandshakeConfig: Handshake,
 		Plugins: map[string]plugin.Plugin{
