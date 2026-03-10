@@ -43,6 +43,12 @@ func GetNodeHandler(guid string) *NodeHandler {
 	return h
 }
 
+func RemoveNodeHandler(guid string) {
+	hMux.Lock()
+	defer hMux.Unlock()
+	delete(handlers, guid)
+}
+
 func RegisterNodes(handlers ...MessageHandler) {
 	handlerList = handlers
 }
