@@ -86,8 +86,39 @@ func RunCLI(args []string) {
 	// Extract global flags
 	vaultID := flags["vault-id"]
 	itemID := flags["item-id"]
+	vaultName := flags["vault"]
+	itemName := flags["item"]
 	delete(flags, "vault-id")
 	delete(flags, "item-id")
+	delete(flags, "vault")
+	delete(flags, "item")
+
+	// Resolve --vault/--item names to IDs if needed
+	if vaultName != "" || itemName != "" {
+		if vaultID != "" || itemID != "" {
+			cliError("cannot use --vault/--item together with --vault-id/--item-id")
+			return
+		}
+		if vaultName == "" || itemName == "" {
+			cliError("--vault and --item must both be provided")
+			return
+		}
+		vc, err := NewCLIVaultClient()
+		if err != nil {
+			cliError("vault auth error: %v", err)
+			return
+		}
+		vaultID, err = vc.ResolveVaultByName(vaultName)
+		if err != nil {
+			cliError("%v", err)
+			return
+		}
+		itemID, err = vc.ResolveItemByName(vaultID, itemName)
+		if err != nil {
+			cliError("%v", err)
+			return
+		}
+	}
 
 	// Extract session flags
 	sessionStart := flags["session"] == "true"
@@ -469,6 +500,8 @@ func printCLIUsage() {
 	fmt.Fprintf(os.Stderr, "\nGlobal Flags:\n")
 	fmt.Fprintf(os.Stderr, "  --vault-id=ID            Robomotion vault ID for credentials\n")
 	fmt.Fprintf(os.Stderr, "  --item-id=ID             Robomotion vault item ID for credentials\n")
+	fmt.Fprintf(os.Stderr, "  --vault=NAME             Vault name (resolved to ID via API)\n")
+	fmt.Fprintf(os.Stderr, "  --item=NAME              Item name (resolved to ID via API)\n")
 	fmt.Fprintf(os.Stderr, "\nSession Flags:\n")
 	fmt.Fprintf(os.Stderr, "  --session                Start a new session (keeps process alive)\n")
 	fmt.Fprintf(os.Stderr, "  --session-id=ID          Reuse an existing session\n")

@@ -312,6 +312,99 @@ func (c *CLIVaultClient) getSecretKey(vaultID string) ([]byte, error) {
 	return hex.DecodeString(secretHex)
 }
 
+// vaultEntry represents a vault with its ID and name.
+type vaultEntry struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// itemEntry represents a vault item with its ID and name.
+type itemEntry struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// ResolveVaultByName lists all vaults and finds one matching the given name.
+// Returns the vault ID or an error if no match, or ambiguous (multiple matches).
+func (c *CLIVaultClient) ResolveVaultByName(name string) (string, error) {
+	body, err := c.apiGet("/v1/vaults.list")
+	if err != nil {
+		return "", fmt.Errorf("failed to list vaults: %w", err)
+	}
+
+	var resp struct {
+		OK     bool              `json:"ok"`
+		Vaults []json.RawMessage `json:"vaults"`
+	}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return "", err
+	}
+
+	var matches []vaultEntry
+	for _, raw := range resp.Vaults {
+		var v vaultEntry
+		if err := json.Unmarshal(raw, &v); err != nil {
+			continue
+		}
+		if strings.EqualFold(v.Name, name) {
+			matches = append(matches, v)
+		}
+	}
+
+	if len(matches) == 0 {
+		return "", fmt.Errorf("no vault found with name %q", name)
+	}
+	if len(matches) > 1 {
+		lines := []string{fmt.Sprintf("ambiguous vault name %q matches %d vaults:", name, len(matches))}
+		for _, m := range matches {
+			lines = append(lines, fmt.Sprintf("  --vault-id=%s  (%s)", m.ID, m.Name))
+		}
+		return "", fmt.Errorf("%s", strings.Join(lines, "\n"))
+	}
+	return matches[0].ID, nil
+}
+
+// ResolveItemByName lists items in a vault and finds one matching the given name.
+// Returns the item ID or an error if no match, or ambiguous (multiple matches).
+func (c *CLIVaultClient) ResolveItemByName(vaultID, name string) (string, error) {
+	endpoint := fmt.Sprintf("/v1/vaults.items.list?vault_id=%s", vaultID)
+	body, err := c.apiGet(endpoint)
+	if err != nil {
+		return "", fmt.Errorf("failed to list vault items: %w", err)
+	}
+
+	var resp struct {
+		OK    bool              `json:"ok"`
+		Items []json.RawMessage `json:"items"`
+	}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return "", err
+	}
+
+	var matches []itemEntry
+	for _, raw := range resp.Items {
+		var item itemEntry
+		if err := json.Unmarshal(raw, &item); err != nil {
+			continue
+		}
+		if strings.EqualFold(item.Name, name) {
+			matches = append(matches, item)
+		}
+	}
+
+	if len(matches) == 0 {
+		return "", fmt.Errorf("no item found with name %q in vault %s", name, vaultID)
+	}
+	if len(matches) > 1 {
+		lines := []string{fmt.Sprintf("ambiguous item name %q matches %d items:", name, len(matches))}
+		for _, m := range matches {
+			lines = append(lines, fmt.Sprintf("  --item-id=%s  (%s)", m.ID, m.Name))
+		}
+		return "", fmt.Errorf("%s", strings.Join(lines, "\n"))
+	}
+	return matches[0].ID, nil
+}
+
 // apiGet makes an authenticated GET request to the Robomotion API.
 func (c *CLIVaultClient) apiGet(endpoint string) ([]byte, error) {
 	url := strings.TrimRight(c.apiBaseURL, "/") + endpoint
