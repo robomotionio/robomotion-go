@@ -39,6 +39,7 @@ type CLIVaultClient struct {
 	keySet    *cliKeySet
 
 	// Robot auth (from env + keys dir)
+	robotID         string // used to request robot-specific enc_vault_key from API
 	robotPrivateKey *rsa.PrivateKey
 	vaultSecrets    map[string][]byte // vault ID → RSA-encrypted secret
 }
@@ -58,9 +59,10 @@ type cliAuthConfig struct {
 }
 
 type vaultItemResponse struct {
-	OK   bool   `json:"ok"`
-	Data string `json:"data"` // hex-encoded encrypted data
-	Item struct {
+	OK    bool   `json:"ok"`
+	Error string `json:"error,omitempty"`
+	Data  string `json:"data"` // hex-encoded encrypted data
+	Item  struct {
 		ID       string `json:"id"`
 		Category int    `json:"category"`
 		Name     string `json:"name"`
@@ -95,9 +97,12 @@ func newCLIVaultClientFromEnv(token string) (*CLIVaultClient, error) {
 		apiURL = "https://api.robomotion.io"
 	}
 
+	fmt.Fprintf(os.Stderr, "[vault-debug] auth=env robotID=%s apiURL=%s token=%s...\n", robotID, apiURL, token[:8])
+
 	c := &CLIVaultClient{
 		apiBaseURL:  apiURL,
 		accessToken: token,
+		robotID:     robotID,
 	}
 
 	// Load robot's private key from ~/.config/robomotion/keys/<robotID>
@@ -106,9 +111,11 @@ func newCLIVaultClientFromEnv(token string) (*CLIVaultClient, error) {
 		return nil, fmt.Errorf("robot private key: %w", err)
 	}
 	c.robotPrivateKey = privKey
+	fmt.Fprintf(os.Stderr, "[vault-debug] private key loaded: bits=%d\n", privKey.N.BitLen())
 
 	// Load vault secrets from ~/.config/robomotion/keys/*.vaults
 	c.vaultSecrets = loadVaultSecrets()
+	fmt.Fprintf(os.Stderr, "[vault-debug] vault secrets loaded: %d vaults\n", len(c.vaultSecrets))
 
 	return c, nil
 }
@@ -250,6 +257,9 @@ func (c *CLIVaultClient) FetchVaultItem(vaultID, itemID string) (map[string]inte
 		return nil, fmt.Errorf("invalid vault response: %w", err)
 	}
 	if !resp.OK {
+		if resp.Error != "" {
+			return nil, fmt.Errorf("vault error: %s (vault=%s item=%s)", resp.Error, vaultID, itemID)
+		}
 		return nil, fmt.Errorf("vault item not found: vault=%s item=%s", vaultID, itemID)
 	}
 
@@ -294,6 +304,7 @@ func (c *CLIVaultClient) getVaultKey(vaultID string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: have private key, bits=%d\n", privKey.N.BitLen())
 
 	// Fetch vault metadata for encrypted vault key
 	vault, err := c.fetchVault(vaultID)
@@ -302,28 +313,33 @@ func (c *CLIVaultClient) getVaultKey(vaultID string) ([]byte, error) {
 	}
 
 	// RSA-OAEP decrypt the vault key
+	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: enc_vault_key base64 len=%d\n", len(vault.EncVaultKey))
 	encVaultKey, err := base64.StdEncoding.DecodeString(vault.EncVaultKey)
 	if err != nil {
 		return nil, fmt.Errorf("invalid vault key encoding: %w", err)
 	}
+	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: enc_vault_key bytes len=%d\n", len(encVaultKey))
 
 	hash := sha256.New()
 	vaultKey, err := rsa.DecryptOAEP(hash, rand.Reader, privKey, encVaultKey, nil)
 	if err != nil {
 		return nil, fmt.Errorf("RSA decrypt vault key failed: %w", err)
 	}
+	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: vaultKey decrypted, len=%d\n", len(vaultKey))
 
 	// Get and decrypt secret key
 	encSecretKey, err := c.getSecretKey(vaultID)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: encSecretKey len=%d\n", len(encSecretKey))
 
 	hash.Reset()
 	secretKey, err := rsa.DecryptOAEP(hash, rand.Reader, privKey, encSecretKey, nil)
 	if err != nil {
 		return nil, fmt.Errorf("RSA decrypt secret key failed: %w", err)
 	}
+	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: secretKey decrypted, len=%d\n", len(secretKey))
 
 	// XOR vault key with secret key
 	if len(secretKey) != len(vaultKey) {
@@ -398,18 +414,18 @@ type vaultsListResponse struct {
 
 // fetchVault gets vault metadata including the encrypted vault key.
 func (c *CLIVaultClient) fetchVault(vaultID string) (*vaultMetadata, error) {
-	body, err := c.apiGet("/v1/vaults.list")
+	endpoint := "/v1/vaults.list"
+	if c.robotID != "" {
+		endpoint += "?robot_id=" + c.robotID
+	}
+	fmt.Fprintf(os.Stderr, "[vault-debug] fetchVault: endpoint=%s\n", endpoint)
+	body, err := c.apiGet(endpoint)
 	if err != nil {
 		return nil, err
 	}
-
-	var resp vaultsListResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, err
-	}
+	fmt.Fprintf(os.Stderr, "[vault-debug] fetchVault: response=%s\n", string(body))
 
 	// Find vault by ID in the response
-	// The vaults.list response includes vault objects with id fields
 	var rawResp struct {
 		OK     bool              `json:"ok"`
 		Vaults []json.RawMessage `json:"vaults"`
@@ -417,6 +433,8 @@ func (c *CLIVaultClient) fetchVault(vaultID string) (*vaultMetadata, error) {
 	if err := json.Unmarshal(body, &rawResp); err != nil {
 		return nil, err
 	}
+
+	fmt.Fprintf(os.Stderr, "[vault-debug] fetchVault: found %d vaults, looking for %s\n", len(rawResp.Vaults), vaultID)
 
 	for _, raw := range rawResp.Vaults {
 		var v struct {
@@ -427,6 +445,7 @@ func (c *CLIVaultClient) fetchVault(vaultID string) (*vaultMetadata, error) {
 		if err := json.Unmarshal(raw, &v); err != nil {
 			continue
 		}
+		fmt.Fprintf(os.Stderr, "[vault-debug] fetchVault: vault id=%s enc_vault_key_len=%d iv=%s\n", v.ID, len(v.EncVaultKey), v.IV)
 		if v.ID == vaultID {
 			return &vaultMetadata{
 				EncVaultKey: v.EncVaultKey,
@@ -488,7 +507,11 @@ type itemEntry struct {
 // ResolveVaultByName lists all vaults and finds one matching the given name.
 // Returns the vault ID or an error if no match, or ambiguous (multiple matches).
 func (c *CLIVaultClient) ResolveVaultByName(name string) (string, error) {
-	body, err := c.apiGet("/v1/vaults.list")
+	endpoint := "/v1/vaults.list"
+	if c.robotID != "" {
+		endpoint += "?robot_id=" + c.robotID
+	}
+	body, err := c.apiGet(endpoint)
 	if err != nil {
 		return "", fmt.Errorf("failed to list vaults: %w", err)
 	}
