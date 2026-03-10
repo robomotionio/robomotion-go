@@ -25,6 +25,7 @@ func generateSkillMD(name, version string, config gjson.Result) {
 
 	var commands []skillCommand
 	var hasCredentials bool
+	var hasConnect, hasDisconnect bool
 
 	for _, t := range types {
 		toolField, hasToolField := t.FieldByName("Tool")
@@ -37,6 +38,18 @@ func generateSkillMD(name, version string, config gjson.Result) {
 		toolName := toolParts["name"]
 		if toolName == "" {
 			continue
+		}
+
+		// Detect Connect/Disconnect nodes by spec ID
+		specID := toolParts["id"]
+		if specID == "" {
+			specID = toolName
+		}
+		if strings.Contains(specID, ".Connect") || strings.EqualFold(toolName, "connect") {
+			hasConnect = true
+		}
+		if strings.Contains(specID, ".Disconnect") || strings.EqualFold(toolName, "disconnect") {
+			hasDisconnect = true
 		}
 
 		cmd := skillCommand{
@@ -108,11 +121,16 @@ func generateSkillMD(name, version string, config gjson.Result) {
 	b.WriteString("---\n")
 	fmt.Fprintf(&b, "name: %s\n", strings.ToLower(strings.TrimPrefix(name, "Robomotion.")))
 	fmt.Fprintf(&b, "description: %s\n", description)
+	if hasCredentials {
+		b.WriteString("compatibility: Requires 'robomotion login' for vault credentials\n")
+	}
 	b.WriteString("---\n\n")
 
 	// Title
 	fmt.Fprintf(&b, "# %s\n\n", name)
-	fmt.Fprintf(&b, "Binary: `%s`\n\n", binaryName)
+	fmt.Fprintf(&b, "Binary: `%s`\n", binaryName)
+	shortName := strings.ToLower(strings.TrimPrefix(name, "Robomotion."))
+	fmt.Fprintf(&b, "Also available via: `robomotion %s <command> [flags]`\n\n", shortName)
 
 	// Commands section
 	b.WriteString("## Commands\n\n")
@@ -159,20 +177,34 @@ func generateSkillMD(name, version string, config gjson.Result) {
 		if len(cmd.outputs) > 0 {
 			outputFields := make([]string, 0, len(cmd.outputs))
 			for _, o := range cmd.outputs {
-				outputFields = append(outputFields, fmt.Sprintf(`"%s": "..."`, o.name))
+				outputFields = append(outputFields, fmt.Sprintf(`"%s": "<%s>"`, o.name, o.varType))
 			}
-			fmt.Fprintf(&b, "**Output:** `{%s}`\n\n", strings.Join(outputFields, ", "))
+			b.WriteString("**Output:**\n```json\n")
+			fmt.Fprintf(&b, "{%s}\n", strings.Join(outputFields, ", "))
+			b.WriteString("```\n\n")
 		}
 	}
 
 	// Authentication section
 	if hasCredentials {
 		b.WriteString("## Authentication\n\n")
-		b.WriteString("All commands require Robomotion Vault credentials via `--vault-id` and `--item-id` flags.\n")
-		b.WriteString("Each call is stateless — parallel calls with different credentials are fully isolated.\n\n")
+		b.WriteString("By name (human-friendly):\n\n")
+		fmt.Fprintf(&b, "    %s %s --vault=\"My Vault\" --item=\"My Item\" ...\n\n",
+			binaryName, commands[0].name)
+		b.WriteString("By ID (machine-friendly):\n\n")
 		fmt.Fprintf(&b, "    %s %s --vault-id=<id> --item-id=<id> ...\n\n",
 			binaryName, commands[0].name)
-		b.WriteString("Alternatively, set the `ROBOMOTION_CREDENTIALS` environment variable to a JSON credential map.\n")
+		b.WriteString("Alternatively, set `ROBOMOTION_CREDENTIALS` to a JSON credential map.\n")
+	}
+
+	// Sessions section
+	if hasConnect && hasDisconnect {
+		b.WriteString("\n## Sessions\n\n")
+		b.WriteString("This package supports persistent connections. Start a session to reuse connections across calls:\n\n")
+		fmt.Fprintf(&b, "    %s connect --vault=\"My Vault\" --item=\"My Item\" --session\n", binaryName)
+		fmt.Fprintf(&b, "    %s %s --session-id=<id> --conn-id=<from-connect> ...\n",
+			binaryName, commands[0].name)
+		fmt.Fprintf(&b, "    %s --session-close=<id>\n", binaryName)
 	}
 
 	fmt.Print(b.String())

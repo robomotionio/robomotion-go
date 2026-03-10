@@ -22,10 +22,12 @@ type CLICommandInfo struct {
 
 // CLIParamInfo describes one input parameter for a CLI command.
 type CLIParamInfo struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Required    bool   `json:"required"`
-	Description string `json:"description,omitempty"`
+	Name        string   `json:"name"`
+	Type        string   `json:"type"`
+	Required    bool     `json:"required"`
+	Description string   `json:"description,omitempty"`
+	Default     string   `json:"default,omitempty"`
+	Choices     []string `json:"choices,omitempty"`
 }
 
 // CLIOutputInfo describes one output field for a CLI command.
@@ -47,7 +49,12 @@ func RunCLI(args []string) {
 	// Special commands
 	switch commandName {
 	case "--list-commands":
-		listCommands()
+		// Handled by registry.go Start() — but if reached via RunCLI, dispatch
+		if len(args) > 1 && !strings.HasPrefix(args[1], "-") {
+			listCommandDetail(args[1])
+		} else {
+			listCommands()
+		}
 		return
 	case "--skill-md":
 		config := ReadConfigFile()
@@ -197,9 +204,20 @@ func RunCLI(args []string) {
 		"name": commandName,
 	}
 
+	// Initialize all variable fields with scope/name config so they don't panic on Get/Set
+	injectVariableConfig(cmd.nodeType, nodeConfig)
+
 	// If vault flags provided, inject credential config for Credential fields
 	if vaultID != "" && itemID != "" {
 		injectCredentialConfig(cmd.nodeType, nodeConfig, vaultID, itemID)
+	}
+
+	// Build CLI context: split flags into message context vs config patches
+	msgData, configPatches := buildCLIContext(cmd.nodeType, flags)
+
+	// Apply config patches (Custom-scope variables, option fields)
+	for k, v := range configPatches {
+		nodeConfig[k] = v
 	}
 
 	configJSON, _ := json.Marshal(nodeConfig)
@@ -208,8 +226,7 @@ func RunCLI(args []string) {
 		return
 	}
 
-	// Build message context from flags
-	msgData := buildMessageContext(cmd.nodeType, flags)
+	// Build message context for Message-scope variables
 	msgJSON, _ := json.Marshal(msgData)
 	ctx := message.NewContext(msgJSON)
 
@@ -310,48 +327,100 @@ func parseFlags(args []string) (map[string]string, error) {
 	return flags, nil
 }
 
-// buildMessageContext converts CLI flags into a message context map.
-// Flag names (kebab-case) are converted to the spec tag "name" (camelCase) where possible.
-func buildMessageContext(nodeType reflect.Type, flags map[string]string) map[string]interface{} {
-	data := make(map[string]interface{})
+// buildCLIContext processes CLI flags and returns:
+// - msgData: message context map (for Message-scope variables)
+// - configPatches: map of field name → value to inject into node config (for Custom-scope variables and options)
+func buildCLIContext(nodeType reflect.Type, flags map[string]string) (msgData map[string]interface{}, configPatches map[string]interface{}) {
+	msgData = make(map[string]interface{})
+	configPatches = make(map[string]interface{})
 
-	// Build a mapping from kebab-case flag name → spec tag name
-	flagToSpec := buildFlagNameMap(nodeType)
+	flagMap := buildFlagMap(nodeType)
 
 	for flagName, value := range flags {
-		// Convert flag name to spec name
-		specName, ok := flagToSpec[flagName]
+		entry, ok := flagMap[flagName]
 		if !ok {
-			// Fall back: convert kebab-case to camelCase
-			specName = strcase.ToLowerCamel(strings.ReplaceAll(flagName, "-", "_"))
+			// Fall back: treat as message context key
+			specName := strcase.ToLowerCamel(strings.ReplaceAll(flagName, "-", "_"))
+			msgData[specName] = value
+			continue
 		}
-		data[specName] = value
+
+		if entry.isOption {
+			// Enum option: inject into config as plain field
+			configPatches[entry.fieldName] = value
+		} else if entry.scope == "Custom" {
+			// Custom-scope variable: set Name to value via config
+			configPatches[entry.fieldName] = map[string]interface{}{
+				"scope": "Custom",
+				"name":  value,
+			}
+		} else {
+			// Message-scope variable: put in message context
+			msgData[entry.specName] = value
+		}
 	}
 
-	return data
+	return
 }
 
-// buildFlagNameMap creates a mapping from kebab-case CLI flag names to the
-// actual spec tag "name" values used in message context.
-func buildFlagNameMap(nodeType reflect.Type) map[string]string {
-	mapping := make(map[string]string)
+// cliFlagEntry describes how a CLI flag maps to a node field.
+type cliFlagEntry struct {
+	specName  string // the spec "name" value (for Message-scope context keys)
+	fieldName string // Go struct field name (lowered first letter for config JSON)
+	scope     string // "Message" or "Custom"
+	isOption  bool   // true for enum option fields (not variables)
+}
+
+// buildFlagMap creates a mapping from kebab-case CLI flag names to their
+// field metadata, handling both named (Message-scope) and unnamed (Custom-scope) variables,
+// as well as enum option fields.
+func buildFlagMap(nodeType reflect.Type) map[string]cliFlagEntry {
+	mapping := make(map[string]cliFlagEntry)
 
 	for i := 0; i < nodeType.NumField(); i++ {
 		field := nodeType.Field(i)
-		if !isVariable(field.Type) {
-			continue
-		}
-
 		specTag := field.Tag.Get("spec")
 		specMap := parseSpec(specTag)
-		specName := specMap["name"]
-		if specName == "" {
-			continue
-		}
 
-		// Convert spec name to kebab-case for the CLI flag
-		flagName := strcase.ToKebab(specName)
-		mapping[flagName] = specName
+		if isVariable(field.Type) {
+			specName := specMap["name"]
+			scope := specMap["scope"]
+			if scope == "" {
+				scope = "Custom"
+			}
+
+			if specName != "" {
+				// Named variable: flag from spec name
+				flagName := strcase.ToKebab(specName)
+				mapping[flagName] = cliFlagEntry{
+					specName:  specName,
+					fieldName: lowerFirstLetter(field.Name),
+					scope:     scope,
+				}
+			} else {
+				// Unnamed variable (Custom scope): derive flag from title
+				title := specMap["title"]
+				if title == "" {
+					continue
+				}
+				flagName := strcase.ToKebab(title)
+				mapping[flagName] = cliFlagEntry{
+					fieldName: lowerFirstLetter(field.Name),
+					scope:     "Custom",
+				}
+			}
+		} else if enum := specMap["enum"]; enum != "" {
+			// Enum option field
+			title := specMap["title"]
+			if title == "" {
+				title = field.Name
+			}
+			flagName := strcase.ToKebab(title)
+			mapping[flagName] = cliFlagEntry{
+				fieldName: lowerFirstLetter(field.Name),
+				isOption:  true,
+			}
+		}
 	}
 
 	return mapping
@@ -374,6 +443,40 @@ func injectCredentialConfig(nodeType reflect.Type, config map[string]interface{}
 				"itemId":  itemID,
 			},
 		}
+	}
+}
+
+// injectVariableConfig initializes all variable fields (In, Out, Opt) with their
+// scope and name from spec tags so they don't panic on Get/Set during CLI execution.
+func injectVariableConfig(nodeType reflect.Type, config map[string]interface{}) {
+	for i := 0; i < nodeType.NumField(); i++ {
+		field := nodeType.Field(i)
+		if !isVariable(field.Type) {
+			continue
+		}
+
+		specTag := field.Tag.Get("spec")
+		specMap := parseSpec(specTag)
+		specName := specMap["name"]
+		scope := specMap["scope"]
+		if scope == "" {
+			scope = "Custom"
+		}
+
+		fieldKey := lowerFirstLetter(field.Name)
+
+		// Don't overwrite if already set (e.g., by configPatches later)
+		if _, exists := config[fieldKey]; exists {
+			continue
+		}
+
+		if scope == "Message" && specName != "" {
+			config[fieldKey] = map[string]interface{}{
+				"scope": "Message",
+				"name":  specName,
+			}
+		}
+		// Custom-scope with empty name: will be set by configPatches from CLI flags
 	}
 }
 
@@ -412,8 +515,8 @@ func collectCLIOutput(nodeType reflect.Type, handler MessageHandler, ctx message
 	return output
 }
 
-// listCommands prints all available CLI commands as JSON to stdout.
-func listCommands() {
+// gatherCommands collects CLI command metadata from all registered node types.
+func gatherCommands() []CLICommandInfo {
 	RegisterFactories()
 
 	types := GetNodeTypes()
@@ -447,68 +550,209 @@ func listCommands() {
 			specTag := field.Tag.Get("spec")
 			specMap := parseSpec(specTag)
 			specName := specMap["name"]
-			if specName == "" {
-				continue
-			}
 
 			varType := specMap["type"]
 			if varType == "" {
 				varType = "string"
 			}
 
-			if isInVariable(field.Type) {
-				cmd.Parameters = append(cmd.Parameters, CLIParamInfo{
-					Name:        strcase.ToKebab(specName),
+			if isInVariable(field.Type) || isOptVariable(field.Type) {
+				// Derive flag name: from spec name if present, else from title
+				flagName := ""
+				if specName != "" {
+					flagName = strcase.ToKebab(specName)
+				} else if title := specMap["title"]; title != "" {
+					flagName = strcase.ToKebab(title)
+				}
+				if flagName == "" {
+					continue
+				}
+
+				_, isOptional := specMap["optional"]
+				required := isInVariable(field.Type) && !isOptional
+
+				param := CLIParamInfo{
+					Name:        flagName,
 					Type:        varType,
-					Required:    true,
+					Required:    required,
 					Description: specMap["description"],
-				})
-			} else if isOptVariable(field.Type) {
-				cmd.Parameters = append(cmd.Parameters, CLIParamInfo{
-					Name:        strcase.ToKebab(specName),
-					Type:        varType,
-					Required:    false,
-					Description: specMap["description"],
-				})
+				}
+
+				// Include default value and enum for human-readable output
+				if defVal := specMap["value"]; defVal != "" {
+					param.Default = defVal
+				}
+				if enum := specMap["enum"]; enum != "" {
+					param.Choices = strings.Split(enum, "|")
+				}
+
+				cmd.Parameters = append(cmd.Parameters, param)
 			} else if isOutVariable(field.Type) {
+				if specName == "" {
+					continue
+				}
 				cmd.Outputs = append(cmd.Outputs, CLIOutputInfo{
 					Name: specName,
 					Type: varType,
 				})
+			} else if enum := specMap["enum"]; enum != "" {
+				// Option fields (enums like OptStorage, OptEncoding)
+				flagName := ""
+				if title := specMap["title"]; title != "" {
+					flagName = strcase.ToKebab(title)
+				} else {
+					flagName = strcase.ToKebab(field.Name)
+				}
+				param := CLIParamInfo{
+					Name:        flagName,
+					Type:        varType,
+					Required:    false,
+					Description: specMap["description"],
+				}
+				if defVal := specMap["value"]; defVal != "" {
+					param.Default = defVal
+				}
+				param.Choices = strings.Split(enum, "|")
+				cmd.Parameters = append(cmd.Parameters, param)
 			}
 		}
 
 		commands = append(commands, cmd)
 	}
 
-	data, _ := json.MarshalIndent(commands, "", "  ")
-	fmt.Println(string(data))
+	return commands
+}
+
+// listCommands prints available commands. Human-readable by default, JSON with --output json.
+func listCommands() {
+	// Check for --output json in remaining args
+	outputJSON := false
+	for i := 2; i < len(os.Args); i++ {
+		if os.Args[i] == "--output" && i+1 < len(os.Args) && os.Args[i+1] == "json" {
+			outputJSON = true
+			break
+		}
+		if os.Args[i] == "--output=json" {
+			outputJSON = true
+			break
+		}
+	}
+
+	commands := gatherCommands()
+
+	if outputJSON {
+		data, _ := json.MarshalIndent(commands, "", "  ")
+		fmt.Println(string(data))
+		return
+	}
+
+	// Human-readable output
+	config := ReadConfigFile()
+	name := config.Get("name").String()
+	version := config.Get("version").String()
+
+	fmt.Fprintf(os.Stderr, "%s v%s\n\n", name, version)
+	fmt.Fprintf(os.Stderr, "Available commands:\n\n")
+
+	for _, cmd := range commands {
+		fmt.Fprintf(os.Stderr, "  %-24s %s\n", cmd.Name, cmd.Description)
+	}
+
+	fmt.Fprintf(os.Stderr, "\nUse --list-commands <command> for details on a specific command.\n")
+	fmt.Fprintf(os.Stderr, "Use --list-commands --output json for machine-readable output.\n")
+}
+
+// listCommandDetail prints detailed help for a single command.
+func listCommandDetail(cmdName string) {
+	commands := gatherCommands()
+
+	var cmd *CLICommandInfo
+	for i := range commands {
+		if commands[i].Name == cmdName {
+			cmd = &commands[i]
+			break
+		}
+	}
+
+	if cmd == nil {
+		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmdName)
+		fmt.Fprintf(os.Stderr, "Run --list-commands to see available commands.\n")
+		os.Exit(1)
+	}
+
+	config := ReadConfigFile()
+	binName := config.Get("name").String()
+
+	fmt.Fprintf(os.Stderr, "Usage: %s %s [flags]\n\n", strings.ToLower(binName), cmd.Name)
+	fmt.Fprintf(os.Stderr, "%s\n", cmd.Description)
+
+	if len(cmd.Parameters) > 0 {
+		fmt.Fprintf(os.Stderr, "\nFlags:\n")
+		for _, p := range cmd.Parameters {
+			flag := fmt.Sprintf("--%s %s", p.Name, p.Type)
+			reqTag := ""
+			if p.Required {
+				reqTag = " (required)"
+			}
+			defTag := ""
+			if p.Default != "" {
+				defTag = fmt.Sprintf(" (default: %s)", p.Default)
+			}
+			choiceTag := ""
+			if len(p.Choices) > 0 {
+				choiceTag = fmt.Sprintf(" [%s]", strings.Join(p.Choices, "|"))
+			}
+			fmt.Fprintf(os.Stderr, "  %-32s %s%s%s%s\n", flag, p.Description, reqTag, defTag, choiceTag)
+		}
+	}
+
+	if len(cmd.Outputs) > 0 {
+		fmt.Fprintf(os.Stderr, "\nOutput:\n")
+		for _, o := range cmd.Outputs {
+			fmt.Fprintf(os.Stderr, "  %-32s %s\n", o.Name, o.Type)
+		}
+	}
+
+	fmt.Fprintf(os.Stderr, "\nSession Flags:\n")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session", "Start a new session (keeps process alive)")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session-id ID", "Reuse an existing session")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session-close ID", "Close a session")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session-timeout DURATION", "Inactivity timeout (default: 30m)")
 }
 
 // printCLIUsage prints human-readable help to stderr.
 func printCLIUsage() {
 	config := ReadConfigFile()
 	name := config.Get("name").String()
+	version := config.Get("version").String()
 
-	fmt.Fprintf(os.Stderr, "Usage: %s <command> [flags]\n\n", os.Args[0])
-	fmt.Fprintf(os.Stderr, "Package: %s\n\n", name)
+	fmt.Fprintf(os.Stderr, "%s v%s\n\n", name, version)
+	fmt.Fprintf(os.Stderr, "Usage: %s <command> [flags]\n\n", strings.ToLower(name))
+
 	fmt.Fprintf(os.Stderr, "Commands:\n")
-	fmt.Fprintf(os.Stderr, "  --list-commands    List all available commands as JSON\n")
-	fmt.Fprintf(os.Stderr, "  --skill-md         Generate SKILL.md for this package\n")
-	fmt.Fprintf(os.Stderr, "  --help, -h         Show this help\n")
-	fmt.Fprintf(os.Stderr, "  <command>          Run a command (use --list-commands to see available)\n")
+	commands := gatherCommands()
+	for _, cmd := range commands {
+		fmt.Fprintf(os.Stderr, "  %-24s %s\n", cmd.Name, cmd.Description)
+	}
+
 	fmt.Fprintf(os.Stderr, "\nGlobal Flags:\n")
-	fmt.Fprintf(os.Stderr, "  --vault-id=ID            Robomotion vault ID for credentials\n")
-	fmt.Fprintf(os.Stderr, "  --item-id=ID             Robomotion vault item ID for credentials\n")
-	fmt.Fprintf(os.Stderr, "  --vault=NAME             Vault name (resolved to ID via API)\n")
-	fmt.Fprintf(os.Stderr, "  --item=NAME              Item name (resolved to ID via API)\n")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--output json", "Output in JSON format")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--vault-id ID", "Robomotion vault ID for credentials")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--item-id ID", "Robomotion vault item ID for credentials")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--vault NAME", "Vault name (resolved to ID via API)")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--item NAME", "Item name (resolved to ID via API)")
+
 	fmt.Fprintf(os.Stderr, "\nSession Flags:\n")
-	fmt.Fprintf(os.Stderr, "  --session                Start a new session (keeps process alive)\n")
-	fmt.Fprintf(os.Stderr, "  --session-id=ID          Reuse an existing session\n")
-	fmt.Fprintf(os.Stderr, "  --session-close=ID       Close a session and stop the daemon\n")
-	fmt.Fprintf(os.Stderr, "  --session-timeout=DUR    Inactivity timeout (default 30m, e.g. 5m)\n")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session", "Start a new session (keeps process alive)")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session-id ID", "Reuse an existing session")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session-close ID", "Close a session and stop the daemon")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session-timeout DURATION", "Inactivity timeout (default: 30m)")
+
 	fmt.Fprintf(os.Stderr, "\nEnvironment:\n")
-	fmt.Fprintf(os.Stderr, "  ROBOMOTION_CREDENTIALS   JSON credential map (alternative to vault flags)\n")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "ROBOMOTION_CREDENTIALS", "JSON credential map (alternative to vault flags)")
+
+	fmt.Fprintf(os.Stderr, "\nUse --list-commands <command> for details on a specific command.\n")
+	fmt.Fprintf(os.Stderr, "Use --help or -h to show this help.\n")
 }
 
 // cliError prints a JSON error to stderr and exits with code 1.

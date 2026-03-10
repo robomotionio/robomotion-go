@@ -130,8 +130,8 @@ func RunSessionClient(sessionID, commandName string, flags map[string]string) {
 	nodeClient := proto.NewNodeClient(conn)
 	ctx := context.Background()
 
-	// Use command name as the node guid for session tracking
-	guid := commandName
+	// Use unique guid for each call so Custom-scope variables are fresh per invocation
+	guid := commandName + "-" + generateSessionID()
 
 	// Extract vault flags before building message context
 	vaultID := flags["vault-id"]
@@ -160,14 +160,21 @@ func RunSessionClient(sessionID, commandName string, flags map[string]string) {
 		}
 	}
 
+	// Build CLI context: split flags into message context vs config patches
+	msgData, configPatches := buildCLIContext(cmd.nodeType, flags)
+
 	if !nodeExists {
 		// Build config JSON (same as cli.go)
 		nodeConfig := map[string]interface{}{
 			"guid": guid,
 			"name": commandName,
 		}
+		injectVariableConfig(cmd.nodeType, nodeConfig)
 		if vaultID != "" && itemID != "" {
 			injectCredentialConfig(cmd.nodeType, nodeConfig, vaultID, itemID)
+		}
+		for k, v := range configPatches {
+			nodeConfig[k] = v
 		}
 
 		configJSON, _ := json.Marshal(nodeConfig)
@@ -188,14 +195,20 @@ func RunSessionClient(sessionID, commandName string, flags map[string]string) {
 		}
 	}
 
-	// Build message data from flags (same logic as cli.go)
-	msgData := buildMessageContext(cmd.nodeType, flags)
+	// Build message data for Message-scope variables
 	msgJSON, _ := json.Marshal(msgData)
+
+	// Compress message data (GRPCServer.OnMessage expects gzip-compressed data)
+	compressed, compErr := Compress(msgJSON)
+	if compErr != nil {
+		cliError("compress failed: %v", compErr)
+		return
+	}
 
 	// Call OnMessage
 	resp, err := nodeClient.OnMessage(ctx, &proto.OnMessageRequest{
 		Guid:      guid,
-		InMessage: msgJSON,
+		InMessage: compressed,
 	})
 	if err != nil {
 		cliError("session OnMessage failed: %v", err)
