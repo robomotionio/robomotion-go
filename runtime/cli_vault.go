@@ -97,8 +97,6 @@ func newCLIVaultClientFromEnv(token string) (*CLIVaultClient, error) {
 		apiURL = "https://api.robomotion.io"
 	}
 
-	fmt.Fprintf(os.Stderr, "[vault-debug] auth=env robotID=%s apiURL=%s token=%s...\n", robotID, apiURL, token[:8])
-
 	c := &CLIVaultClient{
 		apiBaseURL:  apiURL,
 		accessToken: token,
@@ -111,11 +109,9 @@ func newCLIVaultClientFromEnv(token string) (*CLIVaultClient, error) {
 		return nil, fmt.Errorf("robot private key: %w", err)
 	}
 	c.robotPrivateKey = privKey
-	fmt.Fprintf(os.Stderr, "[vault-debug] private key loaded: bits=%d\n", privKey.N.BitLen())
 
-	// Load vault secrets from ~/.config/robomotion/keys/*.vaults
-	c.vaultSecrets = loadVaultSecrets()
-	fmt.Fprintf(os.Stderr, "[vault-debug] vault secrets loaded: %d vaults\n", len(c.vaultSecrets))
+	// Load vault secrets from ~/.config/robomotion/keys/<robotID>.vaults
+	c.vaultSecrets = loadVaultSecrets(robotID)
 
 	return c, nil
 }
@@ -174,13 +170,22 @@ func loadRobotPrivateKey(robotID string) (*rsa.PrivateKey, error) {
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
-// loadVaultSecrets reads all .vaults files from the keys directory.
+// loadVaultSecrets reads .vaults files from the keys directory for a specific robot.
+// Looks for <robotID>.vaults first, then falls back to all .vaults files.
 // Each file is YAML: "vaults:\n  <vaultID>: <base64-encoded RSA-encrypted secret>\n"
 // Returns a merged map of vault ID → RSA-encrypted secret bytes.
-func loadVaultSecrets() map[string][]byte {
+func loadVaultSecrets(robotID string) map[string][]byte {
 	secrets := make(map[string][]byte)
 	keysDir := defaultKeysDir()
 
+	// Try robot-specific file first
+	robotFile := filepath.Join(keysDir, robotID+".vaults")
+	if data, err := os.ReadFile(robotFile); err == nil {
+		parseVaultsFile(data, secrets)
+		return secrets
+	}
+
+	// Fallback: read all .vaults files
 	entries, err := os.ReadDir(keysDir)
 	if err != nil {
 		return secrets
@@ -304,7 +309,6 @@ func (c *CLIVaultClient) getVaultKey(vaultID string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: have private key, bits=%d\n", privKey.N.BitLen())
 
 	// Fetch vault metadata for encrypted vault key
 	vault, err := c.fetchVault(vaultID)
@@ -313,33 +317,28 @@ func (c *CLIVaultClient) getVaultKey(vaultID string) ([]byte, error) {
 	}
 
 	// RSA-OAEP decrypt the vault key
-	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: enc_vault_key base64 len=%d\n", len(vault.EncVaultKey))
 	encVaultKey, err := base64.StdEncoding.DecodeString(vault.EncVaultKey)
 	if err != nil {
 		return nil, fmt.Errorf("invalid vault key encoding: %w", err)
 	}
-	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: enc_vault_key bytes len=%d\n", len(encVaultKey))
 
 	hash := sha256.New()
 	vaultKey, err := rsa.DecryptOAEP(hash, rand.Reader, privKey, encVaultKey, nil)
 	if err != nil {
 		return nil, fmt.Errorf("RSA decrypt vault key failed: %w", err)
 	}
-	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: vaultKey decrypted, len=%d\n", len(vaultKey))
 
 	// Get and decrypt secret key
 	encSecretKey, err := c.getSecretKey(vaultID)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: encSecretKey len=%d\n", len(encSecretKey))
 
 	hash.Reset()
 	secretKey, err := rsa.DecryptOAEP(hash, rand.Reader, privKey, encSecretKey, nil)
 	if err != nil {
 		return nil, fmt.Errorf("RSA decrypt secret key failed: %w", err)
 	}
-	fmt.Fprintf(os.Stderr, "[vault-debug] getVaultKey: secretKey decrypted, len=%d\n", len(secretKey))
 
 	// XOR vault key with secret key
 	if len(secretKey) != len(vaultKey) {
@@ -418,12 +417,10 @@ func (c *CLIVaultClient) fetchVault(vaultID string) (*vaultMetadata, error) {
 	if c.robotID != "" {
 		endpoint += "?robot_id=" + c.robotID
 	}
-	fmt.Fprintf(os.Stderr, "[vault-debug] fetchVault: endpoint=%s\n", endpoint)
 	body, err := c.apiGet(endpoint)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(os.Stderr, "[vault-debug] fetchVault: response=%s\n", string(body))
 
 	// Find vault by ID in the response
 	var rawResp struct {
@@ -434,8 +431,6 @@ func (c *CLIVaultClient) fetchVault(vaultID string) (*vaultMetadata, error) {
 		return nil, err
 	}
 
-	fmt.Fprintf(os.Stderr, "[vault-debug] fetchVault: found %d vaults, looking for %s\n", len(rawResp.Vaults), vaultID)
-
 	for _, raw := range rawResp.Vaults {
 		var v struct {
 			ID          string `json:"id"`
@@ -445,7 +440,6 @@ func (c *CLIVaultClient) fetchVault(vaultID string) (*vaultMetadata, error) {
 		if err := json.Unmarshal(raw, &v); err != nil {
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "[vault-debug] fetchVault: vault id=%s enc_vault_key_len=%d iv=%s\n", v.ID, len(v.EncVaultKey), v.IV)
 		if v.ID == vaultID {
 			return &vaultMetadata{
 				EncVaultKey: v.EncVaultKey,
