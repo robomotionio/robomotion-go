@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"strings"
 	"time"
 
 	hclog "github.com/hashicorp/go-hclog"
@@ -63,6 +64,26 @@ func Start() {
 		case "-s": // generate spec file
 			generateSpecFile(name, version)
 			return
+
+		case "--skill-md":
+			generateSkillMD(name, version, config)
+			return
+
+		case "--list-commands":
+			listCommands()
+			return
+
+		case "--help", "-h":
+			printCLIUsage()
+			return
+
+		default:
+			// Not a known flag — treat as CLI command
+			// e.g., robomotion-googledrive upload_file --file-path=x
+			if !strings.HasPrefix(arg, "-") {
+				RunCLI(os.Args[1:])
+				return
+			}
 		}
 	}
 
