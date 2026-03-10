@@ -50,3 +50,14 @@ func RegisterNodes(handlers ...MessageHandler) {
 func RegisteredNodes() []MessageHandler {
 	return handlerList
 }
+
+// listNodeHandlerGUIDs returns the GUIDs of all active node handlers.
+func listNodeHandlerGUIDs() []string {
+	hMux.Lock()
+	defer hMux.Unlock()
+	guids := make([]string, 0, len(handlers))
+	for guid := range handlers {
+		guids = append(guids, guid)
+	}
+	return guids
+}

@@ -89,6 +89,52 @@ func RunCLI(args []string) {
 	delete(flags, "vault-id")
 	delete(flags, "item-id")
 
+	// Extract session flags
+	sessionStart := flags["session"] == "true"
+	sessionID := flags["session-id"]
+	sessionClose := flags["session-close"]
+	timeoutStr := flags["session-timeout"]
+	delete(flags, "session")
+	delete(flags, "session-id")
+	delete(flags, "session-close")
+	delete(flags, "session-timeout")
+
+	// Session close: tell daemon to shut down
+	if sessionClose != "" {
+		CloseSession(sessionClose)
+		return
+	}
+
+	// Session reuse: send command to existing daemon
+	if sessionID != "" {
+		// Pass vault flags through for credential config injection
+		if vaultID != "" {
+			flags["vault-id"] = vaultID
+		}
+		if itemID != "" {
+			flags["item-id"] = itemID
+		}
+		RunSessionClient(sessionID, commandName, flags)
+		return
+	}
+
+	// Session start: fork daemon, then send first command as client
+	if sessionStart {
+		timeout := parseSessionTimeout(timeoutStr)
+		id := generateSessionID()
+		StartDaemonProcess(id, timeout, vaultID, itemID, os.Args)
+
+		// Send first command to the new daemon
+		if vaultID != "" {
+			flags["vault-id"] = vaultID
+		}
+		if itemID != "" {
+			flags["item-id"] = itemID
+		}
+		RunSessionClient(id, commandName, flags)
+		return
+	}
+
 	// Set up CLI runtime helper (replaces gRPC client)
 	cliHelper := NewCLIRuntimeHelper()
 
@@ -421,8 +467,13 @@ func printCLIUsage() {
 	fmt.Fprintf(os.Stderr, "  --help, -h         Show this help\n")
 	fmt.Fprintf(os.Stderr, "  <command>          Run a command (use --list-commands to see available)\n")
 	fmt.Fprintf(os.Stderr, "\nGlobal Flags:\n")
-	fmt.Fprintf(os.Stderr, "  --vault-id=ID      Robomotion vault ID for credentials\n")
-	fmt.Fprintf(os.Stderr, "  --item-id=ID       Robomotion vault item ID for credentials\n")
+	fmt.Fprintf(os.Stderr, "  --vault-id=ID            Robomotion vault ID for credentials\n")
+	fmt.Fprintf(os.Stderr, "  --item-id=ID             Robomotion vault item ID for credentials\n")
+	fmt.Fprintf(os.Stderr, "\nSession Flags:\n")
+	fmt.Fprintf(os.Stderr, "  --session                Start a new session (keeps process alive)\n")
+	fmt.Fprintf(os.Stderr, "  --session-id=ID          Reuse an existing session\n")
+	fmt.Fprintf(os.Stderr, "  --session-close=ID       Close a session and stop the daemon\n")
+	fmt.Fprintf(os.Stderr, "  --session-timeout=DUR    Inactivity timeout (default 30m, e.g. 5m)\n")
 	fmt.Fprintf(os.Stderr, "\nEnvironment:\n")
 	fmt.Fprintf(os.Stderr, "  ROBOMOTION_CREDENTIALS   JSON credential map (alternative to vault flags)\n")
 }
