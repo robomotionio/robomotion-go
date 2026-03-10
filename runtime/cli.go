@@ -771,7 +771,9 @@ func printCLIUsage() {
 	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "--session-timeout DURATION", "Inactivity timeout (default: 30m)")
 
 	fmt.Fprintf(os.Stderr, "\nEnvironment:\n")
-	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "ROBOMOTION_CREDENTIALS", "JSON credential map (alternative to vault flags)")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "ROBOMOTION_API_TOKEN", "API bearer token (from runner, skips robomotion login)")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "ROBOMOTION_ROBOT_ID", "Robot UUID (for private key lookup in keys dir)")
+	fmt.Fprintf(os.Stderr, "  %-32s %s\n", "ROBOMOTION_API_URL", "API base URL (default: https://api.robomotion.io)")
 
 	fmt.Fprintf(os.Stderr, "\nUse --list-commands <command> for details on a specific command.\n")
 	fmt.Fprintf(os.Stderr, "Use --help or -h to show this help.\n")
