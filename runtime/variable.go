@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/robomotionio/robomotion-go/message"
 	"github.com/robomotionio/robomotion-go/runtime/lmo"
@@ -196,6 +197,52 @@ func (v *InVariable[T]) getString(val interface{}) (t T, err error) {
 	return t, err
 }
 
+// getSlice handles conversion of various input types to slice types (e.g. []string).
+// Supports: JSON array strings ("[\"a\",\"b\"]"), comma-separated strings ("a,b,c"),
+// and values already in slice form.
+func (v *InVariable[T]) getSlice(val interface{}) (t T, err error) {
+	s, isStr := val.(string)
+	if isStr {
+		s = strings.TrimSpace(s)
+		// Try JSON array first
+		if strings.HasPrefix(s, "[") {
+			if err := json.Unmarshal([]byte(s), &t); err == nil {
+				return t, nil
+			}
+		}
+		// Comma-separated: split and set
+		parts := strings.Split(s, ",")
+		elemType := reflect.TypeOf(t).Elem()
+		slice := reflect.MakeSlice(reflect.TypeOf(t), 0, len(parts))
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			elem := reflect.New(elemType).Elem()
+			switch elemType.Kind() {
+			case reflect.String:
+				elem.SetString(p)
+			default:
+				// For non-string element types, try JSON unmarshal
+				tmp := reflect.New(elemType).Interface()
+				if err := json.Unmarshal([]byte(p), tmp); err != nil {
+					return t, fmt.Errorf("cannot convert %q to %s", p, elemType)
+				}
+				elem.Set(reflect.ValueOf(tmp).Elem())
+			}
+			slice = reflect.Append(slice, elem)
+		}
+		reflect.ValueOf(&t).Elem().Set(slice)
+		return t, nil
+	}
+
+	// Already a slice or other type: use JSON roundtrip
+	d, err := json.Marshal(val)
+	if err != nil {
+		return t, err
+	}
+	err = json.Unmarshal(d, &t)
+	return t, err
+}
+
 func (v *InVariable[T]) getStringPtr(val interface{}) (t T, err error) {
 	switch v := val.(type) {
 	case string:
@@ -268,9 +315,12 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 
 	kind := reflect.Invalid
 	typ := reflect.TypeOf(t)
-	if typ != nil {
-		kind = typ.Kind()
+	if typ == nil {
+		// For nil-able types like slices/maps/pointers, TypeOf(zero) returns nil.
+		// Use the type parameter's concrete type instead.
+		typ = reflect.TypeOf((*T)(nil)).Elem()
 	}
+	kind = typ.Kind()
 
 	if val != nil {
 		switch kind {
@@ -296,6 +346,10 @@ func (v *InVariable[T]) Get(ctx message.Context) (T, error) {
 
 		case reflect.String:
 			return v.getString(val)
+
+		case reflect.Slice:
+			return v.getSlice(val)
+
 		default:
 
 			d, err := json.Marshal(val)

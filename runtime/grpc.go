@@ -162,8 +162,9 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 
 	err := node.Handler.OnClose()
 	atomic.AddInt32(&nc, -1)
+	RemoveNodeHandler(req.Guid)
 	defer func() {
-		if atomic.LoadInt32(&nc) == 0 {
+		if atomic.LoadInt32(&nc) == 0 && !sessionMode {
 			CloseLMOStore()
 			defer func() {
 				done <- true
