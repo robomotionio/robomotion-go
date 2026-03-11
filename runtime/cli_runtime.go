@@ -10,24 +10,14 @@ import (
 
 // CLIRuntimeHelper implements RuntimeHelper for CLI mode without gRPC.
 // In CLI mode, all variables use Message scope and resolve from message.Context,
-// so GetVariable/SetVariable are no-ops. Credentials come from vault flags or env.
+// so GetVariable/SetVariable are no-ops. Credentials come from vault flags.
 type CLIRuntimeHelper struct {
-	credentials map[string]interface{} // populated from vault or env
+	credentials map[string]interface{} // populated from vault fetch
 }
 
 // NewCLIRuntimeHelper creates a CLIRuntimeHelper.
-// If ROBOMOTION_CREDENTIALS env var is set (JSON), it's used as the credential map.
 func NewCLIRuntimeHelper() *CLIRuntimeHelper {
-	h := &CLIRuntimeHelper{}
-
-	if credJSON := os.Getenv("ROBOMOTION_CREDENTIALS"); credJSON != "" {
-		var creds map[string]interface{}
-		if err := json.Unmarshal([]byte(credJSON), &creds); err == nil {
-			h.credentials = creds
-		}
-	}
-
-	return h
+	return &CLIRuntimeHelper{}
 }
 
 // SetCredentials sets the credential map (e.g. from vault fetch).
@@ -61,7 +51,7 @@ func (c *CLIRuntimeHelper) GetVaultItem(vaultID, itemID string) (map[string]inte
 	if c.credentials != nil {
 		return c.credentials, nil
 	}
-	return nil, fmt.Errorf("no credentials available: set ROBOMOTION_CREDENTIALS env var or use --vault-id/--item-id flags")
+	return nil, fmt.Errorf("no credentials available: use --vault-id/--item-id flags")
 }
 
 func (c *CLIRuntimeHelper) SetVaultItem(vaultID, itemID string, data []byte) (map[string]interface{}, error) {

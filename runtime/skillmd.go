@@ -194,7 +194,7 @@ func generateSkillMD(name, version string, config gjson.Result) {
 		b.WriteString("By ID (machine-friendly):\n\n")
 		fmt.Fprintf(&b, "    %s %s --vault-id=<id> --item-id=<id> ...\n\n",
 			binaryName, commands[0].name)
-		b.WriteString("Alternatively, set `ROBOMOTION_CREDENTIALS` to a JSON credential map.\n")
+		b.WriteString("Alternatively, set `ROBOMOTION_API_TOKEN` and `ROBOMOTION_ROBOT_ID` environment variables for token-based auth.\n")
 	}
 
 	// Sessions section
