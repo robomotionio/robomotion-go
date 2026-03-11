@@ -17,45 +17,21 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	goruntime "runtime"
 	"strings"
 
-	"golang.org/x/crypto/hkdf"
-	"golang.org/x/crypto/pbkdf2"
 )
 
 // CLIVaultClient provides direct vault access for CLI mode without gRPC/robot runtime.
 // It authenticates with the Robomotion platform and fetches/decrypts vault items.
-//
-// Two auth paths are supported:
-//  1. User auth: from ~/.robomotion/auth.json (via `robomotion login`)
-//  2. Robot auth: from env vars ROBOMOTION_API_TOKEN + ROBOMOTION_ROBOT_ID
-//     (token inherited from runner, private key from ~/.config/robomotion/keys/)
+// Auth via env vars ROBOMOTION_API_TOKEN + ROBOMOTION_ROBOT_ID
+// (token inherited from runner, private key from keys dir).
 type CLIVaultClient struct {
-	apiBaseURL  string
-	accessToken string
-
-	// User auth (from auth.json)
-	masterKey []byte
-	keySet    *cliKeySet
-
-	// Robot auth (from env + keys dir)
+	apiBaseURL      string
+	accessToken     string
 	robotID         string // used to request robot-specific enc_vault_key from API
 	robotPrivateKey *rsa.PrivateKey
 	vaultSecrets    map[string][]byte // vault ID → RSA-encrypted secret
-}
-
-type cliKeySet struct {
-	PublicKey     string `json:"pub_key"`
-	EncPrivateKey string `json:"enc_priv_key"`
-	IV            string `json:"iv"`
-}
-
-// cliAuthConfig holds saved auth state from `robomotion login`.
-type cliAuthConfig struct {
-	APIEndpoint string `json:"api_endpoint"`
-	AccessToken string `json:"access_token"`
-	MasterKey   string `json:"master_key"`   // hex-encoded
-	KeySet      *cliKeySet `json:"key_set"`
 }
 
 type vaultItemResponse struct {
@@ -70,17 +46,13 @@ type vaultItemResponse struct {
 	} `json:"item"`
 }
 
-// NewCLIVaultClient creates a vault client using the best available auth source:
-//  1. Environment (ROBOMOTION_API_TOKEN + ROBOMOTION_ROBOT_ID) — for processes spawned by the runner
-//  2. Auth config (~/.robomotion/auth.json) — from `robomotion login`
+// NewCLIVaultClient creates a vault client from env vars ROBOMOTION_API_TOKEN + ROBOMOTION_ROBOT_ID.
 func NewCLIVaultClient() (*CLIVaultClient, error) {
-	// Try env-based robot auth first (runner → llm_agent → package flow)
-	if token := os.Getenv("ROBOMOTION_API_TOKEN"); token != "" {
-		return newCLIVaultClientFromEnv(token)
+	token := os.Getenv("ROBOMOTION_API_TOKEN")
+	if token == "" {
+		return nil, errors.New("ROBOMOTION_API_TOKEN env var is required")
 	}
-
-	// Fall back to saved auth config
-	return newCLIVaultClientFromConfig()
+	return newCLIVaultClientFromEnv(token)
 }
 
 // newCLIVaultClientFromEnv creates a vault client from runner-inherited env vars.
@@ -112,41 +84,6 @@ func newCLIVaultClientFromEnv(token string) (*CLIVaultClient, error) {
 
 	// Load vault secrets from ~/.config/robomotion/keys/<robotID>.vaults
 	c.vaultSecrets = loadVaultSecrets(robotID)
-
-	return c, nil
-}
-
-// newCLIVaultClientFromConfig creates a vault client from ~/.robomotion/auth.json.
-func newCLIVaultClientFromConfig() (*CLIVaultClient, error) {
-	configPath := defaultAuthConfigPath()
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("no auth available: set ROBOMOTION_API_TOKEN env var, or run 'robomotion login': %w", err)
-	}
-
-	var config cliAuthConfig
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("invalid auth config at %s: %w", configPath, err)
-	}
-
-	if config.AccessToken == "" {
-		return nil, fmt.Errorf("no access token in auth config; run 'robomotion login' again")
-	}
-
-	c := &CLIVaultClient{
-		apiBaseURL:  config.APIEndpoint,
-		accessToken: config.AccessToken,
-		keySet:      config.KeySet,
-	}
-
-	if config.MasterKey != "" {
-		c.masterKey, _ = hex.DecodeString(config.MasterKey)
-	}
-
-	if c.apiBaseURL == "" {
-		c.apiBaseURL = "https://api.robomotion.io"
-	}
 
 	return c, nil
 }
@@ -244,8 +181,20 @@ func parseVaultsFile(data []byte, secrets map[string][]byte) {
 
 // defaultKeysDir returns the path to the Robomotion keys directory.
 func defaultKeysDir() string {
+	return filepath.Join(configDir(), "keys")
+}
+
+// configDir returns the platform-specific Robomotion config directory.
+func configDir() string {
+	if goruntime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return filepath.Join(home, "AppData", "Local", "Robomotion")
+	}
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".config", "robomotion", "keys")
+	return filepath.Join(home, ".config", "robomotion")
 }
 
 // FetchVaultItem fetches and decrypts a vault item by vault ID and item ID.
@@ -280,12 +229,7 @@ func (c *CLIVaultClient) FetchVaultItem(vaultID, itemID string) (map[string]inte
 		return nil, fmt.Errorf("vault key error: %w", err)
 	}
 
-	iv := resp.Item.IV
-	if iv == "" && c.keySet != nil {
-		iv = c.keySet.IV // backward compatibility
-	}
-
-	plaintext, err := decryptAESCBC(vaultKey, encData, iv)
+	plaintext, err := decryptAESCBC(vaultKey, encData, resp.Item.IV)
 	if err != nil {
 		return nil, fmt.Errorf("decryption error: %w", err)
 	}
@@ -352,53 +296,12 @@ func (c *CLIVaultClient) getVaultKey(vaultID string) ([]byte, error) {
 	return xored, nil
 }
 
-// getPrivateKey returns the RSA private key from the appropriate source.
+// getPrivateKey returns the robot's RSA private key.
 func (c *CLIVaultClient) getPrivateKey() (*rsa.PrivateKey, error) {
-	// Robot auth: key already loaded from keys dir
-	if c.robotPrivateKey != nil {
-		return c.robotPrivateKey, nil
+	if c.robotPrivateKey == nil {
+		return nil, errors.New("no private key loaded")
 	}
-
-	// User auth: decrypt from keySet with master key
-	if c.masterKey == nil {
-		return nil, errors.New("no private key available: set ROBOMOTION_API_TOKEN + ROBOMOTION_ROBOT_ID, or run 'robomotion login'")
-	}
-	if c.keySet == nil {
-		return nil, errors.New("key set not available; run 'robomotion login' first")
-	}
-
-	privKeyPEM, err := c.decryptPrivateKey()
-	if err != nil {
-		return nil, fmt.Errorf("private key decryption failed: %w", err)
-	}
-
-	block, _ := pem.Decode([]byte(privKeyPEM))
-	if block == nil {
-		return nil, errors.New("failed to parse private key PEM")
-	}
-	return x509.ParsePKCS1PrivateKey(block.Bytes)
-}
-
-// decryptPrivateKey decrypts the stored private key using the master key.
-func (c *CLIVaultClient) decryptPrivateKey() (string, error) {
-	iv, err := hex.DecodeString(c.keySet.IV)
-	if err != nil {
-		return "", err
-	}
-	data, err := hex.DecodeString(c.keySet.EncPrivateKey)
-	if err != nil {
-		return "", err
-	}
-
-	block, err := aes.NewCipher(c.masterKey)
-	if err != nil {
-		return "", err
-	}
-
-	cbc := cipher.NewCBCDecrypter(block, iv)
-	cbc.CryptBlocks(data, data)
-
-	return string(pkcs7Unpad(data)), nil
+	return c.robotPrivateKey, nil
 }
 
 type vaultMetadata struct {
@@ -451,39 +354,14 @@ func (c *CLIVaultClient) fetchVault(vaultID string) (*vaultMetadata, error) {
 	return nil, fmt.Errorf("vault %s not found", vaultID)
 }
 
-// getSecretKey retrieves the encrypted secret key for a vault.
-// Tries robot auth (.vaults files) first, then user auth (auth.json vault_secrets).
+// getSecretKey retrieves the encrypted secret key for a vault from .vaults files.
 func (c *CLIVaultClient) getSecretKey(vaultID string) ([]byte, error) {
-	// Robot auth: vault secrets loaded from .vaults files in keys dir
 	if c.vaultSecrets != nil {
 		if secret, ok := c.vaultSecrets[vaultID]; ok {
 			return secret, nil
 		}
 	}
-
-	// User auth: vault secrets saved in auth.json
-	configPath := defaultAuthConfigPath()
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("no vault secret for %s: not in .vaults files, cannot read auth config: %w", vaultID, err)
-	}
-
-	var config map[string]interface{}
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, err
-	}
-
-	secrets, ok := config["vault_secrets"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("no vault secret for %s: not in .vaults files or auth config", vaultID)
-	}
-
-	secretHex, ok := secrets[vaultID].(string)
-	if !ok {
-		return nil, fmt.Errorf("no secret key for vault %s; open the vault first", vaultID)
-	}
-
-	return hex.DecodeString(secretHex)
+	return nil, fmt.Errorf("no vault secret for %s in .vaults files", vaultID)
 }
 
 // vaultEntry represents a vault with its ID and name.
@@ -650,25 +528,3 @@ func pkcs7Unpad(data []byte) []byte {
 	return data[:len(data)-padding]
 }
 
-// SetMasterKeyCLI derives the master key from identity, password, and salt.
-// This mirrors the deskbot SetMasterKey function.
-func SetMasterKeyCLI(identity, password, salt string) []byte {
-	saltBytes, _ := hex.DecodeString(salt)
-
-	// HKDF with SHA256
-	h := hkdf.New(sha256.New, []byte(identity), saltBytes, nil)
-	derivedSalt := make([]byte, 32)
-	io.ReadFull(h, derivedSalt)
-
-	// Convert to hex string (matches deskbot behavior)
-	derivedSaltHex := []byte(hex.EncodeToString(derivedSalt))
-
-	// PBKDF2: 100,000 iterations, 32-byte key
-	return pbkdf2.Key([]byte(password), derivedSaltHex, 100000, 32, sha256.New)
-}
-
-// defaultAuthConfigPath returns the path to the CLI auth config file.
-func defaultAuthConfigPath() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".robomotion", "auth.json")
-}
