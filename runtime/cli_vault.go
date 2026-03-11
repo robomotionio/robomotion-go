@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	goruntime "runtime"
 	"strings"
 
 	"golang.org/x/crypto/hkdf"
@@ -244,8 +245,20 @@ func parseVaultsFile(data []byte, secrets map[string][]byte) {
 
 // defaultKeysDir returns the path to the Robomotion keys directory.
 func defaultKeysDir() string {
+	return filepath.Join(configDir(), "keys")
+}
+
+// configDir returns the platform-specific Robomotion config directory.
+func configDir() string {
+	if goruntime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return filepath.Join(home, "AppData", "Local", "Robomotion")
+	}
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".config", "robomotion", "keys")
+	return filepath.Join(home, ".config", "robomotion")
 }
 
 // FetchVaultItem fetches and decrypts a vault item by vault ID and item ID.
