@@ -141,8 +141,10 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 			return nil, fmt.Errorf("get raw message failed with error: %+v", e.Error())
 		}
 
-		if packed, packErr := LMOPack(msg); packErr == nil {
-			msg = packed
+		if HasCapability(CapabilityLMO) {
+			if packed, packErr := LMOPack(msg); packErr == nil {
+				msg = packed
+			}
 		}
 
 		resp.OutMessage = msg
