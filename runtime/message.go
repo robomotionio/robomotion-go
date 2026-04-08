@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 
 	"github.com/robomotionio/robomotion-go/message"
+	"github.com/tidwall/gjson"
 )
 
 func init() {
 	message.GetRaw = getRaw
 	message.SetRaw = setRaw
+	message.Resolve = func(data []byte, key string) (gjson.Result, error) {
+		return LMOResolve(data, key)
+	}
 }
 
 // WithUnpack resolves all BlobRefs in the message payload.
