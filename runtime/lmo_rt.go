@@ -62,6 +62,24 @@ func LMOResolveAll(data []byte) ([]byte, error) {
 	return lmoStore.ResolveAll(data)
 }
 
+// LMOResolveSubtree resolves a field by key and all nested BlobRefs within it.
+// Use this instead of LMOResolve when the result will be consumed as a whole
+// (e.g. an object whose children may individually be BlobRefs).
+func LMOResolveSubtree(data []byte, key string) (gjson.Result, error) {
+	result, err := LMOResolve(data, key)
+	if err != nil {
+		return result, err
+	}
+	if lmoStore == nil || result.Type != gjson.JSON {
+		return result, nil
+	}
+	resolved, err := lmoStore.ResolveAll([]byte(result.Raw))
+	if err != nil {
+		return gjson.Result{}, err
+	}
+	return gjson.ParseBytes(resolved), nil
+}
+
 // LMOPack extracts large fields from the payload as blobs.
 // Returns payload unchanged if the store is nil or relPath is not set.
 func LMOPack(payload []byte) ([]byte, error) {
