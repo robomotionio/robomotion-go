@@ -11,7 +11,7 @@ func init() {
 	message.GetRaw = getRaw
 	message.SetRaw = setRaw
 	message.Resolve = func(data []byte, key string) (gjson.Result, error) {
-		return LMOResolve(data, key)
+		return LMOResolveSubtree(data, key)
 	}
 }
 
