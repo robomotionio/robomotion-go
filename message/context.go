@@ -12,8 +12,9 @@ type GetOption func(json.RawMessage) (json.RawMessage, error)
 type SetOption func(json.RawMessage) (json.RawMessage, error)
 
 var (
-	GetRaw func(json.RawMessage, ...GetOption) (json.RawMessage, error)
-	SetRaw func(json.RawMessage, ...SetOption) (json.RawMessage, error)
+	GetRaw  func(json.RawMessage, ...GetOption) (json.RawMessage, error)
+	SetRaw  func(json.RawMessage, ...SetOption) (json.RawMessage, error)
+	Resolve func(data []byte, key string) (gjson.Result, error)
 )
 
 type Context interface {
@@ -59,6 +60,11 @@ func (msg *message) GetID() string {
 
 func (msg *message) get(path string) gjson.Result {
 	path = convertPath(path)
+	if Resolve != nil {
+		if result, err := Resolve(msg.data, path); err == nil && result.Exists() {
+			return result
+		}
+	}
 	return gjson.GetBytes(msg.data, path)
 }
 
