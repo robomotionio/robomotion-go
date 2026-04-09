@@ -30,7 +30,11 @@ func WithPack() message.SetOption {
 }
 
 func getRaw(raw json.RawMessage, options ...message.GetOption) (json.RawMessage, error) {
-	var err error
+	// Auto-resolve all BlobRefs before returning to the caller.
+	resolved, err := LMOResolveAll(raw)
+	if err == nil {
+		raw = resolved
+	}
 	for _, opt := range options {
 		raw, err = opt(raw)
 		if err != nil {
@@ -39,6 +43,7 @@ func getRaw(raw json.RawMessage, options ...message.GetOption) (json.RawMessage,
 	}
 	return raw, nil
 }
+
 
 func setRaw(raw json.RawMessage, options ...message.SetOption) (json.RawMessage, error) {
 	var err error

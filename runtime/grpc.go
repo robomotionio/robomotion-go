@@ -136,10 +136,7 @@ func (m *GRPCServer) OnMessage(ctx context.Context, req *proto.OnMessageRequest)
 	}
 
 	if !msgCtx.IsEmpty() {
-		msg, e := msgCtx.GetRaw()
-		if e != nil {
-			return nil, fmt.Errorf("get raw message failed with error: %+v", e.Error())
-		}
+		msg := message.PackedBytes(msgCtx)
 
 		if HasCapability(CapabilityLMO) {
 			if packed, packErr := LMOPack(msg); packErr == nil {
