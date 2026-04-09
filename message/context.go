@@ -100,3 +100,12 @@ func (msg *message) SetRaw(data json.RawMessage, options ...SetOption) (err erro
 func (msg *message) IsEmpty() bool {
 	return msg.data == nil || len(msg.data) == 0
 }
+
+// PackedBytes returns the raw internal bytes without BlobRef resolution.
+// Used by the gRPC output path to avoid unnecessary unpack/repack.
+func PackedBytes(ctx Context) json.RawMessage {
+	if m, ok := ctx.(*message); ok {
+		return m.data
+	}
+	return nil
+}
