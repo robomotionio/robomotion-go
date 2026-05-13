@@ -107,11 +107,16 @@ func (s *Store) GetBlob(ref, relPath string) ([]byte, error) {
 }
 
 // Resolve lazily resolves a BlobRef for a specific field path.
+//
+// Each `resolveRef` call is wrapped in `fullyResolveRef`, which loops while
+// the result is itself a BlobRef envelope. This handles double-nested
+// envelopes — same pathology as ResolveAll's recursive fix, applied to the
+// singular path-based variant.
 func (s *Store) Resolve(data []byte, key string) (gjson.Result, error) {
 	value := gjson.GetBytes(data, key)
 	if value.Exists() {
 		if IsBlobRef(value) {
-			return s.resolveRef(value)
+			return s.fullyResolveRef(value)
 		}
 		return value, nil
 	}
@@ -125,7 +130,7 @@ func (s *Store) Resolve(data []byte, key string) (gjson.Result, error) {
 			continue
 		}
 		if IsBlobRef(seg) {
-			resolved, err := s.resolveRef(seg)
+			resolved, err := s.fullyResolveRef(seg)
 			if err != nil {
 				return gjson.Result{}, err
 			}
@@ -136,7 +141,7 @@ func (s *Store) Resolve(data []byte, key string) (gjson.Result, error) {
 			inner := gjson.Get(resolved.Raw, remaining)
 			if inner.Exists() {
 				if IsBlobRef(inner) {
-					return s.resolveRef(inner)
+					return s.fullyResolveRef(inner)
 				}
 				return inner, nil
 			}
@@ -145,6 +150,26 @@ func (s *Store) Resolve(data []byte, key string) (gjson.Result, error) {
 	}
 
 	return gjson.Result{}, nil
+}
+
+// fullyResolveRef wraps resolveRef in a depth-bounded loop so that a blob
+// whose content is itself a BlobRef envelope (or a chain of them) gets fully
+// unwrapped. Naturally-produced chains via Pack are bounded; the limit is a
+// defensive guard against pathological inputs.
+func (s *Store) fullyResolveRef(value gjson.Result) (gjson.Result, error) {
+	const maxResolveDepth = 32
+	current := value
+	for depth := 0; depth < maxResolveDepth; depth++ {
+		if !IsBlobRef(current) {
+			return current, nil
+		}
+		resolved, err := s.resolveRef(current)
+		if err != nil {
+			return gjson.Result{}, err
+		}
+		current = resolved
+	}
+	return gjson.Result{}, fmt.Errorf("lmo: BlobRef chain exceeded max resolve depth %d (possible cycle or pathological input)", maxResolveDepth)
 }
 
 // ResolveAll eagerly resolves every BlobRef in the payload.
