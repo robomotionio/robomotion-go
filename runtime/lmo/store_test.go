@@ -2,10 +2,13 @@ package lmo
 
 import (
 	"encoding/json"
+	"strconv"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/tidwall/gjson"
 )
@@ -137,8 +140,86 @@ func TestLargeMessagePacking(t *testing.T) {
 	if typ.String() != "string" {
 		t.Fatalf("expected type string, got %s", typ.String())
 	}
-	if ln.Int() == 0 {
-		t.Fatal("expected non-zero __len for string type")
+	// __len is the rune count (not byte count) of the value. For ASCII
+	// content these are equal, but pin the rune-count invariant —
+	// TestBlobRefStringLenIsRuneCount covers the multi-byte case.
+	expectedLen := int64(utf8.RuneCountInString(big))
+	if ln.Int() != expectedLen {
+		t.Fatalf("expected __len %d (rune count of payload), got %d", expectedLen, ln.Int())
+	}
+	// __size is the UTF-8 byte count of the raw JSON-serialized value
+	// (the string with its surrounding quotes). Wire contract across SDKs.
+	expectedSize := int64(len(`"`+big+`"`))
+	if size.Int() != expectedSize {
+		t.Fatalf("expected __size %d (utf-8 bytes of raw JSON), got %d", expectedSize, size.Int())
+	}
+}
+
+// Pin: BlobRef envelope metadata for non-Latin (multi-byte UTF-8) string
+// content. The wire contract that every SDK + the robot must agree on:
+//   - __len = rune count (Unicode code-point count), NOT byte count and
+//     NOT UTF-16 code-unit count.
+//   - __size = raw UTF-8 byte count of the JSON-serialized value (string
+//     plus surrounding quotes), NOT a JSON-escaped form like İ.
+// Multi-byte fixtures make the rune-vs-byte distinction visible. Customer
+// payload is Turkish (Acme); Japanese covers 3-byte UTF-8 sequences.
+func TestBlobRefStringNonLatinMetadata(t *testing.T) {
+	cases := []struct {
+		name      string
+		rune      string // single character to repeat
+		runeBytes int    // UTF-8 byte count for one rune
+		count     int    // repetitions
+	}{
+		// Turkish "İ" (U+0130) — 2 bytes UTF-8. 2050 × 2 = 4100 > Threshold.
+		{"Turkish_I_dotted", "İ", 2, 2050},
+		// Japanese "日" (U+65E5) — 3 bytes UTF-8. 1400 × 3 = 4200 > Threshold.
+		{"Japanese_Sun", "日", 3, 1400},
+		// Emoji "😀" (U+1F600) — 4 bytes UTF-8, non-BMP. 1100 × 4 = 4400
+		// > Threshold. Java's String.length() / .NET's string.Length would
+		// return 2200 (UTF-16 surrogate pairs) here — but production uses
+		// code-point count, which agrees with Go's rune count.
+		{"Emoji_Grinning", "😀", 4, 1100},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s, _ := newTestStore(t)
+
+			big := strings.Repeat(tc.rune, tc.count)
+			byteLen := len(big)
+			runeLen := utf8.RuneCountInString(big)
+			if byteLen != tc.runeBytes*tc.count || runeLen != tc.count {
+				t.Fatalf("fixture invariant broken: bytes=%d expected=%d runes=%d expected=%d",
+					byteLen, tc.runeBytes*tc.count, runeLen, tc.count)
+			}
+			if byteLen < Threshold {
+				t.Fatalf("fixture too small: byte len %d < Threshold %d", byteLen, Threshold)
+			}
+
+			payload := []byte(`{"data":"` + big + `"}`)
+			packed, err := s.Pack(payload)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			dataField := gjson.GetBytes(packed, "data")
+			if !IsBlobRef(dataField) {
+				t.Fatal("data field should be a BlobRef")
+			}
+			if got := gjson.Get(dataField.Raw, "__type").String(); got != "string" {
+				t.Fatalf("expected type string, got %s", got)
+			}
+			if got := gjson.Get(dataField.Raw, "__len").Int(); got != int64(runeLen) {
+				t.Fatalf("__len should be rune count %d, got %d (would be %d if byte-counting)",
+					runeLen, got, byteLen)
+			}
+			// __size is bytes of raw JSON form: "İİİ..." = byteLen + 2 quotes.
+			expectedSize := int64(byteLen + 2)
+			if got := gjson.Get(dataField.Raw, "__size").Int(); got != expectedSize {
+				t.Fatalf("__size should be UTF-8 byte count %d, got %d (would be %d if JSON-escape-counting)",
+					expectedSize, got, 6*tc.count+2)
+			}
+		})
 	}
 }
 
@@ -479,5 +560,311 @@ func TestBlobRefTypeObject(t *testing.T) {
 		if typ != "object" {
 			t.Fatalf("expected type object, got %s", typ)
 		}
+	}
+}
+
+// TestNestedBlobRef_SurvivesResolveAll pins the customer's iter-17 bug
+// pattern: when extractObject's !modified branch packs a whole container
+// as a single blob, the blob bytes preserve any pre-existing BlobRef
+// envelopes inside. Without recursive resolveValue, those nested
+// BlobRefs survive ResolveAll and surface upstream as stub objects.
+func TestNestedBlobRef_SurvivesResolveAll(t *testing.T) {
+	s, _ := newTestStore(t)
+
+	// Pack a "response" array (16 SOAP-ish entries, ~12 KB).
+	respElements := make([]string, 16)
+	for i := range respElements {
+		respElements[i] = `{"raw":"` + strings.Repeat("X", 680) +
+			`","sgkSicil":"s","sirketAdi":"ihl","sonucKod":"0"}`
+	}
+	respArr := []byte("[" + strings.Join(respElements, ",") + "]")
+	respRef, err := s.PutBlob(respArr)
+	if err != nil {
+		t.Fatalf("PutBlob: %v", err)
+	}
+	respEnv := `{"__ref":"` + respRef + `","__magic":20260301,"__size":12500,"__path":"test/flow","__type":"array","__len":16}`
+
+	// Build msg shape that triggers !modified whole-pack on api: api > 4 KB
+	// but no individual child reaches 4 KB.
+	loginEntries := make([]string, 16)
+	for i := range loginEntries {
+		loginEntries[i] = `{"sirketAdi":"ACME CORP TEST FIRM A.Ş.","sgkSicil":"0.0000.00.00","isyeriKodu":"x","kullaniciAdi":"u","isyeriSifresi":"p","token":"00000000-0000-0000-0000-000000000000"}`
+	}
+	loginSuccess := "[" + strings.Join(loginEntries, ",") + "]"
+	wsLogin := `{"response":` + respEnv + `,"loginSuccess":` + loginSuccess + `,"loginFailed":[]}`
+
+	medium := func() string {
+		entries := make([]string, 4)
+		for i := range entries {
+			entries[i] = `{"sirketAdi":"İACME","sgkSicil":"0.0000","note":"` + strings.Repeat("y", 80) + `"}`
+		}
+		return "[" + strings.Join(entries, ",") + "]"
+	}
+	api := `{"wsLogin":` + wsLogin +
+		`,"raporAramaTarihile":{"response":` + medium() + `,"failedResponses":[],"noReports":[],"Reports":[]}` +
+		`,"raporOnay":{"response":` + medium() + `,"confirmedReports":[],"reportsNotConfirmed":[]}` +
+		`,"raporOkunduKapat":{"response":` + medium() + `,"reportsNotClosed":[]}` + `}`
+
+	t.Logf("api size: %d (threshold %d)  wsLogin size: %d", len(api), Threshold, len(wsLogin))
+
+	msg := []byte(`{"constants":{"api":` + api + `,"urls":{}}}`)
+
+	packed, err := s.Pack(msg)
+	if err != nil {
+		t.Fatalf("Pack: %v", err)
+	}
+	apiAfter := gjson.GetBytes(packed, "constants.api")
+	t.Logf("after Pack: api isBlobRef=%v", IsBlobRef(apiAfter))
+
+	resolved, err := s.ResolveAll(packed)
+	if err != nil {
+		t.Fatalf("ResolveAll: %v", err)
+	}
+
+	// Scan for any surviving BlobRef envelope.
+	survRef, survPath := findAnyBlobRef(resolved, "")
+	if survRef != "" {
+		t.Fatalf("NESTED BLOBREF SURVIVED RESOLVEALL — bug reproduced!\n"+
+			"surviving ref: %s\nsurviving path: %s\n", survRef, survPath)
+	}
+	respCheck := gjson.GetBytes(resolved, "constants.api.wsLogin.response")
+	if !respCheck.IsArray() {
+		t.Fatalf("expected resolved response to be an array, got: %s", respCheck.Raw[:200])
+	}
+}
+
+func findAnyBlobRef(data []byte, prefix string) (string, string) {
+	if !gjson.ValidBytes(data) {
+		return "", ""
+	}
+	return scan(gjson.ParseBytes(data), prefix)
+}
+func scan(n gjson.Result, prefix string) (string, string) {
+	if IsBlobRef(n) {
+		return gjson.Get(n.Raw, "__ref").String(), prefix
+	}
+	if n.Type != gjson.JSON {
+		return "", ""
+	}
+	var foundRef, foundPath string
+	if strings.HasPrefix(n.Raw, "{") {
+		n.ForEach(func(k, v gjson.Result) bool {
+			p := k.String()
+			if prefix != "" {
+				p = prefix + "." + p
+			}
+			if r, pp := scan(v, p); r != "" {
+				foundRef, foundPath = r, pp
+				return false
+			}
+			return true
+		})
+		return foundRef, foundPath
+	}
+	if strings.HasPrefix(n.Raw, "[") {
+		i := 0
+		n.ForEach(func(_, v gjson.Result) bool {
+			p := prefix
+			if p != "" {
+				p += "."
+			}
+			p += strconv.Itoa(i)
+			i++
+			if r, pp := scan(v, p); r != "" {
+				foundRef, foundPath = r, pp
+				return false
+			}
+			return true
+		})
+	}
+	return foundRef, foundPath
+}
+
+// TestArrayNestedBlobRef_SurvivesResolveAll pins the follow-up class:
+// a BlobRef envelope sitting inside an array element survives ResolveAll
+// unless resolveValue also recurses into arrays.
+func TestArrayNestedBlobRef_SurvivesResolveAll(t *testing.T) {
+	s, _ := newTestStore(t)
+
+	innerData := []byte(`"the inner blob content"`)
+	innerRef, err := s.PutBlob(innerData)
+	if err != nil {
+		t.Fatalf("PutBlob: %v", err)
+	}
+	innerEnv := `{"__ref":"` + innerRef + `","__magic":20260301,` +
+		`"__size":` + strconv.Itoa(len(innerData)) +
+		`,"__path":"test/flow","__type":"string","__len":22}`
+
+	var elements []string
+	for i := 0; i < 30; i++ {
+		elements = append(elements, `{"i":`+strconv.Itoa(i)+`,"pad":"`+strings.Repeat("x", 150)+`"}`)
+	}
+	envIndex := 15
+	elements = append(elements[:envIndex], append([]string{innerEnv}, elements[envIndex:]...)...)
+	bigArray := "[" + strings.Join(elements, ",") + "]"
+
+	msg := []byte(`{"bigArray":` + bigArray + `,"other":"fluff"}`)
+
+	packed, err := s.Pack(msg)
+	if err != nil {
+		t.Fatalf("Pack: %v", err)
+	}
+	if !IsBlobRef(gjson.GetBytes(packed, "bigArray")) {
+		t.Fatalf("bigArray should have been packed as BlobRef")
+	}
+
+	resolved, err := s.ResolveAll(packed)
+	if err != nil {
+		t.Fatalf("ResolveAll: %v", err)
+	}
+
+	if ref, path := scanForBlobRef(resolved); ref != "" {
+		t.Fatalf("array-nested BlobRef survived: ref=%s path=%s", ref, path)
+	}
+
+	got := gjson.GetBytes(resolved, "bigArray."+strconv.Itoa(envIndex))
+	if got.Type != gjson.String || got.String() != "the inner blob content" {
+		t.Fatalf("inner not unwrapped, got type=%d raw=%q", got.Type, got.Raw)
+	}
+}
+
+func scanForBlobRef(data []byte) (string, string) {
+	if !gjson.ValidBytes(data) {
+		return "", ""
+	}
+	return scanRefRec(gjson.ParseBytes(data), "")
+}
+func scanRefRec(n gjson.Result, prefix string) (string, string) {
+	if IsBlobRef(n) {
+		return gjson.Get(n.Raw, "__ref").String(), prefix
+	}
+	if n.Type != gjson.JSON {
+		return "", ""
+	}
+	var ref, path string
+	if strings.HasPrefix(n.Raw, "{") {
+		n.ForEach(func(k, v gjson.Result) bool {
+			p := k.String()
+			if prefix != "" {
+				p = prefix + "." + p
+			}
+			if r, pp := scanRefRec(v, p); r != "" {
+				ref, path = r, pp
+				return false
+			}
+			return true
+		})
+	} else if strings.HasPrefix(n.Raw, "[") {
+		i := 0
+		n.ForEach(func(_, v gjson.Result) bool {
+			p := prefix
+			if p != "" {
+				p += "."
+			}
+			p += strconv.Itoa(i)
+			i++
+			if r, pp := scanRefRec(v, p); r != "" {
+				ref, path = r, pp
+				return false
+			}
+			return true
+		})
+	}
+	return ref, path
+}
+
+// TestPutBlob_ConcurrentSameContent_NoShortReads pins the atomic-write
+// guarantee: when N goroutines race to PutBlob the same content, no concurrent
+// reader observes a partial file. Pre-fix (non-atomic os.WriteFile) this
+// surfaced as zstd "unexpected EOF" decompress errors at low rates
+// (~115/5000). Post-fix (tmp + rename) every reader sees the full payload.
+func TestPutBlob_ConcurrentSameContent_NoShortReads(t *testing.T) {
+	s, _ := newTestStore(t)
+
+	// Payload large enough that compressed bytes don't fit in one write syscall
+	// and partial reads have visible effect on decompression.
+	data := []byte(bigString(64 * 1024))
+
+	const writers = 16
+	const iterations = 200
+
+	var wg sync.WaitGroup
+	errs := make(chan error, writers*iterations)
+
+	for w := 0; w < writers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < iterations; i++ {
+				ref, err := s.PutBlob(data)
+				if err != nil {
+					errs <- err
+					return
+				}
+				got, err := s.GetBlob(ref, "test/flow")
+				if err != nil {
+					errs <- err
+					return
+				}
+				if len(got) != len(data) {
+					errs <- &shortReadErr{got: len(got), want: len(data)}
+					return
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errs)
+
+	for err := range errs {
+		t.Fatalf("concurrent PutBlob/GetBlob race produced an error: %v", err)
+	}
+}
+
+type shortReadErr struct{ got, want int }
+
+func (e *shortReadErr) Error() string {
+	return "short read: got " + strconv.Itoa(e.got) + " bytes, want " + strconv.Itoa(e.want)
+}
+
+// TestPutBlob_RewritesEmptyLeftover pins the dedup gate: a zero-byte file at
+// the target path (e.g. left by a crashed writer pre-fix) must NOT be honored
+// by dedup. PutBlob must rewrite it with the real compressed bytes.
+func TestPutBlob_RewritesEmptyLeftover(t *testing.T) {
+	s, dir := newTestStore(t)
+
+	data := []byte(`"recover from leftover"`)
+	ref := hashRef(data)
+
+	// Plant a zero-byte file at the destination, simulating a crashed prior
+	// PutBlob from before the atomic-write fix.
+	p := filepath.Join(dir, "store", "test/flow", "blobs", ref[5:7], ref[7:])
+	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p, nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(p)
+	if err != nil || info.Size() != 0 {
+		t.Fatalf("setup: expected zero-byte planted file, got size=%d err=%v", info.Size(), err)
+	}
+
+	got, err := s.PutBlob(data)
+	if err != nil {
+		t.Fatalf("PutBlob over zero-byte file: %v", err)
+	}
+	if got != ref {
+		t.Fatalf("ref mismatch: got %s, want %s", got, ref)
+	}
+
+	// Read back and verify content is real, not empty.
+	roundtrip, err := s.GetBlob(ref, "test/flow")
+	if err != nil {
+		t.Fatalf("GetBlob after PutBlob over leftover: %v", err)
+	}
+	if string(roundtrip) != string(data) {
+		t.Fatalf("content mismatch: got %q, want %q", roundtrip, data)
 	}
 }

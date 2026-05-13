@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -106,11 +107,16 @@ func (s *Store) GetBlob(ref, relPath string) ([]byte, error) {
 }
 
 // Resolve lazily resolves a BlobRef for a specific field path.
+//
+// Each `resolveRef` call is wrapped in `fullyResolveRef`, which loops while
+// the result is itself a BlobRef envelope. This handles double-nested
+// envelopes — same pathology as ResolveAll's recursive fix, applied to the
+// singular path-based variant.
 func (s *Store) Resolve(data []byte, key string) (gjson.Result, error) {
 	value := gjson.GetBytes(data, key)
 	if value.Exists() {
 		if IsBlobRef(value) {
-			return s.resolveRef(value)
+			return s.fullyResolveRef(value)
 		}
 		return value, nil
 	}
@@ -124,7 +130,7 @@ func (s *Store) Resolve(data []byte, key string) (gjson.Result, error) {
 			continue
 		}
 		if IsBlobRef(seg) {
-			resolved, err := s.resolveRef(seg)
+			resolved, err := s.fullyResolveRef(seg)
 			if err != nil {
 				return gjson.Result{}, err
 			}
@@ -135,7 +141,7 @@ func (s *Store) Resolve(data []byte, key string) (gjson.Result, error) {
 			inner := gjson.Get(resolved.Raw, remaining)
 			if inner.Exists() {
 				if IsBlobRef(inner) {
-					return s.resolveRef(inner)
+					return s.fullyResolveRef(inner)
 				}
 				return inner, nil
 			}
@@ -144,6 +150,26 @@ func (s *Store) Resolve(data []byte, key string) (gjson.Result, error) {
 	}
 
 	return gjson.Result{}, nil
+}
+
+// fullyResolveRef wraps resolveRef in a depth-bounded loop so that a blob
+// whose content is itself a BlobRef envelope (or a chain of them) gets fully
+// unwrapped. Naturally-produced chains via Pack are bounded; the limit is a
+// defensive guard against pathological inputs.
+func (s *Store) fullyResolveRef(value gjson.Result) (gjson.Result, error) {
+	const maxResolveDepth = 32
+	current := value
+	for depth := 0; depth < maxResolveDepth; depth++ {
+		if !IsBlobRef(current) {
+			return current, nil
+		}
+		resolved, err := s.resolveRef(current)
+		if err != nil {
+			return gjson.Result{}, err
+		}
+		current = resolved
+	}
+	return gjson.Result{}, fmt.Errorf("lmo: BlobRef chain exceeded max resolve depth %d (possible cycle or pathological input)", maxResolveDepth)
 }
 
 // ResolveAll eagerly resolves every BlobRef in the payload.
@@ -193,22 +219,48 @@ func (s *Store) ResolveAll(data []byte) ([]byte, error) {
 // --- Write operations (use store's own relPath) ---
 
 // PutBlob stores data as a zstd-compressed blob and returns its XXH3-128 ref.
-// If the blob already exists (dedup), it skips writing.
+// If a non-empty blob already exists at the target path, dedup skips writing.
+//
+// Atomic write: compressed bytes go to a unique tmp file then rename onto the
+// final path. This eliminates the race where a concurrent reader's os.Stat
+// sees the file mid-write and dedup-skips with partial bytes, surfacing
+// upstream as a zstd "unexpected EOF" decompress error.
+//
+// Dedup verifies the existing file is non-empty before trusting it. A
+// zero-byte file (left by a prior kill before this atomic-write fix, or by
+// an unrelated tool) is rewritten rather than honored.
 func (s *Store) PutBlob(data []byte) (string, error) {
 	ref := hashRef(data)
 
 	p := s.blobPathLocal(ref)
-	if _, err := os.Stat(p); err == nil {
-		return ref, nil // already exists
+	if info, err := os.Stat(p); err == nil && info.Size() > 0 {
+		return ref, nil // already exists, non-empty — trust it
 	}
 
-	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+	dir := filepath.Dir(p)
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", fmt.Errorf("lmo: mkdir blob: %w", err)
 	}
 
 	compressed := s.enc.EncodeAll(data, nil)
-	if err := os.WriteFile(p, compressed, 0644); err != nil {
-		return "", fmt.Errorf("lmo: write blob: %w", err)
+
+	tmp, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return "", fmt.Errorf("lmo: create tmp blob: %w", err)
+	}
+	tmpPath := tmp.Name()
+	if _, err := tmp.Write(compressed); err != nil {
+		tmp.Close()
+		os.Remove(tmpPath)
+		return "", fmt.Errorf("lmo: write tmp blob: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpPath)
+		return "", fmt.Errorf("lmo: close tmp blob: %w", err)
+	}
+	if err := os.Rename(tmpPath, p); err != nil {
+		os.Remove(tmpPath)
+		return "", fmt.Errorf("lmo: rename blob: %w", err)
 	}
 
 	return ref, nil
@@ -337,6 +389,18 @@ func (s *Store) resolveValue(value gjson.Result) ([]byte, bool, error) {
 		if err != nil {
 			return nil, false, err
 		}
+		// Recurse into resolved bytes so nested BlobRefs (from
+		// Pack's extractObject !modified whole-pack branch) are
+		// also unwrapped. Without this, an inner BlobRef envelope
+		// leaks to user code as a stub object and crashes with
+		// "TypeError: <field>.push is not a function".
+		nestedFixed, changed, err := s.resolveValue(resolved)
+		if err != nil {
+			return nil, false, err
+		}
+		if changed {
+			return nestedFixed, true, nil
+		}
 		return []byte(resolved.Raw), true, nil
 	}
 
@@ -365,6 +429,46 @@ func (s *Store) resolveValue(value gjson.Result) ([]byte, bool, error) {
 				}
 				modified = true
 			}
+			return true
+		})
+
+		if walkErr != nil {
+			return nil, false, walkErr
+		}
+		if !modified {
+			return nil, false, nil
+		}
+		return out, true, nil
+	}
+
+	// Array: recurse into elements so a BlobRef envelope that happens to
+	// sit as an array element (e.g. user code did
+	// `arr.push(msg.alreadyPackedField)` and arr later crossed the LMO
+	// threshold and was packed whole) is also unwrapped. Without this,
+	// the inner envelope survives ResolveAll and reaches caller code as
+	// a stub object.
+	if value.Type == gjson.JSON && strings.HasPrefix(raw, "[") {
+		inner := gjson.Parse(raw)
+		modified := false
+		out := []byte(raw)
+		idx := 0
+
+		var walkErr error
+		inner.ForEach(func(_, child gjson.Result) bool {
+			newRaw, changed, err := s.resolveValue(child)
+			if err != nil {
+				walkErr = err
+				return false
+			}
+			if changed {
+				out, err = sjson.SetRawBytes(out, strconv.Itoa(idx), newRaw)
+				if err != nil {
+					walkErr = fmt.Errorf("lmo: sjson set [%d]: %w", idx, err)
+					return false
+				}
+				modified = true
+			}
+			idx++
 			return true
 		})
 
