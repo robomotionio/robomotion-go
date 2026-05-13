@@ -481,3 +481,120 @@ func TestBlobRefTypeObject(t *testing.T) {
 		}
 	}
 }
+
+// TestNestedBlobRef_SurvivesResolveAll pins the customer's iter-17 bug
+// pattern: when extractObject's !modified branch packs a whole container
+// as a single blob, the blob bytes preserve any pre-existing BlobRef
+// envelopes inside. Without recursive resolveValue, those nested
+// BlobRefs survive ResolveAll and surface upstream as stub objects.
+func TestNestedBlobRef_SurvivesResolveAll(t *testing.T) {
+	s, _ := newTestStore(t)
+
+	// Pack a "response" array (16 SOAP-ish entries, ~12 KB).
+	respElements := make([]string, 16)
+	for i := range respElements {
+		respElements[i] = `{"raw":"` + strings.Repeat("X", 680) +
+			`","sgkSicil":"s","sirketAdi":"ihl","sonucKod":"0"}`
+	}
+	respArr := []byte("[" + strings.Join(respElements, ",") + "]")
+	respRef, err := s.PutBlob(respArr)
+	if err != nil {
+		t.Fatalf("PutBlob: %v", err)
+	}
+	respEnv := `{"__ref":"` + respRef + `","__magic":20260301,"__size":12500,"__path":"test/flow","__type":"array","__len":16}`
+
+	// Build msg shape that triggers !modified whole-pack on api: api > 4 KB
+	// but no individual child reaches 4 KB.
+	loginEntries := make([]string, 16)
+	for i := range loginEntries {
+		loginEntries[i] = `{"sirketAdi":"ACME CORP TEST FIRM A.Ş.","sgkSicil":"0.0000.00.00","isyeriKodu":"x","kullaniciAdi":"u","isyeriSifresi":"p","token":"00000000-0000-0000-0000-000000000000"}`
+	}
+	loginSuccess := "[" + strings.Join(loginEntries, ",") + "]"
+	wsLogin := `{"response":` + respEnv + `,"loginSuccess":` + loginSuccess + `,"loginFailed":[]}`
+
+	medium := func() string {
+		entries := make([]string, 4)
+		for i := range entries {
+			entries[i] = `{"sirketAdi":"İACME","sgkSicil":"0.0000","note":"` + strings.Repeat("y", 80) + `"}`
+		}
+		return "[" + strings.Join(entries, ",") + "]"
+	}
+	api := `{"wsLogin":` + wsLogin +
+		`,"raporAramaTarihile":{"response":` + medium() + `,"failedResponses":[],"noReports":[],"Reports":[]}` +
+		`,"raporOnay":{"response":` + medium() + `,"confirmedReports":[],"reportsNotConfirmed":[]}` +
+		`,"raporOkunduKapat":{"response":` + medium() + `,"reportsNotClosed":[]}` + `}`
+
+	t.Logf("api size: %d (threshold %d)  wsLogin size: %d", len(api), Threshold, len(wsLogin))
+
+	msg := []byte(`{"constants":{"api":` + api + `,"urls":{}}}`)
+
+	packed, err := s.Pack(msg)
+	if err != nil {
+		t.Fatalf("Pack: %v", err)
+	}
+	apiAfter := gjson.GetBytes(packed, "constants.api")
+	t.Logf("after Pack: api isBlobRef=%v", IsBlobRef(apiAfter))
+
+	resolved, err := s.ResolveAll(packed)
+	if err != nil {
+		t.Fatalf("ResolveAll: %v", err)
+	}
+
+	// Scan for any surviving BlobRef envelope.
+	survRef, survPath := findAnyBlobRef(resolved, "")
+	if survRef != "" {
+		t.Fatalf("NESTED BLOBREF SURVIVED RESOLVEALL — bug reproduced!\n"+
+			"surviving ref: %s\nsurviving path: %s\n", survRef, survPath)
+	}
+	respCheck := gjson.GetBytes(resolved, "constants.api.wsLogin.response")
+	if !respCheck.IsArray() {
+		t.Fatalf("expected resolved response to be an array, got: %s", respCheck.Raw[:200])
+	}
+}
+
+func findAnyBlobRef(data []byte, prefix string) (string, string) {
+	if !gjson.ValidBytes(data) {
+		return "", ""
+	}
+	return scan(gjson.ParseBytes(data), prefix)
+}
+func scan(n gjson.Result, prefix string) (string, string) {
+	if IsBlobRef(n) {
+		return gjson.Get(n.Raw, "__ref").String(), prefix
+	}
+	if n.Type != gjson.JSON {
+		return "", ""
+	}
+	var foundRef, foundPath string
+	if strings.HasPrefix(n.Raw, "{") {
+		n.ForEach(func(k, v gjson.Result) bool {
+			p := k.String()
+			if prefix != "" {
+				p = prefix + "." + p
+			}
+			if r, pp := scan(v, p); r != "" {
+				foundRef, foundPath = r, pp
+				return false
+			}
+			return true
+		})
+		return foundRef, foundPath
+	}
+	if strings.HasPrefix(n.Raw, "[") {
+		i := 0
+		n.ForEach(func(_, v gjson.Result) bool {
+			p := prefix
+			if p != "" {
+				p += "."
+			}
+			p += string(rune('0'+i))
+			i++
+			if r, pp := scan(v, p); r != "" {
+				foundRef, foundPath = r, pp
+				return false
+			}
+			return true
+		})
+	}
+	return foundRef, foundPath
+}
