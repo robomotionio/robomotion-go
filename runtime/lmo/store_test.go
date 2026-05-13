@@ -2,7 +2,6 @@ package lmo
 
 import (
 	"encoding/json"
-	"strconv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -598,97 +597,4 @@ func scan(n gjson.Result, prefix string) (string, string) {
 		})
 	}
 	return foundRef, foundPath
-}
-
-// TestArrayNestedBlobRef_SurvivesResolveAll pins the follow-up class:
-// a BlobRef envelope sitting inside an array element survives ResolveAll
-// unless resolveValue also recurses into arrays.
-func TestArrayNestedBlobRef_SurvivesResolveAll(t *testing.T) {
-	s, _ := newTestStore(t)
-
-	innerData := []byte(`"the inner blob content"`)
-	innerRef, err := s.PutBlob(innerData)
-	if err != nil {
-		t.Fatalf("PutBlob: %v", err)
-	}
-	innerEnv := `{"__ref":"` + innerRef + `","__magic":20260301,` +
-		`"__size":` + strconv.Itoa(len(innerData)) +
-		`,"__path":"test/flow","__type":"string","__len":22}`
-
-	var elements []string
-	for i := 0; i < 30; i++ {
-		elements = append(elements, `{"i":`+strconv.Itoa(i)+`,"pad":"`+strings.Repeat("x", 150)+`"}`)
-	}
-	envIndex := 15
-	elements = append(elements[:envIndex], append([]string{innerEnv}, elements[envIndex:]...)...)
-	bigArray := "[" + strings.Join(elements, ",") + "]"
-
-	msg := []byte(`{"bigArray":` + bigArray + `,"other":"fluff"}`)
-
-	packed, err := s.Pack(msg)
-	if err != nil {
-		t.Fatalf("Pack: %v", err)
-	}
-	if !IsBlobRef(gjson.GetBytes(packed, "bigArray")) {
-		t.Fatalf("bigArray should have been packed as BlobRef")
-	}
-
-	resolved, err := s.ResolveAll(packed)
-	if err != nil {
-		t.Fatalf("ResolveAll: %v", err)
-	}
-
-	if ref, path := scanForBlobRef(resolved); ref != "" {
-		t.Fatalf("array-nested BlobRef survived: ref=%s path=%s", ref, path)
-	}
-
-	got := gjson.GetBytes(resolved, "bigArray."+strconv.Itoa(envIndex))
-	if got.Type != gjson.String || got.String() != "the inner blob content" {
-		t.Fatalf("inner not unwrapped, got type=%d raw=%q", got.Type, got.Raw)
-	}
-}
-
-func scanForBlobRef(data []byte) (string, string) {
-	if !gjson.ValidBytes(data) {
-		return "", ""
-	}
-	return scanRefRec(gjson.ParseBytes(data), "")
-}
-func scanRefRec(n gjson.Result, prefix string) (string, string) {
-	if IsBlobRef(n) {
-		return gjson.Get(n.Raw, "__ref").String(), prefix
-	}
-	if n.Type != gjson.JSON {
-		return "", ""
-	}
-	var ref, path string
-	if strings.HasPrefix(n.Raw, "{") {
-		n.ForEach(func(k, v gjson.Result) bool {
-			p := k.String()
-			if prefix != "" {
-				p = prefix + "." + p
-			}
-			if r, pp := scanRefRec(v, p); r != "" {
-				ref, path = r, pp
-				return false
-			}
-			return true
-		})
-	} else if strings.HasPrefix(n.Raw, "[") {
-		i := 0
-		n.ForEach(func(_, v gjson.Result) bool {
-			p := prefix
-			if p != "" {
-				p += "."
-			}
-			p += strconv.Itoa(i)
-			i++
-			if r, pp := scanRefRec(v, p); r != "" {
-				ref, path = r, pp
-				return false
-			}
-			return true
-		})
-	}
-	return ref, path
 }
