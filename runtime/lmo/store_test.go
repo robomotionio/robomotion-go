@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/tidwall/gjson"
@@ -691,4 +692,100 @@ func scanRefRec(n gjson.Result, prefix string) (string, string) {
 		})
 	}
 	return ref, path
+}
+
+// TestPutBlob_ConcurrentSameContent_NoShortReads pins the atomic-write
+// guarantee: when N goroutines race to PutBlob the same content, no concurrent
+// reader observes a partial file. Pre-fix (non-atomic os.WriteFile) this
+// surfaced as zstd "unexpected EOF" decompress errors at low rates
+// (~115/5000). Post-fix (tmp + rename) every reader sees the full payload.
+func TestPutBlob_ConcurrentSameContent_NoShortReads(t *testing.T) {
+	s, _ := newTestStore(t)
+
+	// Payload large enough that compressed bytes don't fit in one write syscall
+	// and partial reads have visible effect on decompression.
+	data := []byte(bigString(64 * 1024))
+
+	const writers = 16
+	const iterations = 200
+
+	var wg sync.WaitGroup
+	errs := make(chan error, writers*iterations)
+
+	for w := 0; w < writers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < iterations; i++ {
+				ref, err := s.PutBlob(data)
+				if err != nil {
+					errs <- err
+					return
+				}
+				got, err := s.GetBlob(ref, "test/flow")
+				if err != nil {
+					errs <- err
+					return
+				}
+				if len(got) != len(data) {
+					errs <- &shortReadErr{got: len(got), want: len(data)}
+					return
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errs)
+
+	for err := range errs {
+		t.Fatalf("concurrent PutBlob/GetBlob race produced an error: %v", err)
+	}
+}
+
+type shortReadErr struct{ got, want int }
+
+func (e *shortReadErr) Error() string {
+	return "short read: got " + strconv.Itoa(e.got) + " bytes, want " + strconv.Itoa(e.want)
+}
+
+// TestPutBlob_RewritesEmptyLeftover pins the dedup gate: a zero-byte file at
+// the target path (e.g. left by a crashed writer pre-fix) must NOT be honored
+// by dedup. PutBlob must rewrite it with the real compressed bytes.
+func TestPutBlob_RewritesEmptyLeftover(t *testing.T) {
+	s, dir := newTestStore(t)
+
+	data := []byte(`"recover from leftover"`)
+	ref := hashRef(data)
+
+	// Plant a zero-byte file at the destination, simulating a crashed prior
+	// PutBlob from before the atomic-write fix.
+	p := filepath.Join(dir, "store", "test/flow", "blobs", ref[5:7], ref[7:])
+	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p, nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(p)
+	if err != nil || info.Size() != 0 {
+		t.Fatalf("setup: expected zero-byte planted file, got size=%d err=%v", info.Size(), err)
+	}
+
+	got, err := s.PutBlob(data)
+	if err != nil {
+		t.Fatalf("PutBlob over zero-byte file: %v", err)
+	}
+	if got != ref {
+		t.Fatalf("ref mismatch: got %s, want %s", got, ref)
+	}
+
+	// Read back and verify content is real, not empty.
+	roundtrip, err := s.GetBlob(ref, "test/flow")
+	if err != nil {
+		t.Fatalf("GetBlob after PutBlob over leftover: %v", err)
+	}
+	if string(roundtrip) != string(data) {
+		t.Fatalf("content mismatch: got %q, want %q", roundtrip, data)
+	}
 }

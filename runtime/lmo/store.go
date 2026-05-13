@@ -194,22 +194,48 @@ func (s *Store) ResolveAll(data []byte) ([]byte, error) {
 // --- Write operations (use store's own relPath) ---
 
 // PutBlob stores data as a zstd-compressed blob and returns its XXH3-128 ref.
-// If the blob already exists (dedup), it skips writing.
+// If a non-empty blob already exists at the target path, dedup skips writing.
+//
+// Atomic write: compressed bytes go to a unique tmp file then rename onto the
+// final path. This eliminates the race where a concurrent reader's os.Stat
+// sees the file mid-write and dedup-skips with partial bytes, surfacing
+// upstream as a zstd "unexpected EOF" decompress error.
+//
+// Dedup verifies the existing file is non-empty before trusting it. A
+// zero-byte file (left by a prior kill before this atomic-write fix, or by
+// an unrelated tool) is rewritten rather than honored.
 func (s *Store) PutBlob(data []byte) (string, error) {
 	ref := hashRef(data)
 
 	p := s.blobPathLocal(ref)
-	if _, err := os.Stat(p); err == nil {
-		return ref, nil // already exists
+	if info, err := os.Stat(p); err == nil && info.Size() > 0 {
+		return ref, nil // already exists, non-empty — trust it
 	}
 
-	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+	dir := filepath.Dir(p)
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", fmt.Errorf("lmo: mkdir blob: %w", err)
 	}
 
 	compressed := s.enc.EncodeAll(data, nil)
-	if err := os.WriteFile(p, compressed, 0644); err != nil {
-		return "", fmt.Errorf("lmo: write blob: %w", err)
+
+	tmp, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return "", fmt.Errorf("lmo: create tmp blob: %w", err)
+	}
+	tmpPath := tmp.Name()
+	if _, err := tmp.Write(compressed); err != nil {
+		tmp.Close()
+		os.Remove(tmpPath)
+		return "", fmt.Errorf("lmo: write tmp blob: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpPath)
+		return "", fmt.Errorf("lmo: close tmp blob: %w", err)
+	}
+	if err := os.Rename(tmpPath, p); err != nil {
+		os.Remove(tmpPath)
+		return "", fmt.Errorf("lmo: rename blob: %w", err)
 	}
 
 	return ref, nil
