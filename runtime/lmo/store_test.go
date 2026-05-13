@@ -589,7 +589,7 @@ func scan(n gjson.Result, prefix string) (string, string) {
 			if p != "" {
 				p += "."
 			}
-			p += string(rune('0'+i))
+			p += strconv.Itoa(i)
 			i++
 			if r, pp := scan(v, p); r != "" {
 				foundRef, foundPath = r, pp

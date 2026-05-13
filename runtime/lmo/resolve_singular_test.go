@@ -148,8 +148,22 @@ func TestResolve_SingularRecursive_DepthLimit_Pathological(t *testing.T) {
 	}
 
 	payload := []byte(`{"k":` + currentEnvelope + `}`)
-	_, err = s.Resolve(payload, "k")
-	if err != nil && !strings.Contains(err.Error(), "depth") {
-		t.Fatalf("Resolve on pathological chain: expected nil or depth-limit error, got: %v", err)
+	result, err := s.Resolve(payload, "k")
+	// Chain depth 64 exceeds maxResolveDepth (32), so the loop MUST exhaust
+	// and surface a depth-limit error. Asserts the FIX is present (full
+	// unwrap or loud error) and rejects the silent-failure mode where a
+	// missing fullyResolveRef would return the inner envelope unchanged.
+	if err == nil {
+		if IsBlobRef(result) {
+			t.Fatalf("Resolve returned a BlobRef envelope without error — "+
+				"fullyResolveRef appears to be missing.\nGot: %s", result.Raw)
+		}
+		if result.String() != "bottom" {
+			t.Fatalf("expected full unwrap to 'bottom', got: %s", result.String())
+		}
+		return
+	}
+	if !strings.Contains(err.Error(), "depth") {
+		t.Fatalf("expected depth-limit error containing 'depth', got: %v", err)
 	}
 }
