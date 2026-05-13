@@ -174,6 +174,11 @@ func TestBlobRefStringNonLatinMetadata(t *testing.T) {
 		{"Turkish_I_dotted", "İ", 2, 2050},
 		// Japanese "日" (U+65E5) — 3 bytes UTF-8. 1400 × 3 = 4200 > Threshold.
 		{"Japanese_Sun", "日", 3, 1400},
+		// Emoji "😀" (U+1F600) — 4 bytes UTF-8, non-BMP. 1100 × 4 = 4400
+		// > Threshold. Java's String.length() / .NET's string.Length would
+		// return 2200 (UTF-16 surrogate pairs) here — but production uses
+		// code-point count, which agrees with Go's rune count.
+		{"Emoji_Grinning", "😀", 4, 1100},
 	}
 
 	for _, tc := range cases {
