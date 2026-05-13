@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/tidwall/gjson"
 )
@@ -139,14 +140,54 @@ func TestLargeMessagePacking(t *testing.T) {
 	if typ.String() != "string" {
 		t.Fatalf("expected type string, got %s", typ.String())
 	}
-	if ln.Int() != int64(len(big)) {
-		t.Fatalf("expected __len %d (rune count of payload), got %d", len(big), ln.Int())
+	// __len is the rune count (not byte count) of the value. For ASCII
+	// content these are equal, but pin the rune-count invariant —
+	// TestBlobRefStringLenIsRuneCount covers the multi-byte case.
+	expectedLen := int64(utf8.RuneCountInString(big))
+	if ln.Int() != expectedLen {
+		t.Fatalf("expected __len %d (rune count of payload), got %d", expectedLen, ln.Int())
 	}
 	// __size is the UTF-8 byte count of the raw JSON-serialized value
 	// (the string with its surrounding quotes). Wire contract across SDKs.
 	expectedSize := int64(len(`"`+big+`"`))
 	if size.Int() != expectedSize {
 		t.Fatalf("expected __size %d (utf-8 bytes of raw JSON), got %d", expectedSize, size.Int())
+	}
+}
+
+// Pin: __len is the rune count of the value, NOT the UTF-8 byte count.
+// Uses a multi-byte fixture so a regression that swaps RuneCountInString
+// for len() (or a test that asserts len(big)) is caught. The customer
+// payload is Turkish (Ihlas), making this a realistic shape — repeated
+// "İ" (U+0130, 2 bytes UTF-8) gives byte count = 2 × rune count.
+func TestBlobRefStringLenIsRuneCount(t *testing.T) {
+	s, _ := newTestStore(t)
+
+	const rune2 = "İ" // 2 bytes UTF-8 per rune
+	const runeCount = 2050
+	big := strings.Repeat(rune2, runeCount)
+	if len(big) == runeCount {
+		t.Fatalf("fixture invariant broken: byte count must differ from rune count, got both = %d", runeCount)
+	}
+	if len(big) < Threshold {
+		t.Fatalf("fixture too small: byte len %d < Threshold %d", len(big), Threshold)
+	}
+
+	payload := []byte(`{"data":"` + big + `"}`)
+	packed, err := s.Pack(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dataField := gjson.GetBytes(packed, "data")
+	if !IsBlobRef(dataField) {
+		t.Fatal("data field should be a BlobRef")
+	}
+	if got := gjson.Get(dataField.Raw, "__type").String(); got != "string" {
+		t.Fatalf("expected type string, got %s", got)
+	}
+	if got := gjson.Get(dataField.Raw, "__len").Int(); got != runeCount {
+		t.Fatalf("__len should be rune count %d, got %d (would be %d if byte-counting)", runeCount, got, len(big))
 	}
 }
 
