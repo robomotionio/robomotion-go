@@ -337,6 +337,18 @@ func (s *Store) resolveValue(value gjson.Result) ([]byte, bool, error) {
 		if err != nil {
 			return nil, false, err
 		}
+		// Recurse into resolved bytes so nested BlobRefs (from
+		// Pack's extractObject !modified whole-pack branch) are
+		// also unwrapped. Without this, an inner BlobRef envelope
+		// leaks to user code as a stub object and crashes with
+		// "TypeError: <field>.push is not a function".
+		nestedFixed, changed, err := s.resolveValue(resolved)
+		if err != nil {
+			return nil, false, err
+		}
+		if changed {
+			return nestedFixed, true, nil
+		}
 		return []byte(resolved.Raw), true, nil
 	}
 
