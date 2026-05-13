@@ -139,8 +139,14 @@ func TestLargeMessagePacking(t *testing.T) {
 	if typ.String() != "string" {
 		t.Fatalf("expected type string, got %s", typ.String())
 	}
-	if ln.Int() == 0 {
-		t.Fatal("expected non-zero __len for string type")
+	if ln.Int() != int64(len(big)) {
+		t.Fatalf("expected __len %d (rune count of payload), got %d", len(big), ln.Int())
+	}
+	// __size is the UTF-8 byte count of the raw JSON-serialized value
+	// (the string with its surrounding quotes). Wire contract across SDKs.
+	expectedSize := int64(len(`"`+big+`"`))
+	if size.Int() != expectedSize {
+		t.Fatalf("expected __size %d (utf-8 bytes of raw JSON), got %d", expectedSize, size.Int())
 	}
 }
 
