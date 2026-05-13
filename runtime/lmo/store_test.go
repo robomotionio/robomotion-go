@@ -155,39 +155,66 @@ func TestLargeMessagePacking(t *testing.T) {
 	}
 }
 
-// Pin: __len is the rune count of the value, NOT the UTF-8 byte count.
-// Uses a multi-byte fixture so a regression that swaps RuneCountInString
-// for len() (or a test that asserts len(big)) is caught. The customer
-// payload is Turkish (Ihlas), making this a realistic shape — repeated
-// "İ" (U+0130, 2 bytes UTF-8) gives byte count = 2 × rune count.
-func TestBlobRefStringLenIsRuneCount(t *testing.T) {
-	s, _ := newTestStore(t)
-
-	const rune2 = "İ" // 2 bytes UTF-8 per rune
-	const runeCount = 2050
-	big := strings.Repeat(rune2, runeCount)
-	if len(big) == runeCount {
-		t.Fatalf("fixture invariant broken: byte count must differ from rune count, got both = %d", runeCount)
-	}
-	if len(big) < Threshold {
-		t.Fatalf("fixture too small: byte len %d < Threshold %d", len(big), Threshold)
-	}
-
-	payload := []byte(`{"data":"` + big + `"}`)
-	packed, err := s.Pack(payload)
-	if err != nil {
-		t.Fatal(err)
+// Pin: BlobRef envelope metadata for non-Latin (multi-byte UTF-8) string
+// content. The wire contract that every SDK + the robot must agree on:
+//   - __len = rune count (Unicode code-point count), NOT byte count and
+//     NOT UTF-16 code-unit count.
+//   - __size = raw UTF-8 byte count of the JSON-serialized value (string
+//     plus surrounding quotes), NOT a JSON-escaped form like İ.
+// Multi-byte fixtures make the rune-vs-byte distinction visible. Customer
+// payload is Turkish (Ihlas); Japanese covers 3-byte UTF-8 sequences.
+func TestBlobRefStringNonLatinMetadata(t *testing.T) {
+	cases := []struct {
+		name      string
+		rune      string // single character to repeat
+		runeBytes int    // UTF-8 byte count for one rune
+		count     int    // repetitions
+	}{
+		// Turkish "İ" (U+0130) — 2 bytes UTF-8. 2050 × 2 = 4100 > Threshold.
+		{"Turkish_I_dotted", "İ", 2, 2050},
+		// Japanese "日" (U+65E5) — 3 bytes UTF-8. 1400 × 3 = 4200 > Threshold.
+		{"Japanese_Sun", "日", 3, 1400},
 	}
 
-	dataField := gjson.GetBytes(packed, "data")
-	if !IsBlobRef(dataField) {
-		t.Fatal("data field should be a BlobRef")
-	}
-	if got := gjson.Get(dataField.Raw, "__type").String(); got != "string" {
-		t.Fatalf("expected type string, got %s", got)
-	}
-	if got := gjson.Get(dataField.Raw, "__len").Int(); got != runeCount {
-		t.Fatalf("__len should be rune count %d, got %d (would be %d if byte-counting)", runeCount, got, len(big))
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s, _ := newTestStore(t)
+
+			big := strings.Repeat(tc.rune, tc.count)
+			byteLen := len(big)
+			runeLen := utf8.RuneCountInString(big)
+			if byteLen != tc.runeBytes*tc.count || runeLen != tc.count {
+				t.Fatalf("fixture invariant broken: bytes=%d expected=%d runes=%d expected=%d",
+					byteLen, tc.runeBytes*tc.count, runeLen, tc.count)
+			}
+			if byteLen < Threshold {
+				t.Fatalf("fixture too small: byte len %d < Threshold %d", byteLen, Threshold)
+			}
+
+			payload := []byte(`{"data":"` + big + `"}`)
+			packed, err := s.Pack(payload)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			dataField := gjson.GetBytes(packed, "data")
+			if !IsBlobRef(dataField) {
+				t.Fatal("data field should be a BlobRef")
+			}
+			if got := gjson.Get(dataField.Raw, "__type").String(); got != "string" {
+				t.Fatalf("expected type string, got %s", got)
+			}
+			if got := gjson.Get(dataField.Raw, "__len").Int(); got != int64(runeLen) {
+				t.Fatalf("__len should be rune count %d, got %d (would be %d if byte-counting)",
+					runeLen, got, byteLen)
+			}
+			// __size is bytes of raw JSON form: "İİİ..." = byteLen + 2 quotes.
+			expectedSize := int64(byteLen + 2)
+			if got := gjson.Get(dataField.Raw, "__size").Int(); got != expectedSize {
+				t.Fatalf("__size should be UTF-8 byte count %d, got %d (would be %d if JSON-escape-counting)",
+					expectedSize, got, 6*tc.count+2)
+			}
+		})
 	}
 }
 
