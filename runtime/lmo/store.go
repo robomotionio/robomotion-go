@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -377,6 +378,46 @@ func (s *Store) resolveValue(value gjson.Result) ([]byte, bool, error) {
 				}
 				modified = true
 			}
+			return true
+		})
+
+		if walkErr != nil {
+			return nil, false, walkErr
+		}
+		if !modified {
+			return nil, false, nil
+		}
+		return out, true, nil
+	}
+
+	// Array: recurse into elements so a BlobRef envelope that happens to
+	// sit as an array element (e.g. user code did
+	// `arr.push(msg.alreadyPackedField)` and arr later crossed the LMO
+	// threshold and was packed whole) is also unwrapped. Without this,
+	// the inner envelope survives ResolveAll and reaches caller code as
+	// a stub object.
+	if value.Type == gjson.JSON && strings.HasPrefix(raw, "[") {
+		inner := gjson.Parse(raw)
+		modified := false
+		out := []byte(raw)
+		idx := 0
+
+		var walkErr error
+		inner.ForEach(func(_, child gjson.Result) bool {
+			newRaw, changed, err := s.resolveValue(child)
+			if err != nil {
+				walkErr = err
+				return false
+			}
+			if changed {
+				out, err = sjson.SetRawBytes(out, strconv.Itoa(idx), newRaw)
+				if err != nil {
+					walkErr = fmt.Errorf("lmo: sjson set [%d]: %w", idx, err)
+					return false
+				}
+				modified = true
+			}
+			idx++
 			return true
 		})
 
