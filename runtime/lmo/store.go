@@ -93,7 +93,7 @@ func (s *Store) GetBlob(ref, relPath string) ([]byte, error) {
 	}
 	p := filepath.Join(s.configDir, "store", relPath, "blobs", h[:2], h[2:])
 
-	compressed, err := os.ReadFile(p)
+	compressed, err := readFile(p)
 	if err != nil {
 		return nil, fmt.Errorf("lmo: read blob %s: %w", ref, err)
 	}
@@ -258,7 +258,16 @@ func (s *Store) PutBlob(data []byte) (string, error) {
 		os.Remove(tmpPath)
 		return "", fmt.Errorf("lmo: close tmp blob: %w", err)
 	}
-	if err := os.Rename(tmpPath, p); err != nil {
+	if err := renameAtomic(tmpPath, p); err != nil {
+		// On Windows a concurrent reader holding the destination open without
+		// FILE_SHARE_DELETE causes rename to fail with Access denied even
+		// after the share-error retry exhausts. If another writer in the
+		// meantime produced a valid file at the destination (content-addressed,
+		// so same hash → same bytes), treat that as a dedup win.
+		if info, statErr := os.Stat(p); statErr == nil && info.Size() > 0 {
+			os.Remove(tmpPath)
+			return ref, nil
+		}
 		os.Remove(tmpPath)
 		return "", fmt.Errorf("lmo: rename blob: %w", err)
 	}
