@@ -10,6 +10,29 @@ func IsToolRequest(ctx message.Context) bool {
 	return msgType == "tool_request"
 }
 
+// ToolName returns the name of the tool the agent invoked for this
+// message. For single-Tool nodes the name matches the node's tool tag and
+// can be ignored. For Toolkit nodes this is the discriminator used to
+// dispatch inside OnMessage. Empty string when ctx is not a tool request.
+func ToolName(ctx message.Context) string {
+	if v, ok := ctx.Get("__tool_name__").(string); ok {
+		return v
+	}
+	return ""
+}
+
+// ToolParameters returns the parsed parameters object the agent passed
+// with the tool call, or an empty map. Empty when ctx is not a tool
+// request. Use the returned map directly, or json.Marshal+Unmarshal it
+// into a typed struct if the schema is stable.
+func ToolParameters(ctx message.Context) map[string]interface{} {
+	v := ctx.Get("__parameters__")
+	if m, ok := v.(map[string]interface{}); ok {
+		return m
+	}
+	return map[string]interface{}{}
+}
+
 // ToolResponse sends a response back to the LLM Agent and prevents message flow
 func ToolResponse(ctx message.Context, status string, data map[string]interface{}, errorMsg string) error {
 	if !IsToolRequest(ctx) {
