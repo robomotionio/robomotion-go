@@ -26,7 +26,18 @@ type NodeSpec struct {
 	InFilters   *string     `json:"inFilters,omitempty"`
 	Properties  []Property  `json:"properties"`
 	CustomPorts interface{} `json:"customPorts,omitempty"`
-	Tool        interface{} `json:"tool,omitempty"`
+	// Tool is the single-tool descriptor for nodes embedding runtime.Tool.
+	Tool interface{} `json:"tool,omitempty"`
+	// Tools is the multi-tool descriptor for nodes embedding runtime.Toolkit
+	// and implementing ToolkitProvider. Each entry is one tool routed to
+	// this node's guid; the agent passes __tool_name__ on the wire to
+	// discriminate. Mutually exclusive with Tool in practice — a node uses
+	// one shape or the other.
+	Tools []ToolDef `json:"tools,omitempty"`
+	// Skill is the optional system-message addendum the consuming agent
+	// appends when this node is wired to its tools port. Populated from
+	// SkillProvider.Skill().
+	Skill string `json:"skill,omitempty"`
 }
 
 type Property struct {
@@ -111,13 +122,28 @@ func generateSpecFile(pluginName, version string) {
 		if toolField, hasToolField := t.FieldByName("Tool"); hasToolField {
 			toolTag := toolField.Tag.Get("tool")
 			toolParts := parseSpec(toolTag)
-			
+
 			if toolName := toolParts["name"]; toolName != "" {
 				spec.Tool = map[string]string{
 					"name":        toolName,
 					"description": toolParts["description"],
 				}
 			}
+		}
+
+		// Check if node embeds Toolkit and implements ToolkitProvider /
+		// SkillProvider. Spec emission instantiates a zero value via
+		// reflect.New (same shape NodeFactory uses) so the methods are
+		// available on a pointer receiver — the conventional way Robomotion
+		// nodes define their handlers.
+		if _, hasToolkitField := t.FieldByName("Toolkit"); hasToolkitField {
+			instance := reflect.New(t).Interface()
+			if tp, ok := instance.(ToolkitProvider); ok {
+				spec.Tools = tp.Tools()
+			}
+		}
+		if instance, _ := reflect.New(t).Interface().(SkillProvider); instance != nil {
+			spec.Skill = instance.Skill()
 		}
 
 		// Look for custom port fields (fields of type Port)
@@ -220,6 +246,29 @@ func generateSpecFile(pluginName, version string) {
 						"scope": map[string]interface{}{"type": "string"},
 						"name":  map[string]interface{}{"properties": arrProps},
 					},
+				}
+
+			} else if isVar && isEnum && isOptVar {
+				// OptVariable + enum tag = checkbox-list multi-select. The
+				// Designer renders it via the multiSelectCheckbox widget;
+				// the runtime unmarshals the resulting array of strings
+				// into the OptVariable[[]string] field's name slot. This
+				// is the shape Catch-style tool filtering uses (see
+				// Toolkit.OptEnabled in agent-teams).
+				enumVals, enumNames := parseEnum(enum, fsMap["enumNames"], getVariableType(field, fsMap))
+				sProp.Enum = enumVals
+				sProp.EnumNames = enumNames
+				multiple := true
+				sProp.Multiple = &multiple
+				sProp.Type = "array"
+				itemType := strings.ToLower(getVariableType(field, fsMap))
+				if itemType == "array" {
+					itemType = "string"
+				}
+				sProp.Items = &map[string]interface{}{
+					"type":      itemType,
+					"enum":      enumVals,
+					"enumNames": enumNames,
 				}
 
 			} else if isVar {
@@ -368,6 +417,12 @@ func generateSpecFile(pluginName, version string) {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": format}
 				} else if isArray {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "array"}
+					optProperty.FormData[lowerFieldName] = []interface{}{}
+				} else if isVar && isEnum && isOptVar {
+					// Multi-select OptVariable[[]string]: render as checkboxes,
+					// formData is a flat string array (no scope/name wrapper —
+					// the field has a fixed schema, not a variable reference).
+					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "multiSelectCheckbox"}
 					optProperty.FormData[lowerFieldName] = []interface{}{}
 				} else if isVar {
 					optProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
