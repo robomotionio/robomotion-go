@@ -178,8 +178,80 @@ func (m *GRPCServer) GetCapabilities(ctx context.Context, req *proto.Empty) (*pr
 	return &proto.PGetCapabilitiesResponse{Capabilities: uint64(packageCapabilities)}, nil
 }
 
+// OnSetup instantiates one node from config (like OnCreate) and runs its
+// interactive setup action. Only nodes implementing SetupHandler respond;
+// others return an "unsupported" error so the host can fall back. The handler
+// is transient — created for this setup and removed afterwards — so it never
+// collides with a concurrent flow run of the same node type.
+func (m *GRPCServer) OnSetup(ctx context.Context, req *proto.OnSetupRequest) (*proto.OnSetupResponse, error) {
+	<-initReady
+
+	resp := &proto.OnSetupResponse{}
+
+	f := GetNodeFactory(req.Name)
+	if f == nil {
+		return resp, fmt.Errorf("%s factory not found", req.Name)
+	}
+
+	if err := f.OnCreate(context.TODO(), req.Config); err != nil {
+		hclog.Default().Info("grpc.server.onsetup.factory", "err", err)
+		return resp, err
+	}
+
+	guid := gjson.Get(string(req.Config), "guid").String()
+	node := GetNodeHandler(guid)
+	if node == nil {
+		return resp, fmt.Errorf("node handler not found")
+	}
+	defer RemoveNodeHandler(guid)
+
+	sh := AsSetupHandler(node.Handler)
+	if sh == nil {
+		return resp, fmt.Errorf("node %s does not support setup", req.Name)
+	}
+
+	sctx := &setupContext{
+		guid:      guid,
+		sessionID: req.SessionId,
+		config:    req.Config,
+		ctx:       ctx,
+	}
+	if err := sh.OnSetup(sctx); err != nil {
+		hclog.Default().Info("grpc.server.onsetup.node", "err", err)
+		return resp, err
+	}
+	return resp, nil
+}
+
 // GRPCClient is an implementation of KV that talks over RPC.
 type GRPCRuntimeHelperClient struct{ client proto.RuntimeHelperClient }
+
+func (m *GRPCRuntimeHelperClient) SetupEmit(guid, sessionID string, event []byte) error {
+	_, err := m.client.SetupEmit(context.Background(), &proto.SetupEmitRequest{
+		Guid:      guid,
+		SessionId: sessionID,
+		Event:     event,
+	})
+	if err != nil {
+		hclog.Default().Info("runtime.setupemit", "err", err)
+		return err
+	}
+	return nil
+}
+
+func (m *GRPCRuntimeHelperClient) SetupAwait(guid, sessionID string, spec []byte, timeoutSec int32) ([]byte, bool, error) {
+	resp, err := m.client.SetupAwait(context.Background(), &proto.SetupAwaitRequest{
+		Guid:      guid,
+		SessionId: sessionID,
+		Spec:      spec,
+		Timeout:   timeoutSec,
+	})
+	if err != nil {
+		hclog.Default().Info("runtime.setupawait", "err", err)
+		return nil, false, err
+	}
+	return resp.Input, resp.TimedOut, nil
+}
 
 func (m *GRPCRuntimeHelperClient) Close() error {
 

@@ -10,6 +10,14 @@ service Node {
     rpc OnMessage(OnMessageRequest) returns (OnMessageResponse);
     rpc OnClose(OnCloseRequest) returns (OnCloseResponse);
     rpc GetCapabilities(Empty) returns(PGetCapabilitiesResponse);
+    // OnSetup runs a node's interactive setup action (e.g. WhatsApp QR
+    // pairing) outside of a flow run. The host instantiates the node from
+    // config (like OnCreate), invokes OnSetup which may block for the setup's
+    // duration while emitting prompts via RuntimeHelper.SetupEmit and awaiting
+    // user input via RuntimeHelper.SetupAwait, then returns a result. Only
+    // nodes that implement the SetupHandler interface respond; others report
+    // an unsupported error. Capability-gated by CapabilitySetup.
+    rpc OnSetup(OnSetupRequest) returns (OnSetupResponse);
 }
 
 message Error {
@@ -53,6 +61,20 @@ message OnCloseResponse {
 message PGetCapabilitiesResponse {
     uint64 capabilities = 1;
 }
+
+// OnSetupRequest instantiates one node for an interactive setup action.
+// name + config mirror OnCreateRequest; session_id correlates the
+// SetupEmit/SetupAwait callbacks this run makes back to the host.
+message OnSetupRequest {
+    string name = 1;
+    bytes config = 2;
+    string session_id = 3;
+}
+
+message OnSetupResponse {
+    bytes result = 1; // optional setup result JSON (e.g. {"phone_number":...})
+    Error error = 2;
+}
 service RuntimeHelper {
     rpc Close(Empty) returns (Empty);
     rpc Debug(DebugRequest) returns (Empty);
@@ -76,6 +98,14 @@ service RuntimeHelper {
     rpc GetPortConnections(GetPortConnectionsRequest) returns (GetPortConnectionsResponse);
     rpc IsRunning(Empty) returns (IsRunningResponse);
     rpc GetInstanceAccess(Empty) returns (GetInstanceAccessResponse);
+    // SetupEmit pushes a setup prompt/status (QR image, code, OAuth URL,
+    // progress) up to the host during an OnSetup run; the host relays it to
+    // the UI (REST-polled). SetupAwait blocks until the user supplies input
+    // for the given spec (a code, a confirmation) or the timeout elapses;
+    // unused by no-input setups like WhatsApp QR (the scan is detected
+    // out-of-band by the package itself).
+    rpc SetupEmit(SetupEmitRequest) returns (Empty);
+    rpc SetupAwait(SetupAwaitRequest) returns (SetupAwaitResponse);
 }
 
 message Empty {
@@ -246,4 +276,28 @@ message GetInstanceAccessResponse {
   string amq_endpoint = 1;   // e.g. wss://amq.robomotion.io
   string api_endpoint = 2;   // e.g. https://api.robomotion.io
   string access_token = 3;   // bearer token (JWT, UUID, etc.)
+}
+
+// SetupEmitRequest carries one setup prompt/status frame. event is a JSON
+// SetupEvent: {kind:"qr"|"code"|"oauth"|"status", step:"pending"|"completed"|
+// "timeout"|"error", image, text, message, expires_at}.
+message SetupEmitRequest {
+    string guid = 1;
+    string session_id = 2;
+    bytes event = 3;
+}
+
+// SetupAwaitRequest blocks for user-supplied input. spec is a JSON
+// SetupInputSpec describing what is expected (field names, prompt). The host
+// fulfils it from input the UI POSTs to the setup session.
+message SetupAwaitRequest {
+    string guid = 1;
+    string session_id = 2;
+    bytes spec = 3;
+    int32 timeout = 4; // seconds; 0 = host default
+}
+
+message SetupAwaitResponse {
+    bytes input = 1;     // JSON SetupInput supplied by the user
+    bool timed_out = 2;
 }

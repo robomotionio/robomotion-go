@@ -38,6 +38,12 @@ type RuntimeHelper interface {
 	IsRunning() (bool, error)
 	GetPortConnections(string, int) ([]NodeInfo, error)
 	GetInstanceAccess() (*InstanceAccess, error)
+	// SetupEmit pushes a setup prompt/status frame (JSON SetupEvent) to the
+	// host during an OnSetup run. SetupAwait blocks until the user supplies
+	// input for spec (JSON SetupInputSpec) or the timeout elapses; returns the
+	// raw JSON SetupInput and whether it timed out.
+	SetupEmit(guid, sessionID string, event []byte) error
+	SetupAwait(guid, sessionID string, spec []byte, timeoutSec int32) ([]byte, bool, error)
 }
 
 // This is the implementation of plugin.Plugin so we can serve/consume this.

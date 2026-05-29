@@ -14,6 +14,11 @@ type ToolInterceptor struct {
 	hasTool         bool
 }
 
+// Unwrap returns the original node handler the interceptor wraps, so callers
+// (e.g. AsSetupHandler) can reach interfaces the node implements beyond
+// MessageHandler.
+func (t *ToolInterceptor) Unwrap() MessageHandler { return t.originalHandler }
+
 // NewToolInterceptor creates a tool interceptor for a node
 func NewToolInterceptor(handler MessageHandler) MessageHandler {
 	nodeType := reflect.TypeOf(handler)

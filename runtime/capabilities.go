@@ -8,6 +8,7 @@ const (
 	CapabilityTerminateOnStop                        // bit 2
 	CapabilityUseS3                                  // bit 3
 	CapabilityLMO                                    // bit 4: content-addressed blob store
+	CapabilitySetup                                  // bit 5: node implements the interactive OnSetup lifecycle
 )
 
 var (
