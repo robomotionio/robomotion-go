@@ -1,6 +1,6 @@
 # Robomotion Go Package Development Guide
 
-*Last updated: August 9, 2025*
+*Last updated: May 29, 2026*
 
 Welcome to the **Robomotion package development guide** for Go developers. This guide covers building custom Robomotion packages using the [`robomotion-go`](https://github.com/robomotionio/robomotion-go) SDK.
 
@@ -100,6 +100,7 @@ The Robomotion runtime is exposed through the **`runtime`** package. A few key c
 | *Node* | `runtime.Node` | Embeddable struct that carries common fields (GUID, delays, …) |
 | *Variable* | `InVariable[T]`, `OutVariable[T]`, `OptVariable[T]` | Strongly-typed message variables |
 | *Lifecycle* | `OnCreate`, `OnMessage`, `OnClose` | Mandatory callbacks a node must implement |
+| *Interactive setup* | `OnSetup` (optional, via `SetupHandler`) | An interactive setup action — QR/OAuth/device-code/test-connection — run from the UI **outside any flow run** (§6.1) |
 | *Runtime Helper* | interface `RuntimeHelper` | Provided to you inside `Init` – gives access to vault, app requests, file upload, … |
 | *Large Message Object (LMO)* | `runtime.LargeMessageObject` | Mechanism to transport objects >64 KB |
 
@@ -564,6 +565,101 @@ Things to remember:
 3. **OnClose** – counterpart to *OnCreate*. Close files, flush buffers, etc.
 
 Delays can be added via `DelayBefore` and `DelayAfter` (milliseconds) – especially useful for rate-limited APIs.
+
+### 6.1 Interactive setup (`OnSetup`) — optional lifecycle
+
+Some nodes need a one-time **interactive setup** before they can run: a WhatsApp
+QR scan, an OAuth redirect, a device-code entry, a "test connection". Doing this
+*during a flow run* is awkward (the user isn't watching the robot, and a cloud
+robot has no screen). `OnSetup` lets the **UI** drive that handshake on the
+connected robot **outside any flow run** — e.g. inside a hire/onboarding wizard —
+and persist the result (a session blob, a token) into the node's bound vault item
+so the real run just works.
+
+It is **opt-in and capability-gated**. A node implements the optional
+`SetupHandler` interface; doing so makes the package automatically advertise
+`CapabilitySetup`. Nodes that don't implement it are unaffected, and older hosts
+that predate `OnSetup` simply never call it — so it is fully backward-compatible.
+
+```go
+type SetupHandler interface {
+    OnSetup(ctx runtime.SetupContext) error
+}
+```
+
+When the host runs setup it instantiates your node **from its config exactly like
+`OnCreate`** (so your `Opt*` fields and the bound `runtime.Credential` are
+populated), spawns the package process, and calls `OnSetup`. There is **no
+message loop** — `OnMessage` is never called for a setup run. `OnSetup` may block
+for the whole handshake (e.g. the ~3-minute QR window); the process is torn down
+afterwards.
+
+`SetupContext` is how you talk to the UI:
+
+| Method | Purpose |
+|--------|---------|
+| `Emit(SetupEvent) error` | Push a prompt/status frame **up** to the UI (rendered live; the UI REST-polls these). Call it for every rotating QR / status change. |
+| `Await(SetupInputSpec, timeoutSec) (SetupInput, error)` | Block for user-supplied input (a code, a confirmation). Optional — no-input setups never call it. |
+| `Config() []byte` | The node's raw config JSON (same bytes `OnCreate` parses). |
+| `GUID()`, `SessionID()`, `Context()` | Node GUID, the setup session id, and a `context.Context` that cancels on host timeout/abort. |
+
+`SetupEvent` is channel-agnostic so one shape serves every kind of setup:
+
+```go
+type SetupEvent struct {
+    Kind      string // "qr" | "code" | "oauth" | "status" | "prompt"
+    Step      string // "pending" | "completed" | "timeout" | "error"
+    Image     string // data URL, e.g. a QR PNG (the UI renders it with a plain <img>)
+    Text      string // a code / OAuth URL / value to display
+    Message   string // human-facing status or error text
+    ExpiresAt string // when the current code rotates (optional)
+}
+```
+
+Emit a terminal `Step` (`completed` / `timeout` / `error`) when the handshake ends —
+the UI advances on `completed`.
+
+**Example — a QR-pairing setup:**
+
+```go
+import (
+    "encoding/base64"
+    qrcode "github.com/skip2/go-qrcode"
+    "github.com/robomotionio/robomotion-go/runtime"
+)
+
+// Connect supports interactive setup. Implementing SetupHandler auto-advertises
+// CapabilitySetup, so the host offers an in-wizard setup step for this node.
+func (n *Connect) OnSetup(ctx runtime.SetupContext) error {
+    // n.OptCredentials is the bound (possibly empty) vault item — populated
+    // from config just like in OnCreate.
+
+    // … open the provider's pairing channel; for each rotating code: …
+    png, _ := qrcode.Encode(code, qrcode.Medium, 320)
+    ctx.Emit(runtime.SetupEvent{
+        Kind:  "qr",
+        Step:  "pending",
+        Image: "data:image/png;base64," + base64.StdEncoding.EncodeToString(png),
+    })
+
+    // … when the provider signals the scan succeeded, persist the session to the
+    // bound credential (same vault API you'd use in OnMessage) …
+    // n.OptCredentials.Set(msgCtx, sessionBlobJSON)
+
+    ctx.Emit(runtime.SetupEvent{Kind: "status", Step: "completed", Message: "Linked"})
+    return nil
+}
+```
+
+Notes:
+- **Keep the run-time path too.** `OnSetup` is *additive* — if a node can also
+  pair/auth lazily during a flow run, leave that path in place for older robots
+  and standalone use. `OnSetup` is the better UX, not a hard requirement.
+- For an **input-driven** setup (device code, confirmation), use `Await`; the UI
+  posts the input back and the call returns it (or a timeout).
+- The QR/relay delivery is handled entirely by the host (runner → deskbot → api,
+  surfaced to the UI by REST poll). Your node only `Emit`s structured events; it
+  never talks to the api or a WebSocket itself.
 
 ---
 
