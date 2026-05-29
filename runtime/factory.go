@@ -45,6 +45,15 @@ func RegisterNodeFactory(name string, factory INodeFactory) {
 	fMux.Lock()
 	defer fMux.Unlock()
 	factories[name] = factory
+
+	// Auto-advertise CapabilitySetup when a registered node type implements
+	// SetupHandler, so GetCapabilities reports setup support without the
+	// package author wiring it by hand.
+	if nf, ok := factory.(*NodeFactory); ok && nf.Type != nil {
+		if reflect.PtrTo(nf.Type).Implements(setupHandlerType) {
+			SetPackageCapability(CapabilitySetup)
+		}
+	}
 }
 
 func GetNodeFactory(name string) INodeFactory {

@@ -114,3 +114,11 @@ func (c *CLIRuntimeHelper) GetPortConnections(guid string, port int) ([]NodeInfo
 func (c *CLIRuntimeHelper) GetInstanceAccess() (*InstanceAccess, error) {
 	return nil, fmt.Errorf("GetInstanceAccess not supported in CLI mode")
 }
+
+func (c *CLIRuntimeHelper) SetupEmit(guid, sessionID string, event []byte) error {
+	return fmt.Errorf("SetupEmit not supported in CLI mode")
+}
+
+func (c *CLIRuntimeHelper) SetupAwait(guid, sessionID string, spec []byte, timeoutSec int32) ([]byte, bool, error) {
+	return nil, false, fmt.Errorf("SetupAwait not supported in CLI mode")
+}

@@ -95,3 +95,9 @@ func (t *testClient) IsRunning() (bool, error) { return true, nil }
 func (t *testClient) GetPortConnections(string, int) ([]NodeInfo, error) { return nil, nil }
 
 func (t *testClient) GetInstanceAccess() (*InstanceAccess, error) { return nil, nil }
+
+func (t *testClient) SetupEmit(guid, sessionID string, event []byte) error { return nil }
+
+func (t *testClient) SetupAwait(guid, sessionID string, spec []byte, timeoutSec int32) ([]byte, bool, error) {
+	return nil, false, nil
+}
