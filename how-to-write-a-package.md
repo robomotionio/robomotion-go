@@ -10,7 +10,7 @@ Welcome to the **Robomotion package development guide** for Go developers. This 
 
 | Tool | Minimum version | Purpose |
 |------|-----------------|---------|
-| Go   | `1.20`          | Compiles your code & provides `go` tooling |
+| Go   | `1.24`          | Compiles your code & provides `go` tooling. The SDK module declares `go 1.24.0` in its `go.mod`; generics (used by `InVariable[T]` et al.) require at least `1.18`, but match the SDK to avoid toolchain downloads |
 | `roboctl` | **latest** (run `roboctl version`) | CLI that scaffolds and builds packages |
 | Git  | any             | Source-control & versioning |
 | A text editor / IDE | – | Coding |
@@ -97,12 +97,15 @@ The Robomotion runtime is exposed through the **`runtime`** package. A few key c
 
 | Concept | Type | Description |
 |---------|------|-------------|
-| *Node* | `runtime.Node` | Embeddable struct that carries common fields (GUID, delays, …) |
+| *Node* | `runtime.Node` | Embeddable struct that carries common fields (`GUID`, `Name`, `DelayBefore`, `DelayAfter`, `ContinueOnError`) |
 | *Variable* | `InVariable[T]`, `OutVariable[T]`, `OptVariable[T]` | Strongly-typed message variables |
 | *Lifecycle* | `OnCreate`, `OnMessage`, `OnClose` | Mandatory callbacks a node must implement |
 | *Interactive setup* | `OnSetup` (optional, via `SetupHandler`) | An interactive setup action — QR/OAuth/device-code/test-connection — run from the UI **outside any flow run** (§6.1) |
-| *Runtime Helper* | interface `RuntimeHelper` | Provided to you inside `Init` – gives access to vault, app requests, file upload, … |
-| *Large Message Object (LMO)* | `runtime.LargeMessageObject` | Mechanism to transport objects >64 KB |
+| *AI tool* | `runtime.Tool` / `runtime.Toolkit` (optional) | Marks a node as agent-callable: one tool (`Tool`) or many (`Toolkit` + `ToolkitProvider`), optionally with `SkillProvider` guidance (§17) |
+| *Runtime Helper* | interface `RuntimeHelper` | Provided to you inside `Init` – gives access to vault, app requests, file upload, setup-event relay, … |
+| *Credential* | `runtime.Credential` | A bound RPA-Vault item; `.Get(ctx)` returns its decrypted fields (§7) |
+| *Large Message Object (LMO)* | content-addressed blob store | Transparently swaps large message fields (≥ 4 KB) for `BlobRef` markers backed by zstd blobs (§20) |
+| *OAuth2 helper* | `runtime.OpenOAuthDialog` | Browser-based OAuth2 authorization-code flow with a fixed local callback (§19) |
 
 You **never** instantiate a node yourself – the runner does that through reflection.
 
@@ -167,14 +170,17 @@ Below is a **non-exhaustive** but practically complete list of keys you can use 
 | `type` | Field | `type=string` | Primitive type (`string`, `int`, `object`, …) |
 | `value` | Field | `value=Hello` | Default value for **options** |
 | `description` | Field | `description=…` | Tooltip text |
-| `enum`, `enumNames` | Field | `enum=a|b|c,enumNames=A|B|C` | Enumerations (the SDK splits on `|`) |
-| `scope` | Variable | `scope=Message` | One of `Message`, `Custom`, `JS`, … |
-| `messageScope`, `customScope`, `jsScope`, `csScope` | Variable | `messageScope` | Flags that control scope availability in Designer |
+| `enum`, `enumNames` | Field | `enum=a|b|c,enumNames=A|B|C` | Enumerations (the SDK splits on `|`). On a plain field → single-select dropdown; on an `OptVariable[[]string]` → multi-select checkbox grid (§17.4) |
+| `scope` | Variable | `scope=Message` | One of `Message`, `Custom`, `JS`, `CS`, `AI` |
+| `messageScope`, `customScope`, `jsScope`, `csScope`, `aiScope` | Variable | `messageScope` | Flags that control which scopes the Designer offers for this field. `aiScope` lets an LLM agent supply the value when the node is wired as a tool |
+| `messageOnly` | Variable | `messageOnly` | Restricts the field to Message scope only (no Custom/JS picker) |
 | `option` | Field | `option` | Marks the property as a user-configurable *option* (as opposed to runtime input) |
 | `arrayFields` | Field | `arrayFields=Label|Value` | For array-of-object variables – names become sub-fields |
 | `format` | Field | `format=password` | JSON-schema format for Designer (dates, passwords, …) |
 | `hidden` | Field | `hidden` | Field is invisible but still stored |
 | `category` | Field | `category=2` | Group fields under collapsible panels |
+| `tool` (own tag) | Node | `tool:"name=send_msg,description=…"` | On a `runtime.Tool` field, exposes the node as a single AI tool / CLI command (§17, §18) |
+| `toolkit` (own tag) | Node | `toolkit:""` | On a `runtime.Toolkit` field, the node publishes many tools via `Tools()` (§17.2) |
 
 ### 5.2 Node ID Namespace Requirements
 
@@ -1132,4 +1138,281 @@ runtime.Node `spec:"description=Hello, world"`
 // Correct - use Unicode comma
 runtime.Node `spec:"description=Hello，world"`
 ```
+
+---
+
+## 17. AI Agent Tools (Tool / Toolkit / SkillProvider)
+
+Any node can be exposed to an AI agent runtime (HermesAgent, ADK Agent, …) as a
+callable tool, with **no per-package code inside the agent**. The agent reads the
+node's pspec, registers the tool(s), and dispatches calls over the normal
+Robomotion message bus. Three opt-in markers, all additive and independent:
+
+| You want… | Add | pspec key | Agent consumes as |
+|-----------|-----|-----------|-------------------|
+| One callable tool | `runtime.Tool` field + `tool:"…"` tag | `tool` | one tool registration |
+| Many tools in one node | `runtime.Toolkit` field + `ToolkitProvider` | `tools[]` | N tool registrations, one node guid |
+| System-prompt guidance | `SkillProvider` interface | `skill` | text appended to the agent system message |
+
+> **Deep dive:** `docs/toolkit-skill-provider.md` covers the full mental model,
+> the wire protocol, and the production Agent Teams toolkit. This section is the
+> quick reference.
+
+### 17.1 Single Tool (`runtime.Tool`)
+
+Embed `runtime.Tool` and tag it. The node still works as a normal flow node;
+the marker just makes it *also* agent-callable (and CLI-callable, see §18).
+
+```go
+type CreateIssue struct {
+    runtime.Node `spec:"id=Linear.CreateIssue,name=Create Issue,icon=mdiPlus,color=#5e6ad2"`
+    runtime.Tool `tool:"name=linear_create_issue,description=Create a Linear issue"`
+
+    InTitle runtime.InVariable[string] `spec:"title=Title,type=string,scope=AI,name=title,aiScope,messageScope"`
+    OutID   runtime.OutVariable[string] `spec:"title=Issue ID,type=string,scope=Message,name=issueId,messageScope"`
+}
+```
+
+When the agent calls the tool, the SDK's `ToolInterceptor` routes the request
+to your `OnMessage`. Use `scope=AI` + `aiScope` on the inputs the LLM should
+fill. If `OnMessage` returns without calling `ToolResponse`, the interceptor
+auto-collects every `OutVariable` and replies with a success payload.
+
+### 17.2 Toolkit (`runtime.Toolkit` + `ToolkitProvider`)
+
+One node, many tools. Embed `runtime.Toolkit`, implement `Tools()`, and
+dispatch inside `OnMessage` on the tool name:
+
+```go
+type SearchToolkit struct {
+    runtime.Node    `spec:"id=Acme.Search.Toolkit,name=Search Toolkit,icon=mdiMagnify,color=#3b82f6"`
+    runtime.Toolkit `toolkit:""`
+}
+
+func (n *SearchToolkit) Tools() []runtime.ToolDef {
+    return []runtime.ToolDef{
+        {
+            Name:        "web_search",
+            Description: "Search the web. Returns the top hits.",
+            Schema: map[string]interface{}{
+                "type": "object",
+                "properties": map[string]interface{}{
+                    "query": map[string]interface{}{"type": "string", "description": "Free-text query."},
+                },
+                "required": []string{"query"},
+            },
+        },
+        // … more ToolDefs …
+    }
+}
+
+func (n *SearchToolkit) OnCreate() error { return nil }
+func (n *SearchToolkit) OnClose() error  { return nil }
+func (n *SearchToolkit) OnMessage(ctx message.Context) error {
+    if !runtime.IsToolRequest(ctx) {
+        return nil
+    }
+    params := runtime.ToolParameters(ctx)
+    switch runtime.ToolName(ctx) {
+    case "web_search":
+        hits, err := webSearch(params["query"].(string))
+        if err != nil {
+            return runtime.ToolResponse(ctx, "error", nil, err.Error())
+        }
+        return runtime.ToolResponse(ctx, "success", map[string]interface{}{"results": hits}, "")
+    }
+    return runtime.ToolResponse(ctx, "error", nil, "unknown tool: "+runtime.ToolName(ctx))
+}
+```
+
+`Tools()` is called **once at build time** during spec generation; the list is
+frozen in the pspec. The four request helpers:
+
+| Helper | Returns |
+|--------|---------|
+| `runtime.IsToolRequest(ctx)` | `bool`, is this an agent tool call? |
+| `runtime.ToolName(ctx)` | `string`, which tool (the discriminator for a Toolkit) |
+| `runtime.ToolParameters(ctx)` | `map[string]interface{}`, the call args |
+| `runtime.ToolResponse(ctx, status, data, errMsg)` | sends the reply and stops downstream flow |
+
+### 17.3 SkillProvider: ship guidance with the tools
+
+Implement `Skill() string` on any node (toolkit, single tool, or even a no-tool
+"context" node). The returned markdown is appended to the consuming agent's
+system message when the node is wired to its tools port. It is the in-tree
+equivalent of MCP's `prompts/get`. A common pattern is `//go:embed AGENT.md`.
+
+```go
+//go:embed AGENT.md
+var agentMD string
+
+func (n *SearchToolkit) Skill() string { return agentMD }
+```
+
+### 17.4 Letting flow authors choose which tools to expose
+
+Add an `OptVariable[[]string]` with an `enum` tag. The SDK emits a multi-select
+checkbox grid (`ui:field=multiSelectCheckbox`); the selected names arrive as a
+`[]string`. Convention: **empty = expose all** (users opt out, not in).
+
+```go
+OptEnabled runtime.OptVariable[[]string] `spec:"title=Enabled Tools,type=array,scope=Custom,name=,customScope,enum=web_search|image_search|news_search,enumNames=Web Search|Image Search|News Search,description=Empty = all"`
+```
+
+---
+
+## 18. CLI Command Mode (the binary as a standalone tool)
+
+Every package binary can run **without a robot** as a self-contained CLI
+program. Any node with a `runtime.Tool` field becomes a subcommand. This is what
+lets AI-agent skills and shell scripts call a package directly.
+
+> **Deep dive:** `docs/package-cli.md`. Quick reference below.
+
+`runtime.Start()` inspects `os.Args[1]` and dispatches by mode:
+
+| First arg | Mode |
+|-----------|------|
+| *(none)* | gRPC plugin (normal robot runtime) |
+| `-a` | Attach (debug, see §10) |
+| `-s` | Print the pspec JSON to stdout |
+| `--skill-md` | Print a generated `SKILL.md` to stdout |
+| `--list-commands [cmd]` | List CLI commands (add `--output json` for machine output) |
+| `--help` / `-h` | Usage |
+| anything not starting with `-` | **CLI mode**, treat as a command name |
+
+```bash
+# Discover
+robomotion-googledrive --list-commands
+robomotion-googledrive --skill-md > SKILL.md
+
+# Invoke (flags are kebab-case of each variable's spec name; output is JSON on stdout)
+robomotion-googledrive upload_file --file-path=/tmp/x.pdf --folder-id=abc123
+```
+
+**Credentials** resolve through the vault, by name or by ID:
+
+```bash
+robomotion-googledrive upload_file --vault="My Vault" --item="Drive Token" --file-path=/tmp/x.pdf
+robomotion-googledrive upload_file --vault-id=<id>     --item-id=<id>       --file-path=/tmp/x.pdf
+```
+
+Auth comes from `robomotion login`, or from the `ROBOMOTION_API_TOKEN` /
+`ROBOMOTION_ROBOT_ID` / `ROBOMOTION_API_URL` environment variables (set by the
+runner). Each invocation is its own process, naturally isolated and parallel.
+
+**Sessions** keep the process warm for Connect/operation/Disconnect flows that
+reuse a connection:
+
+```bash
+robomotion-database connect --vault="DB" --item="prod" --session     # → {"session_id": "..."}
+robomotion-database query   --sql="SELECT 1" --session-id=<id>
+robomotion-database --session-close=<id>
+```
+
+Output goes to **stdout as JSON**; errors go to **stderr as JSON** with exit
+code `1`. Node code is unchanged: the same `InVariable.Get` / `OutVariable.Set`
+/ `Credential.Get` calls work because CLI mode installs a `CLIRuntimeHelper` in
+place of the gRPC client.
+
+---
+
+## 19. OAuth2 Authorization Helper
+
+For nodes that need an interactive OAuth2 authorization-code grant, the SDK
+ships `runtime.OpenOAuthDialog`. It opens the system browser, runs a local
+callback server on a **fixed** redirect URL, and returns the authorization code.
+
+```go
+import (
+    "context"
+    "golang.org/x/oauth2"
+    "golang.org/x/oauth2/google"
+    "github.com/robomotionio/robomotion-go/runtime"
+)
+
+func (n *Connect) OnMessage(ctx message.Context) error {
+    cfg := &oauth2.Config{
+        ClientID:     clientID,
+        ClientSecret: clientSecret,
+        Scopes:       []string{"https://www.googleapis.com/auth/drive"},
+        Endpoint:     google.Endpoint,
+        RedirectURL:  runtime.OAuth2RedirectURL, // forced to http://localhost:9876/oauth2/callback
+    }
+    code, err := runtime.OpenOAuthDialog(cfg) // blocks up to 5 min for the user
+    if err != nil {
+        return err
+    }
+    token, err := cfg.Exchange(context.Background(), code)
+    if err != nil {
+        return err
+    }
+    // … persist token (e.g. into a Credential) for later runs …
+    return nil
+}
+```
+
+Notes:
+- The redirect URL is **always** `runtime.OAuth2RedirectURL`
+  (`http://localhost:9876/oauth2/callback`). Register exactly that in your
+  OAuth app. `OpenOAuthDialog` overwrites `cfg.RedirectURL` to match.
+- The callback port (`9876`) is shared, so the helper retries binding for up to
+  5 minutes if another OAuth flow holds it; the user-authorization wait is also
+  capped at 5 minutes.
+- The request asks for offline access + forced consent so a refresh token is
+  returned. For a cloud robot with no browser, prefer the `OnSetup` lifecycle
+  (§6.1) and drive the OAuth handshake from the UI instead.
+
+---
+
+## 20. Large Message Objects (LMO)
+
+Large message fields (≥ 4 KB) are transparently swapped for `BlobRef` markers
+backed by zstd-compressed, content-addressed blobs on disk. This keeps the gRPC
+messages small while still letting nodes pass big payloads. The SDK does
+**read + write**: it resolves incoming `BlobRef`s and packs large outgoing
+values automatically, so most nodes never touch the API.
+
+LMO is **capability-gated** (`CapabilityLMO`, advertised by default): it only
+activates when the robot also supports it; otherwise payloads stay inline.
+
+For the rare cases you need manual control:
+
+```go
+// Resolve one field that may be a BlobRef:
+result, _ := runtime.LMOResolve(data, "fieldName")
+
+// Resolve a field plus all nested BlobRefs inside it:
+sub, _ := runtime.LMOResolveSubtree(data, "payload")
+
+// Resolve every BlobRef in a payload:
+resolved, _ := runtime.LMOResolveAll(data)
+
+// Pack large fields out of a payload into blobs:
+packed, _ := runtime.LMOPack(payload)
+
+// Pack a single Go value if it exceeds the threshold:
+ref, packed, _ := runtime.PackValue(value) // (refMap, didPack, err)
+```
+
+LMO is not initialized in CLI mode (§18); packages that move >1 MB payloads via
+LMO need the full robot runtime.
+
+---
+
+## 21. Capabilities (feature negotiation)
+
+The runner and the package each advertise a bitmask of capabilities; a feature
+is active only where **both** agree (`runtime.HasCapability`). This is how new
+SDK features ship without breaking older robots.
+
+| Capability | Meaning |
+|------------|---------|
+| `CapabilityLMO` | Content-addressed blob store (§20), advertised by the package by default |
+| `CapabilitySetup` | Node implements the `OnSetup` lifecycle (§6.1), auto-advertised when a node implements `SetupHandler` |
+| `CapabilityUseS3`, `CapabilityTerminateOnStop`, `CapabilityIgnoreVersionCheck` | Robot-side runtime behaviors |
+
+You rarely set these by hand: implementing `SetupHandler` flips
+`CapabilitySetup` for you, and `CapabilityLMO` is on by default. Use
+`runtime.HasCapability(cap)` if you need to branch on what the host supports.
 
