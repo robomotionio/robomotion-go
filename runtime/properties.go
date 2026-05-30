@@ -56,3 +56,26 @@ func GetRobotID() (string, error) {
 
 	return v, nil
 }
+
+// IsSetupManaged reports whether the host manages interactive setup for THIS
+// run — i.e. a setup surface (the Agent Hub hire wizard / OnSetup) exists, so a
+// node should NOT fall back to in-flow pairing (e.g. the WhatsApp/Telegram
+// Receive flow-run QR/token prompt). The deskbot sets it (from AgentHubSlug)
+// in the per-run GetRobotInfo payload, alongside flow_id. This is run CONTEXT,
+// not a capability: it flips per run on the same robot (hub hire vs custom
+// flow). False when absent (older robots / custom & designer flows) so the
+// legacy in-flow pairing remains the default there.
+func IsSetupManaged() bool {
+	info, err := GetRobotInfo()
+	if err != nil {
+		return false
+	}
+	switch v := info["setup_managed"].(type) {
+	case bool:
+		return v
+	case float64: // protobuf Struct encodes some scalars as float64
+		return v != 0
+	default:
+		return false
+	}
+}

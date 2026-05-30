@@ -16,7 +16,7 @@ service Node {
     // duration while emitting prompts via RuntimeHelper.SetupEmit and awaiting
     // user input via RuntimeHelper.SetupAwait, then returns a result. Only
     // nodes that implement the SetupHandler interface respond; others report
-    // an unsupported error. Capability-gated by CapabilitySetup.
+    // an unsupported error. Gated by the SetupHandler interface (no capability bit).
     rpc OnSetup(OnSetupRequest) returns (OnSetupResponse);
 }
 

@@ -582,10 +582,12 @@ connected robot **outside any flow run** — e.g. inside a hire/onboarding wizar
 and persist the result (a session blob, a token) into the node's bound vault item
 so the real run just works.
 
-It is **opt-in and capability-gated**. A node implements the optional
-`SetupHandler` interface; doing so makes the package automatically advertise
-`CapabilitySetup`. Nodes that don't implement it are unaffected, and older hosts
-that predate `OnSetup` simply never call it — so it is fully backward-compatible.
+It is **opt-in and interface-gated**. A node implements the optional
+`SetupHandler` interface; the host invokes `OnSetup` only on nodes that do.
+Nodes that don't implement it report an unsupported error, and older hosts that
+predate `OnSetup` simply never call it — so it is fully backward-compatible.
+(There is no `OnSetup` capability bit — gating is the interface check, not a
+negotiated capability.)
 
 ```go
 type SetupHandler interface {
@@ -634,8 +636,9 @@ import (
     "github.com/robomotionio/robomotion-go/runtime"
 )
 
-// Connect supports interactive setup. Implementing SetupHandler auto-advertises
-// CapabilitySetup, so the host offers an in-wizard setup step for this node.
+// Connect supports interactive setup. Implementing SetupHandler makes the host
+// offer an in-wizard setup step for this node (gated by the interface, no
+// capability bit).
 func (n *Connect) OnSetup(ctx runtime.SetupContext) error {
     // n.OptCredentials is the bound (possibly empty) vault item — populated
     // from config just like in OnCreate.
@@ -1409,10 +1412,11 @@ SDK features ship without breaking older robots.
 | Capability | Meaning |
 |------------|---------|
 | `CapabilityLMO` | Content-addressed blob store (§20), advertised by the package by default |
-| `CapabilitySetup` | Node implements the `OnSetup` lifecycle (§6.1), auto-advertised when a node implements `SetupHandler` |
-| `CapabilityUseS3`, `CapabilityTerminateOnStop`, `CapabilityIgnoreVersionCheck` | Robot-side runtime behaviors |
+| `CapabilityUseS3`, `CapabilityTerminateOnStop`, `CapabilityIgnoreVersionCheck`, `CapabilityDiagnostics`, `CapabilityLazyMessage` | Robot-side runtime behaviors |
 
-You rarely set these by hand: implementing `SetupHandler` flips
-`CapabilitySetup` for you, and `CapabilityLMO` is on by default. Use
+(`OnSetup` is **not** a capability — it's gated by implementing the
+`SetupHandler` interface; see §6.1. See `CAPABILITIES.md` for the bit registry.)
+
+You rarely set these by hand: `CapabilityLMO` is on by default. Use
 `runtime.HasCapability(cap)` if you need to branch on what the host supports.
 

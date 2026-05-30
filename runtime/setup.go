@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 )
 
 // SetupHandler is the OPTIONAL lifecycle a node implements to support an
@@ -18,10 +17,6 @@ import (
 type SetupHandler interface {
 	OnSetup(ctx SetupContext) error
 }
-
-// setupHandlerType is used to auto-advertise CapabilitySetup at factory
-// registration when a node type implements SetupHandler.
-var setupHandlerType = reflect.TypeOf((*SetupHandler)(nil)).Elem()
 
 // SetupEvent is one prompt/status frame a node pushes to the UI during setup.
 // Kind tells the UI how to render; Step mirrors the node's setup state
