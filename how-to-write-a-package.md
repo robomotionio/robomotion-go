@@ -1262,6 +1262,58 @@ checkbox grid (`ui:field=multiSelectCheckbox`); the selected names arrive as a
 OptEnabled runtime.OptVariable[[]string] `spec:"title=Enabled Tools,type=array,scope=Custom,name=,customScope,enum=web_search|image_search|news_search,enumNames=Web Search|Image Search|News Search,description=Empty = all"`
 ```
 
+### 17.5 Credentials for a Toolkit — pick the right vault type
+
+A Toolkit node is usually **action-only**: unlike WhatsApp/Telegram (which have
+a `Receive`/session node the credential hangs on), a Ghost or WordPress toolkit
+has nowhere else to carry auth, so it **declares its own `runtime.Credential`
+field** and resolves it per call:
+
+```go
+type Toolkit struct {
+    runtime.Node    `spec:"id=Acme.Wordpress.Agents.Toolkit,name=Toolkit,icon=mdiWordpress,color=#21759b"`
+    runtime.Toolkit `toolkit:""`
+
+    OptCredentials runtime.Credential `spec:"title=Credentials,category=1,scope=Custom,messageScope,customScope,description=…"`
+}
+```
+
+**Choosing the `category` is a real decision — get it right:**
+
+1. **Use the matching PRIMITIVE type when the credential fits one** (the 8 types
+   in §7.3). The category is a label the Vault UI and the hire wizard use to
+   render/group/reuse the item, so be honest:
+   - `username` + `password` → **Login (1)** (e.g. WordPress app-password).
+   - a single token → **API Key/Token (4)** (e.g. Ghost Admin key, OpenRouter).
+   - `server`/`port`/`database`/`username`/`password` → **Database (5)**, etc.
+
+2. **Only when the secret set fits NO primitive, use Document (6) — a generic
+   JSON bag.** The vault stores every item's fields as one encrypted JSON blob
+   keyed by name (category is just an `int` label; there is **no** per-category
+   field schema — see `robomotion-deskbot/runtime/vault.go`), so a Document item
+   can hold any keys you define. Use it for opaque/odd secrets that don't map to
+   a primitive — e.g. a WhatsApp **session** blob (`runtime_paired`), or an auth
+   set with an unusual combination of fields. `cred.Get(ctx)` returns the JSON
+   as `map[string]interface{}` either way.
+   - **Don't force Document "because a toolkit might need anything."** Pick the
+     honest primitive when one fits; reach for Document only when none do.
+
+3. **Non-secret config is NOT a credential.** A base URL, a region, a workspace
+   id — these are plain **node properties** (`OptVariable[string]`), never vault
+   fields. Wire them as a normal option/setting, not into `OptCredentials`. (So
+   the WordPress toolkit takes `OptSiteUrl` as a property and only
+   `username`/`password` as the Login credential.)
+
+When the toolkit is hired through the Agent Hub, the consuming role's
+`credentials.yaml` slot must declare the **same `category`** (and, for Document,
+the `fields` it collects). The role groups its slots for onboarding with two
+opaque author strings: `group:` co-locates a credential + its companion property
+(e.g. a WordPress login + its Site URL) in one wizard step, and `phase:` buckets
+steps into the left-rail sections (`Essentials` / `Integrations` / `Tuning`).
+See the Agent Hub guide `how-to-write-credentials-yaml.md` (§7 `group`, §8
+`phase`) for the slot side and how a credential + a companion property are
+presented in onboarding.
+
 ---
 
 ## 18. CLI Command Mode (the binary as a standalone tool)
