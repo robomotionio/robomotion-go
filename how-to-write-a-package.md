@@ -1281,8 +1281,8 @@ type Toolkit struct {
 **Choosing the `category` is a real decision — get it right:**
 
 1. **Use the matching PRIMITIVE type when the credential fits one** (the 8 types
-   in §7.3). The category is a label the Vault UI and the hire wizard use to
-   render/group/reuse the item, so be honest:
+   in §7.3). The category is a label the Vault UI uses to render/group/reuse the
+   item, so be honest:
    - `username` + `password` → **Login (1)** (e.g. WordPress app-password).
    - a single token → **API Key/Token (4)** (e.g. Ghost Admin key, OpenRouter).
    - `server`/`port`/`database`/`username`/`password` → **Database (5)**, etc.
@@ -1298,21 +1298,31 @@ type Toolkit struct {
    - **Don't force Document "because a toolkit might need anything."** Pick the
      honest primitive when one fits; reach for Document only when none do.
 
-3. **Non-secret config is NOT a credential.** A base URL, a region, a workspace
-   id — these are plain **node properties** (`OptVariable[string]`), never vault
-   fields. Wire them as a normal option/setting, not into `OptCredentials`. (So
-   the WordPress toolkit takes `OptSiteUrl` as a property and only
-   `username`/`password` as the Login credential.)
+3. **Non-secret config is NOT a credential — these are two different binding
+   mechanisms, do not mix them.** A Vault credential item and a node-property
+   setting are stored and delivered by completely different paths:
 
-When the toolkit is hired through the Agent Hub, the consuming role's
-`credentials.yaml` slot must declare the **same `category`** (and, for Document,
-the `fields` it collects). The role groups its slots for onboarding with two
-opaque author strings: `group:` co-locates a credential + its companion property
-(e.g. a WordPress login + its Site URL) in one wizard step, and `phase:` buckets
-steps into the left-rail sections (`Essentials` / `Integrations` / `Tuning`).
-See the Agent Hub guide `how-to-write-credentials-yaml.md` (§7 `group`, §8
-`phase`) for the slot side and how a credential + a companion property are
-presented in onboarding.
+   | | Vault **credential** (`runtime.Credential`) | Node **property** (`OptVariable[T]`) |
+   |---|---|---|
+   | Holds | secrets only (API key, password) | non-secret config (Site URL, region, workspace id) |
+   | Stored as | one encrypted blob in the RPA Vault | a plain value in the node's config |
+   | Resolved via | `cred.Get(ctx)` (vault resolve/inject) | the field's `.Get(ctx)` (node config) |
+
+   > ⚠️ **Real bug this caused (Ghost 1.1.0).** The Ghost toolkit crammed the
+   > non-secret **Site URL** into the Admin-API credential as a `url` field. The
+   > vault/inject path reliably carries the **secret** but dropped the
+   > non-secret `url` on resolve, so `cred.Get(ctx)` came back with the key but
+   > **no url** → the toolkit reported "not configured" forever, even though the
+   > credential was correctly bound and resolved. Fixed in 1.1.1 by moving Site
+   > URL to an `OptSiteUrl` node property, mirroring WordPress. **Rule of thumb:
+   > if it isn't secret, it must not be a field of `OptCredentials` — make it an
+   > `OptVariable[T]` node property.** A credential item should only ever carry
+   > the fields of its primitive type (§7.3).
+
+How the consuming Agent Hub role declares the matching slots (a credential slot
+for the secret, a setting slot for each non-secret property) and presents them
+during onboarding is the **hub's** concern, not the package's — see
+`robomotion-agent-hub/docs/how-to-write-credentials-yaml.md`.
 
 ---
 
