@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"html"
 	"log"
 	"net"
 	"net/http"
@@ -111,7 +112,7 @@ func OpenOAuthDialog(cfg *oauth2.Config) (string, error) {
 <body>
 	<div class="container">
 		<h1>Authorization Failed</h1>
-		<p>` + errMsg + `</p>
+		<p>` + html.EscapeString(errMsg) + `</p>
 		<p>You can close this window and try again.</p>
 	</div>
 </body>
