@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/golang/protobuf v1.5.4
-	github.com/hashicorp/go-hclog v1.6.1
+	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-version v1.6.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/klauspost/compress v1.18.0
@@ -12,7 +12,7 @@ require (
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/robomotionio/go-plugin v1.2.7
+	github.com/robomotionio/go-plugin v1.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
@@ -20,7 +20,7 @@ require (
 	golang.org/x/net v0.48.0
 	golang.org/x/oauth2 v0.34.0
 	google.golang.org/grpc v1.79.3
-	google.golang.org/protobuf v1.36.10
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
