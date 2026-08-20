@@ -46,3 +46,28 @@ type ToolkitProvider interface {
 type SkillProvider interface {
 	Skill() string
 }
+
+// AssetDecl is one markdown bootstrap file a node declares. The Designer's
+// Files tab renders exactly this list; saved files land in the flow repo at
+// assets/<node_guid>/<name>. The runtime never reads assets itself — the
+// robot materialises them next to the node before the first OnMessage.
+type AssetDecl struct {
+	Name     string `json:"name"`
+	Required bool   `json:"required,omitempty"`
+	Template string `json:"template,omitempty"`
+}
+
+// AssetProvider is the optional interface a node implements to declare the
+// markdown files it bootstraps with. Mirrors the Python SDK's
+// node_decorator(assets=[...]).
+type AssetProvider interface {
+	Assets() []AssetDecl
+}
+
+// MetadataProvider is a free-form per-node passthrough emitted into the node
+// spec. The framework never interprets the contents; package-specific
+// consumers (Designer tabs, custom editors) read the keys they care about.
+// Mirrors the Python SDK's node_decorator(metadata={...}).
+type MetadataProvider interface {
+	Metadata() map[string]interface{}
+}

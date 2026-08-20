@@ -38,6 +38,14 @@ type NodeSpec struct {
 	// appends when this node is wired to its tools port. Populated from
 	// SkillProvider.Skill().
 	Skill string `json:"skill,omitempty"`
+	// Assets lists the markdown bootstrap files this node declares,
+	// populated from AssetProvider.Assets(). The Designer's Files tab
+	// renders this list verbatim.
+	Assets []AssetDecl `json:"assets,omitempty"`
+	// Metadata is a free-form per-node passthrough populated from
+	// MetadataProvider.Metadata(). Never interpreted by the framework;
+	// custom editors read the keys they know about.
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
 type Property struct {
@@ -144,6 +152,12 @@ func generateSpecFile(pluginName, version string) {
 		}
 		if instance, _ := reflect.New(t).Interface().(SkillProvider); instance != nil {
 			spec.Skill = instance.Skill()
+		}
+		if instance, _ := reflect.New(t).Interface().(AssetProvider); instance != nil {
+			spec.Assets = instance.Assets()
+		}
+		if instance, _ := reflect.New(t).Interface().(MetadataProvider); instance != nil {
+			spec.Metadata = instance.Metadata()
 		}
 
 		// Look for custom port fields (fields of type Port)
