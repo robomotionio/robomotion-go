@@ -1324,6 +1324,43 @@ for the secret, a setting slot for each non-secret property) and presents them
 during onboarding is the **hub's** concern, not the package's — see
 `robomotion-agent-hub/docs/how-to-write-credentials-yaml.md`.
 
+### 17.6 AssetProvider and MetadataProvider: what a custom editor reads
+
+Two more optional interfaces, both purely additive to the pspec and both there
+for the same reason: a node whose Designer surface is bigger than a properties
+panel needs to ship the surface's *content* with the package, not have Designer
+carry a copy of it.
+
+```go
+// The markdown files this node bootstraps with. Designer's Files tab renders
+// exactly this list; saved files land in the flow repo at
+// assets/<node_guid>/<name>, and the robot materialises them next to the node
+// before the first OnMessage.
+func (n *MyAgent) Assets() []runtime.AssetDecl {
+    return []runtime.AssetDecl{
+        {Name: "AGENT.md", Required: true, Template: "You are a helpful assistant.\n"},
+        {Name: "SOUL.md", Template: "# Soul\n\nVoice and disposition.\n"},
+    }
+}
+
+// A free-form passthrough. The framework never interprets it; the consumer
+// that knows the key reads it. Designer's Tools tab reads
+// metadata.internalTools; the DeepSeek Agent's editor reads metadata.dsPlugins.
+func (n *MyAgent) Metadata() map[string]interface{} {
+    return map[string]interface{}{"dsPlugins": catalog}
+}
+```
+
+Both emit with `omitempty`, so a node that implements neither produces a
+byte-identical pspec to before. The shapes match the Python SDK's
+`node_decorator(assets=..., metadata=...)` on purpose — one Designer code path
+serves both SDKs.
+
+Use `Metadata` for a catalog that has to stay in step with the package version:
+shipping it here means a package upgrade updates the editor's options without a
+Designer release, and a flow authored against an older package still describes
+the plugins that package actually had.
+
 ---
 
 ## 18. CLI Command Mode (the binary as a standalone tool)
