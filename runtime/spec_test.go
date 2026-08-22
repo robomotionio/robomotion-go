@@ -279,3 +279,71 @@ func TestSpec_OptVariableEnumEmitsMultiSelectCheckbox(t *testing.T) {
 		t.Fatalf("formData.optEnabled = %v, want []", arr)
 	}
 }
+
+// fxHidden exercises the `hidden` flag on the field kinds a package actually
+// wants to hide: variables the Designer's own editor owns, on all three sides.
+type fxHidden struct {
+	Node `spec:"id=Test.Hidden,name=Test Hidden,icon=,color=#000"`
+
+	InVisible InVariable[string]  `spec:"title=Query,name=query,type=string,scope=Message,messageScope"`
+	InSecret  InVariable[string]  `spec:"title=Managed In,name=,type=string,scope=Custom,customScope,hidden"`
+	OutSecret OutVariable[string] `spec:"title=Managed Out,name=,type=string,scope=Message,messageScope,hidden"`
+	OptSecret OptVariable[string] `spec:"title=Managed Opt,name=,type=string,scope=Custom,customScope,option,hidden"`
+}
+
+func (n *fxHidden) OnCreate() error                  { return nil }
+func (n *fxHidden) OnMessage(c message.Context) error { return nil }
+func (n *fxHidden) OnClose() error                   { return nil }
+
+// A field marked `hidden` must reach the Designer as hidden, and that used to
+// fail for exactly the fields worth hiding.
+//
+// `hidden` wrote `ui:widget: hidden` BEFORE the branch that assigns
+// `ui:field: variable`, which replaced the whole entry — so on any variable
+// field the flag silently did nothing. The Designer reads `ui:widget` before
+// `ui:field`, so carrying both is what a hidden variable needs; carrying only
+// the field is a Designer-managed value sitting on the properties panel,
+// inviting somebody to hand-edit a JSON document its editor owns.
+func TestSpec_HiddenSurvivesTheVariableField(t *testing.T) {
+	pspec := captureSpec(t, &fxHidden{})
+	node := nodeByID(t, pspec, "Test.Hidden")
+
+	properties, _ := node["properties"].([]interface{})
+	if len(properties) == 0 {
+		t.Fatalf("node.properties missing: %#v", node["properties"])
+	}
+
+	// Collect every group's uiSchema, so the assertion does not depend on
+	// which group a field landed in.
+	ui := map[string]map[string]interface{}{}
+	for _, p := range properties {
+		pm, _ := p.(map[string]interface{})
+		group, _ := pm["uiSchema"].(map[string]interface{})
+		for field, entry := range group {
+			if em, ok := entry.(map[string]interface{}); ok {
+				ui[field] = em
+			}
+		}
+	}
+
+	for _, field := range []string{"inSecret", "outSecret", "optSecret"} {
+		entry, ok := ui[field]
+		if !ok {
+			t.Fatalf("%s has no uiSchema entry: %#v", field, ui)
+		}
+		if entry["ui:widget"] != "hidden" {
+			t.Errorf("%s: ui:widget = %v, want \"hidden\" — the field assignment clobbered it", field, entry["ui:widget"])
+		}
+		// The field is still declared, because a hidden variable is still a
+		// variable: the runtime reads it and the editor writes it.
+		if entry["ui:field"] != "variable" {
+			t.Errorf("%s: ui:field = %v, want \"variable\" kept alongside hidden", field, entry["ui:field"])
+		}
+	}
+
+	if entry, ok := ui["inVisible"]; ok {
+		if entry["ui:widget"] == "hidden" {
+			t.Errorf("a field with no hidden flag was hidden: %#v", entry)
+		}
+	}
+}
