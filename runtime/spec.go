@@ -376,10 +376,6 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "input"}
 				}
 
-				if isHidden {
-					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
-				}
-
 				if hasFormat {
 					inProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					inProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": format}
@@ -393,6 +389,10 @@ func generateSpecFile(pluginName, version string) {
 					inProperty.FormData[lowerFieldName] = n
 				}
 
+				if isHidden {
+					markHidden(inProperty.UISchema, lowerFieldName)
+				}
+
 			} else if isOutVar || isOutput { // output
 
 				outProperty.Schema.Properties[lowerFieldName] = sProp
@@ -402,15 +402,15 @@ func generateSpecFile(pluginName, version string) {
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "input"}
 				}
 
-				if isHidden {
-					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
-				}
-
 				if isVar {
 					outProperty.FormData[lowerFieldName] = VarDataProperty{Scope: scope, Name: n}
 					outProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "variable"}
 				} else {
 					outProperty.FormData[lowerFieldName] = n
+				}
+
+				if isHidden {
+					markHidden(outProperty.UISchema, lowerFieldName)
 				}
 
 			} else if isOptVar || isCred || isEnum { // option
@@ -420,10 +420,6 @@ func generateSpecFile(pluginName, version string) {
 
 				if !isVar && !isCred && isEnum && hasDescription {
 					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:field": "input"}
-				}
-
-				if isHidden {
-					optProperty.UISchema[lowerFieldName] = map[string]string{"ui:widget": "hidden"}
 				}
 
 				if hasFormat {
@@ -449,6 +445,10 @@ func generateSpecFile(pluginName, version string) {
 					optProperty.FormData[lowerFieldName] = parseValue(field, v)
 				} else {
 					optProperty.FormData[lowerFieldName] = n
+				}
+
+				if isHidden {
+					markHidden(optProperty.UISchema, lowerFieldName)
 				}
 
 			} else if isOption {
@@ -584,6 +584,27 @@ func upperFirstLetter(text string) string {
 	}
 
 	return fmt.Sprintf("%s%s", strings.ToUpper(text[:1]), text[1:])
+}
+
+// markHidden adds the hidden widget to whatever UI a field already has.
+//
+// It MERGES rather than replaces, and it runs after the field is decided,
+// because those two facts are the bug it exists to fix: `hidden` used to be
+// written first and then overwritten by the `ui:field` the variable/format/
+// array branches assign, so `hidden` silently did nothing on every OptVariable,
+// InVariable and OutVariable — which is every field a package would actually
+// want to hide. A Designer-managed field ended up on the properties panel
+// beside the ones a person edits, inviting them to hand-edit a JSON document
+// the editor owns.
+//
+// The Designer reads `ui:widget: hidden` before it reads `ui:field`, so
+// carrying both is what a hidden variable field needs.
+func markHidden(uiSchema map[string]interface{}, field string) {
+	if existing, ok := uiSchema[field].(map[string]string); ok {
+		existing["ui:widget"] = "hidden"
+		return
+	}
+	uiSchema[field] = map[string]string{"ui:widget": "hidden"}
 }
 
 func getVariableType(f reflect.StructField, fsMap map[string]string) string {
