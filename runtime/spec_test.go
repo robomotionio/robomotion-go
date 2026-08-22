@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/robomotionio/robomotion-go/message"
+	"github.com/robomotionio/robomotion-go/runtime/icons"
 )
 
 // These tests drive generateSpecFile against fixture node types and
@@ -46,9 +47,9 @@ type fxToolkit struct {
 // name prefix via `isGenericType`).
 type runtime_OptVariableStringSlice = OptVariable[[]string]
 
-func (n *fxToolkit) OnCreate() error                     { return nil }
-func (n *fxToolkit) OnMessage(_ message.Context) error   { return nil }
-func (n *fxToolkit) OnClose() error                      { return nil }
+func (n *fxToolkit) OnCreate() error                   { return nil }
+func (n *fxToolkit) OnMessage(_ message.Context) error { return nil }
+func (n *fxToolkit) OnClose() error                    { return nil }
 func (n *fxToolkit) Tools() []ToolDef {
 	return []ToolDef{
 		{Name: "one", Description: "first", Schema: map[string]interface{}{"type": "object"}},
@@ -277,5 +278,72 @@ func TestSpec_OptVariableEnumEmitsMultiSelectCheckbox(t *testing.T) {
 	}
 	if len(arr) != 0 {
 		t.Fatalf("formData.optEnabled = %v, want []", arr)
+	}
+}
+
+// resolveIcon decides whether a spec tag's icon value is a NAME to look up or
+// path data to pass through. Getting the discrimination wrong is quiet in both
+// directions: a name treated as a path emits garbage into the pspec, and a path
+// treated as a name emits nothing at all and the node loses its icon.
+func TestResolveIcon(t *testing.T) {
+	// A real entry from the bundled Material Design set, so the lookup path is
+	// exercised against actual data rather than a stub.
+	const knownName = "mdiAccount"
+	if _, ok := icons.Icons[knownName]; !ok {
+		t.Fatalf("fixture assumption broken: %s is not in the icon set", knownName)
+	}
+
+	cases := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{"a known name resolves to its path", knownName, icons.Icons[knownName]},
+		{"an empty value stays empty", "", ""},
+
+		// The reason this function exists: a package shipping its own mark.
+		{"absolute path data passes through",
+			"M12 2 6 8 12 14 18 8Z", "M12 2 6 8 12 14 18 8Z"},
+		{"relative path data passes through",
+			"m1.5 2.25c1 1 2 2 3 3z", "m1.5 2.25c1 1 2 2 3 3z"},
+		{"negative first coordinate passes through",
+			"M-4 2 6 8Z", "M-4 2 6 8Z"},
+		{"decimal first coordinate passes through",
+			"M.5 2 6 8Z", "M.5 2 6 8Z"},
+
+		// A mistyped name must NOT be emitted as if it were a path. It keeps
+		// the old behaviour — an empty icon — which is visible and harmless,
+		// rather than putting the typo itself into the pspec.
+		{"an unknown name yields nothing", "mdiDoesNotExist", ""},
+		{"a name starting with m is still a name", "mdiAccountDoesNotExist", ""},
+		{"arbitrary text yields nothing", "not an icon", ""},
+		{"a lone M is not path data", "M", ""},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := resolveIcon(c.value); got != c.want {
+				t.Fatalf("resolveIcon(%q) = %q, want %q", c.value, got, c.want)
+			}
+		})
+	}
+}
+
+// Path data has to survive parseSpec, which splits the tag on commas and on
+// '='. SVG permits whitespace instead of commas between numbers, so a path
+// written that way comes through whole — this pins that the two agree.
+func TestInlineIconSurvivesSpecTagParsing(t *testing.T) {
+	const path = "M12 2 6 8 12 14 18 8Z"
+	spec := "id=Robomotion.Test.Node,name=Test,icon=" + path + ",color=#4D6BFE"
+
+	parsed := parseSpec(spec)
+	if parsed["icon"] != path {
+		t.Fatalf("parseSpec mangled the path: got %q, want %q", parsed["icon"], path)
+	}
+	if parsed["color"] != "#4D6BFE" {
+		t.Fatalf("the key after the path was lost: %q", parsed["color"])
+	}
+	if got := resolveIcon(parsed["icon"]); got != path {
+		t.Fatalf("resolveIcon(%q) = %q", parsed["icon"], got)
 	}
 }

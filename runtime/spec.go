@@ -98,7 +98,7 @@ func generateSpecFile(pluginName, version string) {
 
 		id := nsMap["id"]
 		name := nsMap["name"]
-		icon := icons.Icons[nsMap["icon"]]
+		icon := resolveIcon(nsMap["icon"])
 		color := nsMap["color"]
 		editor := nsMap["editor"]
 		inFilters := nsMap["inFilters"]
@@ -529,6 +529,50 @@ func parseEnum(enum, enumNames, enumType string) ([]interface{}, []string) {
 
 	enumNameArr = strings.Split(enumNames, "|")
 	return enumArr, enumNameArr
+}
+
+// resolveIcon turns a spec tag's icon value into SVG path data.
+//
+// A name is looked up in the bundled Material Design set, which is what nearly
+// every package uses. A value that is ALREADY path data is passed through, so a
+// package can ship its own mark — a vendor logo has no MDI equivalent, and
+// before this there was no way to supply one from Go at all. The Python SDK has
+// always allowed it, because its icon is a decorator argument rather than a
+// struct tag.
+//
+// Two constraints follow from the tag being comma-separated (see parseSpec):
+// path data must use spaces rather than commas as its number separator, which
+// SVG permits, and it must contain no '='.
+//
+// The literal is accepted only when it LOOKS like path data — every SVG path
+// opens with a moveto. So a mistyped icon name still resolves to an empty icon,
+// as it did before, rather than being emitted as a bogus path.
+func resolveIcon(value string) string {
+	if path, ok := icons.Icons[value]; ok {
+		return path
+	}
+	if isPathData(value) {
+		return value
+	}
+	return ""
+}
+
+// isPathData reports whether a spec tag's icon value is an inline SVG path
+// rather than the name of one.
+func isPathData(value string) bool {
+	value = strings.TrimSpace(value)
+	if len(value) < 2 {
+		return false
+	}
+	if value[0] != 'M' && value[0] != 'm' {
+		return false
+	}
+	switch c := value[1]; {
+	case c == ' ', c == '-', c == '.':
+		return true
+	default:
+		return c >= '0' && c <= '9'
+	}
 }
 
 func parseSpec(spec string) map[string]string {
