@@ -46,6 +46,10 @@ type NodeSpec struct {
 	// MetadataProvider.Metadata(). Never interpreted by the framework;
 	// custom editors read the keys they know about.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	// Memory is the agent-memory declaration populated from
+	// MemoryProvider.Memory(). The Designer shows the Memory tab for any node
+	// that carries it; the package owns the repository it describes.
+	Memory *MemoryDecl `json:"memory,omitempty"`
 }
 
 type Property struct {
@@ -158,6 +162,10 @@ func generateSpecFile(pluginName, version string) {
 		}
 		if instance, _ := reflect.New(t).Interface().(MetadataProvider); instance != nil {
 			spec.Metadata = instance.Metadata()
+		}
+		if instance, _ := reflect.New(t).Interface().(MemoryProvider); instance != nil {
+			decl := instance.Memory()
+			spec.Memory = &decl
 		}
 
 		// Look for custom port fields (fields of type Port)
