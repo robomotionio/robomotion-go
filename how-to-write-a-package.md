@@ -1361,6 +1361,62 @@ shipping it here means a package upgrade updates the editor's options without a
 Designer release, and a flow authored against an older package still describes
 the plugins that package actually had.
 
+### 17.7 MemoryProvider: an agent that keeps a memory
+
+An agent node that learns on the job — writes skills for itself, keeps notes,
+counts what it reached for — declares that it keeps an **agent memory**:
+
+```go
+// The memory is a git repository per agent node, keyed by flow and node
+// rather than by robot, so it survives the machine and follows the flow.
+func (n *MyAgent) Memory() runtime.MemoryDecl {
+    return runtime.MemoryDecl{
+        Layout: "v1",                                                   // the layout the package writes
+        Roots:  []string{"skills/learned", "skills/reviewed", "notes", "usage"},
+        Sync:   true,                                                   // the package pushes/pulls itself
+    }
+}
+```
+
+Emitted into the pspec as `memory` (with `omitempty`, so a node without it is
+byte-identical to before). The Designer shows the **Memory** tab — overview,
+history, skills, notes, versions, growth — for *any* node that declares it, with
+no node-type special-casing; the API serves the repository
+(`/v1/agents.memory.*`); the **package owns the worktree and the sync**.
+
+What the package does with it, through the nested module
+`github.com/robomotionio/robomotion-go/memory` (go-git, pure Go):
+
+```go
+remote, err := runtime.MemoryRemote(flowID, n.GUID)   // "no remote" → local history only
+var r *memory.Remote
+if err == nil { r = &memory.Remote{URL: remote.URL, Username: remote.Username, Password: remote.Password} }
+repo, _, err := memory.Open(ctx, memory.Options{
+    Dir: filepath.Join(agentHome, "memory"), Remote: r,
+    Author: memory.Identity{Name: model, Email: robotID + "@robomotion"},
+    Manifest: layout.NewManifest("myagent", flowID, n.GUID, workspaceID, robotID, time.Now()),
+})
+_, _ = repo.Pull(ctx)                                  // before the turn
+// … the turn runs; the agent writes under skills/learned and notes …
+_, _ = repo.Commit(ctx, memory.CommitRequest{Secrets: boundValues, Trailers: map[string][]string{"Session-Id": {id}}})
+repo.PushAsync()                                       // after the turn; never fails the turn
+```
+
+`runtime.MemoryRemote` resolves `GetInstanceAccess()` into
+`<ApiEndpoint>/v1/git/wsp-<workspace>/agent-<flow>-<guid>.git` with Basic auth
+— the robot id as user, the instance token as password — which is the same
+proxy the deskbot clones flows through. The repository is created lazily on
+the first push. Every commit is scrubbed of the values the node was handed
+(bound environment variables → `${ENV:NAME}`) and pattern-scanned before it is
+written; a hit is quarantined and reported, never committed.
+
+Conventions the layout fixes (see `github.com/robomotionio/agent-bundle/spec`):
+the worktree root is never a skill root (only `skills/learned` and `notes` go
+into the harness's roots; `skills/reviewed` is staged and verified against its
+`.pin.json`), one commit per turn that changed something, author
+`<model> <robot@robomotion>`, subjects `learn: | note: | promote: | archive: |
+restore: | edit: | import: | verify: | revert: | init:`.
+
 ---
 
 ## 18. CLI Command Mode (the binary as a standalone tool)
@@ -1391,6 +1447,12 @@ robomotion-googledrive --skill-md > SKILL.md
 # Invoke (flags are kebab-case of each variable's spec name; output is JSON on stdout)
 robomotion-googledrive upload_file --file-path=/tmp/x.pdf --folder-id=abc123
 ```
+
+**Memory commands** (`memory_log`, `memory_export`, `memory_import`,
+`memory_promote` on an agent package) need `--memory-dir` in CLI mode: the
+CLI runtime reports `id=cli, flow_id=cli`, so there is no per-node home to
+derive, and `GetInstanceAccess` is unsupported, so a CLI process never pushes —
+the robot pushes at its next turn.
 
 **Credentials** resolve through the vault, by name or by ID:
 

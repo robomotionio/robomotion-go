@@ -49,3 +49,8 @@ the LMO AND).
   robot ability — it flips per run on the same robot. It travels as a field in
   the per-run `GetRobotInfo` payload (next to `flow_id`) and is read via
   `runtime.IsSetupManaged()`. Do **not** allocate a capability bit for it.
+
+- **Agent memory needs no capability bit.** A node declares it through
+  `runtime.MemoryProvider` (pspec `memory`), and the package clones/commits/
+  pushes the repository itself through the API's git proxy with
+  `GetInstanceAccess()`. The robot does not have to know; bit 7+ stays free.
