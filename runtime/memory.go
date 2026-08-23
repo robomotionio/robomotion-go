@@ -30,38 +30,37 @@ type MemoryDecl struct {
 // MemoryProvider is the optional interface a node implements to declare an
 // agent memory. Emitted into the pspec as `memory`, beside `assets` and
 // `metadata`; a node that does not implement it produces a byte-identical
-// pspec to before.
+// pspec to before. This declaration is all the SDK knows about agent memory:
+// the layout and the git engine live in github.com/robomotionio/agent-bundle
+// (`layout`, `memory`), with the packages that use them.
 type MemoryProvider interface {
 	Memory() MemoryDecl
 }
 
-// GitRemote is how a package reaches its memory repository: the smart-HTTP URL
-// behind the API's git proxy, with Basic auth — the robot's id as user and its
-// instance token as password, exactly as the deskbot clones flows.
+// GitRemote is how a package reaches a repository on the workspace git server:
+// the smart-HTTP URL behind the API's git proxy, with Basic auth — the robot's
+// id as user and its instance token as password, exactly as the deskbot clones
+// flows.
 type GitRemote struct {
 	URL      string
 	Username string
 	Password string
 }
 
-// MemoryRepoName is the workspace repository an agent node's memory lives in,
-// without the `wsp-<ws>/` organisation and without `.git`. One repository per
-// agent node: the flow id ties the ACL to the flow's, the node guid keeps two
-// agent nodes on one flow apart.
-func MemoryRepoName(flowID, guid string) string {
-	return "agent-" + flowID + "-" + guid
-}
-
-// MemoryRemote resolves the remote for a node's memory from the running
-// robot's own access: `<ApiEndpoint>/v1/git/wsp-<workspace>/agent-<flow>-<guid>.git`
-// with the instance token as password. The error is "no remote" in any
-// situation where the package should fall back to local history only — CLI
-// mode, a robot that has not been told its workspace, a runtime that is not
-// initialised — and the caller is expected to treat it that way rather than
-// fail a turn.
-func MemoryRemote(flowID, guid string) (GitRemote, error) {
-	if strings.TrimSpace(flowID) == "" || strings.TrimSpace(guid) == "" {
-		return GitRemote{}, fmt.Errorf("no remote: a memory remote needs a flow id and a node guid")
+// WorkspaceGitRemote resolves the remote for a repository of the running
+// robot's workspace — `<ApiEndpoint>/v1/git/wsp-<workspace>/<repoName>.git`
+// with the instance token as password. `repoName` is the bare repository name
+// (`flow-<id>`, `agent-<flow>-<guid>`, …); what a package keeps in such a
+// repository is the package's business, not the SDK's.
+//
+// The error reads "no remote" in every situation where a package should fall
+// back to local-only behaviour — CLI mode, a robot that has not been told its
+// workspace, a runtime that is not initialised — and callers are expected to
+// treat it that way rather than fail a turn.
+func WorkspaceGitRemote(repoName string) (GitRemote, error) {
+	repoName = strings.TrimSuffix(strings.TrimSpace(repoName), ".git")
+	if repoName == "" || strings.ContainsAny(repoName, "/\\ ") {
+		return GitRemote{}, fmt.Errorf("no remote: %q is not a repository name", repoName)
 	}
 	access, err := GetInstanceAccess()
 	if err != nil {
@@ -86,7 +85,27 @@ func MemoryRemote(flowID, guid string) (GitRemote, error) {
 	if err != nil || base.Host == "" {
 		return GitRemote{}, fmt.Errorf("no remote: the API endpoint %q is not a URL", access.ApiEndpoint)
 	}
-	base.Path = strings.TrimSuffix(base.Path, "/") + "/v1/git/wsp-" + workspace + "/" + MemoryRepoName(flowID, guid) + ".git"
+	base.Path = strings.TrimSuffix(base.Path, "/") + "/v1/git/wsp-" + workspace + "/" + repoName + ".git"
 	base.RawQuery, base.Fragment = "", ""
 	return GitRemote{URL: base.String(), Username: robot, Password: access.AccessToken}, nil
+}
+
+// MemoryRepoName is the repository an agent node's memory lives in,
+// `agent-<flow>-<guid>`.
+//
+// Deprecated: the memory layout is agent-bundle's; use its layout.RepoName and
+// WorkspaceGitRemote. Kept so v1.24.0 callers keep compiling.
+func MemoryRepoName(flowID, guid string) string {
+	return "agent-" + flowID + "-" + guid
+}
+
+// MemoryRemote is WorkspaceGitRemote(MemoryRepoName(flowID, guid)).
+//
+// Deprecated: use WorkspaceGitRemote with the repository name the package
+// computes; the SDK does not need to know what a memory repository is called.
+func MemoryRemote(flowID, guid string) (GitRemote, error) {
+	if strings.TrimSpace(flowID) == "" || strings.TrimSpace(guid) == "" {
+		return GitRemote{}, fmt.Errorf("no remote: a memory remote needs a flow id and a node guid")
+	}
+	return WorkspaceGitRemote(MemoryRepoName(flowID, guid))
 }

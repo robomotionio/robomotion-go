@@ -1379,43 +1379,26 @@ func (n *MyAgent) Memory() runtime.MemoryDecl {
 ```
 
 Emitted into the pspec as `memory` (with `omitempty`, so a node without it is
-byte-identical to before). The Designer shows the **Memory** tab — overview,
-history, skills, notes, versions, growth — for *any* node that declares it, with
-no node-type special-casing; the API serves the repository
-(`/v1/agents.memory.*`); the **package owns the worktree and the sync**.
+byte-identical to before). The Designer shows the **Memory** tab for *any* node
+that declares it, with no node-type special-casing; the API serves the
+repository (`/v1/agents.memory.*`); the **package owns the worktree and the
+sync**.
 
-What the package does with it, through the nested module
-`github.com/robomotionio/robomotion-go/memory` (go-git, pure Go):
+That declaration is all the SDK knows about agent memory. The layout, the
+scrubber and the git engine live in `github.com/robomotionio/agent-bundle`
+(`layout`, `secrets`, `memory`), with the agent packages that use them — the
+SDK is for writing packages, and a memory engine is an agent feature. What the
+SDK does provide is the one runtime fact such a package needs:
 
 ```go
-remote, err := runtime.MemoryRemote(flowID, n.GUID)   // "no remote" → local history only
-var r *memory.Remote
-if err == nil { r = &memory.Remote{URL: remote.URL, Username: remote.Username, Password: remote.Password} }
-repo, _, err := memory.Open(ctx, memory.Options{
-    Dir: filepath.Join(agentHome, "memory"), Remote: r,
-    Author: memory.Identity{Name: model, Email: robotID + "@robomotion"},
-    Manifest: layout.NewManifest("myagent", flowID, n.GUID, workspaceID, robotID, time.Now()),
-})
-_, _ = repo.Pull(ctx)                                  // before the turn
-// … the turn runs; the agent writes under skills/learned and notes …
-_, _ = repo.Commit(ctx, memory.CommitRequest{Secrets: boundValues, Trailers: map[string][]string{"Session-Id": {id}}})
-repo.PushAsync()                                       // after the turn; never fails the turn
+// <ApiEndpoint>/v1/git/wsp-<workspace>/<repoName>.git with the robot's own
+// instance token — the same proxy the deskbot clones flows through. The
+// repository is created lazily on the first push. "no remote" → local only.
+remote, err := runtime.WorkspaceGitRemote(layout.RepoName(flowID, n.GUID))
 ```
 
-`runtime.MemoryRemote` resolves `GetInstanceAccess()` into
-`<ApiEndpoint>/v1/git/wsp-<workspace>/agent-<flow>-<guid>.git` with Basic auth
-— the robot id as user, the instance token as password — which is the same
-proxy the deskbot clones flows through. The repository is created lazily on
-the first push. Every commit is scrubbed of the values the node was handed
-(bound environment variables → `${ENV:NAME}`) and pattern-scanned before it is
-written; a hit is quarantined and reported, never committed.
-
-Conventions the layout fixes (see `github.com/robomotionio/agent-bundle/spec`):
-the worktree root is never a skill root (only `skills/learned` and `notes` go
-into the harness's roots; `skills/reviewed` is staged and verified against its
-`.pin.json`), one commit per turn that changed something, author
-`<model> <robot@robomotion>`, subjects `learn: | note: | promote: | archive: |
-restore: | edit: | import: | verify: | revert: | init:`.
+See agent-bundle's `spec/memory-layout.md` for the layout and conventions and
+`memory` for `Open` / `Pull` / `Commit` / `PushAsync`.
 
 ---
 

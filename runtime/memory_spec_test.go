@@ -69,9 +69,15 @@ func TestMemoryRepoName(t *testing.T) {
 	}
 }
 
-func TestMemoryRemoteWithoutRuntimeIsNoRemote(t *testing.T) {
-	if _, err := MemoryRemote("flow", "abc123"); err == nil {
+func TestWorkspaceGitRemoteWithoutRuntimeIsNoRemote(t *testing.T) {
+	if _, err := WorkspaceGitRemote("agent-flow-abc123"); err == nil {
 		t.Fatal("expected no remote without an initialised runtime")
+	}
+	if _, err := WorkspaceGitRemote(""); err == nil {
+		t.Fatal("expected no remote without a repository name")
+	}
+	if _, err := WorkspaceGitRemote("a/b"); err == nil {
+		t.Fatal("expected no remote for a path")
 	}
 	if _, err := MemoryRemote("", "abc123"); err == nil {
 		t.Fatal("expected no remote without a flow id")
