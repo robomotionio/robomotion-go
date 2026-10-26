@@ -3,6 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/tidwall/gjson"
 
@@ -10,10 +11,15 @@ import (
 	"github.com/robomotionio/robomotion-go/utils"
 )
 
-var lmoStore *lmo.Store
+var (
+	lmoStore   *lmo.Store
+	lmoStoreMu sync.Mutex
+)
 
 // InitLMOStore creates a Store using the platform config directory.
 func InitLMOStore() error {
+	lmoStoreMu.Lock()
+	defer lmoStoreMu.Unlock()
 	if lmoStore != nil {
 		lmoStore.Close()
 		lmoStore = nil
@@ -35,13 +41,16 @@ func SetLMOStorePath(relPath string) error {
 	return lmoStore.SetRelPath(relPath)
 }
 
-// CloseLMOStore releases zstd resources.
+// CloseLMOStore releases zstd resources. Safe to call more than once and
+// from concurrent goroutines: zstd panics if its decoder is closed twice.
 func CloseLMOStore() {
-	if lmoStore == nil {
-		return
-	}
-	lmoStore.Close()
+	lmoStoreMu.Lock()
+	s := lmoStore
 	lmoStore = nil
+	lmoStoreMu.Unlock()
+	if s != nil {
+		s.Close()
+	}
 }
 
 // LMOResolve lazily resolves a BlobRef for a specific field path.
