@@ -160,10 +160,12 @@ func (m *GRPCServer) OnClose(ctx context.Context, req *proto.OnCloseRequest) (*p
 	}
 
 	err := node.Handler.OnClose()
-	atomic.AddInt32(&nc, -1)
+	// The robot may close several nodes at once; only the call that takes nc
+	// to zero may release the store. A separate Load lets two calls both see 0.
+	last := atomic.AddInt32(&nc, -1) == 0
 	RemoveNodeHandler(req.Guid)
 	defer func() {
-		if atomic.LoadInt32(&nc) == 0 && !sessionMode {
+		if last && !sessionMode {
 			CloseLMOStore()
 			defer func() {
 				done <- true
